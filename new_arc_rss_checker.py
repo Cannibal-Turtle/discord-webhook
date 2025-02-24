@@ -113,7 +113,7 @@ def process_novel(novel):
 
     # Check the last announced arc stored in history.
     if new_locked_arc == history.get("last_announced", ""):
-        print(f"✅ [{novel['name']}] No new arc detected. Last announced: {history.get('last_announced', '')}")
+        print(f"✅ [{novel['novel_title']}] No new arc detected. Last announced: {history.get('last_announced', '')}")
         return
 
     # Update last_announced in the same history file.
@@ -161,9 +161,9 @@ def process_novel(novel):
 
     response = requests.post(discord_webhook, json=data)
     if response.status_code == 204:
-        print(f"✅ [{novel['name']}] Sent notification for new arc: {new_locked_arc}")
+        print(f"✅ [{novel['novel_title']}] Sent notification for new arc: {new_locked_arc}")
     else:
-        print(f"❌ [{novel['name']}] Failed to send notification. Status Code: {response.status_code}")
+        print(f"❌ [{novel['novel_title']}] Failed to send notification. Status Code: {response.status_code}")
 
 # === MAIN PROCESS ===
 with open("config.json", "r") as cf:
