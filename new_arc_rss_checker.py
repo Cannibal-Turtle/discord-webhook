@@ -77,7 +77,7 @@ def process_novel(novel):
     paid_feed = feedparser.parse(paid_feed_url)
 
     # Detect if NSFW is present in any free feed entry.
-    if nsfw_detected(free_feed.entries):
+    if nsfw_detected(free_feed.entries, novel_title):
         # Append additional role mention.
         role_mention = f"{role_mention} <@&1329502951764525187> <@&1343352825811439616>"
 
