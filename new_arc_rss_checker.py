@@ -77,7 +77,7 @@ def process_novel(novel):
     # Detect if NSFW is present in any free feed entry.
     if nsfw_detected(free_feed.entries):
         # Append additional role mention.
-        role_mention = f"{role_mention} <@&1343352825811439616>"
+        role_mention = f"{role_mention} <@&1329502951764525187> <@&1343352825811439616>"
 
     # Extract arc titles from feed entries that have " 001" in their nameextend.
     free_arcs_feed = [clean_feed_title(entry.get("nameextend", "").split(" 001")[0])
@@ -136,7 +136,7 @@ def process_novel(novel):
 
     # Construct the final Discord message.
     message = (
-        f"{role_mention}\n"
+        f"{role_mention} <@&1329502951764525187>\n"
         "## :loudspeaker: NEW ARC ALERT˚ · .˚ ༘:butterfly:⋆｡˚\n"
         f"***《World {world_number}》is Live for***\n"
         f"### [{novel_title}]({novel_link}) <:Hehe:1329429547229122580>\n"
