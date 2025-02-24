@@ -110,4 +110,3 @@ To trigger a manual check:
 
 ---
 🚀 **Now, you're ready to automate novel arc announcements to Discord!**
-```
