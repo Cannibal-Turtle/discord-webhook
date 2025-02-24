@@ -13,11 +13,10 @@ To add a new novel, update `config.json` with the following fields:
 {
   "novels": [
     {
-      "name": "Your Novel Name",
+      "novel_title": "Your Novel Title",
       "role_mention": "<@&DISCORD_ROLE_ID>",
       "free_feed": "https://your-free-feed-url.xml",
       "paid_feed": "https://your-paid-feed-url.xml",
-      "novel_title": "Your Novel Title",
       "novel_link": "https://your-novel-link/",
       "host": "Your Hosting Site",
       "custom_emoji": "<:EmojiID>",
