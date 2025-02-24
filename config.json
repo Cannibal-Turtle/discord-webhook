@@ -1,0 +1,16 @@
+{
+  "novels": [
+    {
+      "name": "Quick Transmigration",
+      "role_mention": "<@&1329391480435114005>",
+      "free_feed": "https://cannibal-turtle.github.io/rss-feed/free_chapters_feed.xml",
+      "paid_feed": "https://cannibal-turtle.github.io/rss-feed/paid_chapters_feed.xml",
+      "novel_title": "Quick Transmigration: The Villain Is Too Pampered and Alluring",
+      "novel_link": "https://dragonholic.com/novel/quick-transmigration-the-villain-is-too-pampered-and-alluring/",
+      "host": "Dragonholic",
+      "custom_emoji": "<:Hehe:1329429547229122580>",
+      "discord_role_url": "https://discord.com/channels/1329384099609051136/1329419555600203776/1330466188349800458",
+      "history_file": "qt_history.json"
+    }
+  ]
+}
