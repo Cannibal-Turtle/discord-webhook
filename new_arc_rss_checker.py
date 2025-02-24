@@ -27,7 +27,7 @@ def format_stored_title(title):
     """
     match = re.match(r"(【Arc\s+\d+】)\s*(.*)", title)
     if match:
-        return f"**{match.group(1)}** {match.group(2)}"
+        return f"**{match.group(1)}**{match.group(2)}"
     return f"**{title}**"
 
 def extract_arc_number(title):
