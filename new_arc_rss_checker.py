@@ -123,7 +123,7 @@ def process_novel(novel):
         f"{role_mention}\n"
         "## :loudspeaker: NEW ARC ALERT˚ · .˚ ༘:butterfly:⋆｡˚\n"
         f"***《World {world_number}》is Live for***\n"
-        f"### [{novel_title}]({novel_link}) {custom_emoji}\n"
+        f"### [{novel_title}]({novel_link}) <:Hehe:1329429547229122580>\n"
         "❀° ┄───────────────────────╮\n"
         "**`Unlocked 🔓`**\n"
         f"||{unlocked_section}||\n\n"
@@ -132,7 +132,7 @@ def process_novel(novel):
         "╰───────────────────────┄ °❀\n"
         f"> *Advance access is ready for you on {host}! :rose:*\n"
         "✎﹏﹏﹏﹏﹏﹏﹏﹏\n"
-        f"-# React to the :man_supervillain: @ {discord_role_url} to get notified on updates and announcements~"
+        f"-# React to the {custom_emoji} @ {discord_role_url} to get notified on updates and announcements~"
     )
 
     data = {
