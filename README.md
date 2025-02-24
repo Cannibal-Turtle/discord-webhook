@@ -32,7 +32,7 @@ Each novel must have a **unique `history_file`** to store its arc history.
 ---
 
 ## 🎯 Notes
-- If a novel has no history of previous arcs, then history must be inserted manually before it can pick up automatically from the RSS feed.
+- If a novel has no history of previous arcs, then history file like `tvitpa_history.json` must be inserted manually before it can pick up automatically from the RSS feed.
 - Arcs are stored persistently and prevent duplicate notifications.
 - NSFW detection adds an extra Discord role mention.
 
