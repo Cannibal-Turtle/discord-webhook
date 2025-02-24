@@ -45,6 +45,17 @@ def deduplicate(lst):
             result.append(item)
     return result
 
+def nsfw_detected(feed_entries):
+    """
+    Check if any entry in the provided feed entries has a category that contains "nsfw".
+    Returns True if found, otherwise False.
+    """
+    for entry in feed_entries:
+        category = entry.get("category", "")
+        if "nsfw" in category.lower():
+            return True
+    return False
+
 def process_novel(novel):
     # Unpack novel configuration.
     free_feed_url = novel["free_feed"]
@@ -62,6 +73,11 @@ def process_novel(novel):
     # Fetch feeds.
     free_feed = feedparser.parse(free_feed_url)
     paid_feed = feedparser.parse(paid_feed_url)
+
+    # Detect if NSFW is present in any free feed entry.
+    if nsfw_detected(free_feed.entries):
+        # Append additional role mention.
+        role_mention = f"{role_mention} <@&1343352825811439616>"
 
     # Extract arc titles from feed entries that have " 001" in their nameextend.
     free_arcs_feed = [clean_feed_title(entry.get("nameextend", "").split(" 001")[0])
