@@ -45,15 +45,17 @@ def deduplicate(lst):
             result.append(item)
     return result
 
-def nsfw_detected(feed_entries):
+def nsfw_detected(feed_entries, novel_title):
     """
-    Check if any entry in the provided feed entries has a category that contains "nsfw".
+    Check if any entry that matches the given novel_title has a category containing "nsfw".
     Returns True if found, otherwise False.
     """
     for entry in feed_entries:
-        category = entry.get("category", "")
-        if "nsfw" in category.lower():
-            return True
+        # Check if the entry's title includes the novel title (case-insensitive)
+        if novel_title.lower() in entry.get("title", "").lower():
+            category = entry.get("category", "")
+            if "nsfw" in category.lower():
+                return True
     return False
 
 def process_novel(novel):
