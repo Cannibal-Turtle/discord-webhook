@@ -1,4 +1,3 @@
-```markdown
 # Discord Novel Arc Notifier
 
 This project automatically checks RSS feeds for new novel arcs and sends formatted Discord notifications. It supports multiple novels with persistent arc history and NSFW detection (restricted by novel title). All messages use a global Discord webhook (set as a GitHub secret named `DISCORD_WEBHOOK`).
@@ -34,10 +33,9 @@ Each novel must have a **unique `history_file`** to store its arc history.
 ---
 
 ## 🎯 Notes
-- **No need to manually edit `tvitpa_history.json`** – It updates automatically.
+- If a novel has no history of previous arcs, then history must be inserted manually before it can pick up automatically from the RSS feed.
 - Arcs are stored persistently and prevent duplicate notifications.
 - NSFW detection adds an extra Discord role mention.
 
 ---
 🚀 **Now, you're ready to automate novel arc announcements to Discord!**
-```
