@@ -58,6 +58,16 @@ def nsfw_detected(feed_entries, novel_title):
                 return True
     return False
 
+def extract_arc_title(nameextend):
+    """
+    Extracts the arc title by removing " 001" or "(1)" if present.
+    """
+    if " 001" in nameextend:
+        return clean_feed_title(nameextend.split(" 001")[0])
+    elif "(1)" in nameextend:
+        return clean_feed_title(nameextend.split("(1)")[0])
+    return clean_feed_title(nameextend)
+
 def process_novel(novel):
     # Unpack novel configuration.
     free_feed_url = novel["free_feed"]
@@ -81,11 +91,12 @@ def process_novel(novel):
         # Append additional role mention.
         role_mention = f"{role_mention} <@&1329502951764525187> <@&1343352825811439616>"
 
-    # Extract arc titles from feed entries that have " 001" in their nameextend.
-    free_arcs_feed = [clean_feed_title(entry.get("nameextend", "").split(" 001")[0])
-                       for entry in free_feed.entries if " 001" in entry.get("nameextend", "")]
-    paid_arcs_feed = [clean_feed_title(entry.get("nameextend", "").split(" 001")[0])
-                       for entry in paid_feed.entries if " 001" in entry.get("nameextend", "")]
+    # ✅ Correctly indented - Extract arc titles inside process_novel()
+    free_arcs_feed = [extract_arc_title(entry.get("nameextend", ""))
+                      for entry in free_feed.entries if " 001" in entry.get("nameextend", "") or "(1)" in entry.get("nameextend", "")]
+
+    paid_arcs_feed = [extract_arc_title(entry.get("nameextend", ""))
+                      for entry in paid_feed.entries if " 001" in entry.get("nameextend", "") or "(1)" in entry.get("nameextend", "")]
 
     # Load persistent history.
     history = load_history(history_file)
@@ -108,7 +119,6 @@ def process_novel(novel):
     save_history(history, history_file)
 
     # Determine the new locked arc.
-    # (Assume the new locked arc is the last element in the locked list.)
     new_locked_arc = history["locked"][-1] if history["locked"] else None
 
     # Check the last announced arc stored in history.
@@ -125,13 +135,9 @@ def process_novel(novel):
     if world_number is None:
         world_number = len(history["unlocked"]) + len(history["locked"]) + 1
 
-    # Build the unlocked section.
+    # Build message sections.
     unlocked_section = "\n".join([format_stored_title(title) for title in history["unlocked"]])
-    # Build the locked section.
-    locked_section_lines = [format_stored_title(title) for title in history["locked"]]
-    # Remove any duplicates.
-    locked_section_lines = deduplicate(locked_section_lines)
-    # Prefix only the new locked arc (assumed to be the last element) with the arrow.
+    locked_section_lines = deduplicate([format_stored_title(title) for title in history["locked"]])
     if locked_section_lines:
         locked_section_lines[-1] = f"☛{locked_section_lines[-1]}"
     locked_section = "\n".join(locked_section_lines)
@@ -153,13 +159,7 @@ def process_novel(novel):
         f"-# React to the {custom_emoji} @ {discord_role_url} to get notified on updates and announcements~"
     )
 
-    data = {
-        "content": message,
-        "allowed_mentions": {"parse": []},
-        "flags": 4  # Disable embeds
-    }
-
-    response = requests.post(discord_webhook, json=data)
+    response = requests.post(discord_webhook, json={"content": message, "allowed_mentions": {"parse": []}, "flags": 4})
     if response.status_code == 204:
         print(f"✅ [{novel['novel_title']}] Sent notification for new arc: {new_locked_arc}")
     else:
