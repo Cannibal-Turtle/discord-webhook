@@ -14,31 +14,14 @@ def load_history(history_file):
         return {"unlocked": [], "locked": [], "last_announced": ""}
 
 def save_history(history, history_file):
-    """Saves the novel's arc history to JSON file and verifies the update."""
+    """Saves the novel's arc history to JSON file with proper encoding."""
     print(f"📂 Checking before saving: {history_file}")
 
-    # Print old content before saving
-    if os.path.exists(history_file):
-        with open(history_file, "r") as f:
-            old_data = json.load(f)
-            print(f"🔍 Before Update: {old_data}")  # Print old content for debugging
-
-    # Write updated content
-    with open(history_file, "w") as f:
-        json.dump(history, f, indent=4)
-        f.flush()  # Ensure write
-        os.fsync(f.fileno())  # Ensure file is written to disk
+    # Save JSON with `ensure_ascii=False` to keep characters like 【】 readable
+    with open(history_file, "w", encoding="utf-8") as f:
+        json.dump(history, f, indent=4, ensure_ascii=False)  # ✅ Fixes Unicode issue
 
     print(f"✅ Successfully updated history file: {history_file}")
-
-    # Read back the content and verify it's correct
-    with open(history_file, "r") as f:
-        new_data = json.load(f)
-        print(f"📂 After Update: {new_data}")  # Print updated content for verification
-
-    # If the file did not update, print an error
-    if new_data == old_data:
-        print("❌ ERROR: File did not update correctly!")
 
 def commit_history_update(history_file):
     """Commits and pushes the updated history file to GitHub."""
