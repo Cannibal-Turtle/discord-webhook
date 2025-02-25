@@ -16,23 +16,36 @@ def load_history(history_file):
 def save_history(history, history_file):
     """Saves the novel's arc history to JSON file and verifies the update."""
     print(f"📂 Checking before saving: {history_file}")
+
+    # Print old content before saving
     if os.path.exists(history_file):
         with open(history_file, "r") as f:
-            print(f"🔍 Before Update: {json.load(f)}")  # Print old content
+            old_data = json.load(f)
+            print(f"🔍 Before Update: {old_data}")  # Print old content for debugging
 
+    # Write updated content
     with open(history_file, "w") as f:
         json.dump(history, f, indent=4)
+        f.flush()  # Ensure write
+        os.fsync(f.fileno())  # Ensure file is written to disk
 
     print(f"✅ Successfully updated history file: {history_file}")
 
+    # Read back the content and verify it's correct
     with open(history_file, "r") as f:
-        print(f"📂 After Update: {json.load(f)}")  # Print updated content
+        new_data = json.load(f)
+        print(f"📂 After Update: {new_data}")  # Print updated content for verification
+
+    # If the file did not update, print an error
+    if new_data == old_data:
+        print("❌ ERROR: File did not update correctly!")
         
 def commit_history_update(history_file):
     """Commits and pushes the updated history file to GitHub."""
+    print(f"📌 Committing changes for {history_file}...")
     os.system(f"git add {history_file}")
     os.system(f"git commit -m 'Auto-update: {history_file}' || echo 'No changes to commit'")
-    os.system("git push origin main || echo 'Push failed, check permissions'")
+    os.system("git push origin main || echo '❌ Push failed, check permissions'")
 
 def clean_feed_title(raw_title):
     """Removes extra characters from feed titles."""
