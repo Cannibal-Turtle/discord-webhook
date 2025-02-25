@@ -2,10 +2,10 @@ name: Check RSS and Send to Discord
 
 on:
   repository_dispatch:
-    types: [trigger-discord-notify]  # 🔽 Listens for the external event
+    types: [trigger-discord-notify]  
   schedule:
-    - cron: "0 13 * * *"  # Backup trigger at 13:00 UTC
-  workflow_dispatch:  # Allows manual trigger
+    - cron: "0 13 * * *"
+  workflow_dispatch:
 
 jobs:
   rss_to_discord:
