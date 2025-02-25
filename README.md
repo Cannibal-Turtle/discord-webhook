@@ -19,7 +19,7 @@ To allow the script to update the **novel history JSON files** and push changes 
 #### ✅ **Generate a PAT from the Source Repository**
 1. Go to [GitHub Personal Access Tokens](https://github.com/settings/tokens).
 2. Click **"Generate new token (classic)"**.
-3. Select **Expiration** (e.g., 90 days or no expiration).
+3. Select **Expiration** (no expiration).
 4. Under **Scopes**, check:
    - ✅ `repo` (Full control of private repositories)
    - ✅ `workflow` (Required for GitHub Actions)
