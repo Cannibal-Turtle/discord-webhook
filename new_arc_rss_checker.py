@@ -10,7 +10,6 @@ def load_history(history_file):
         with open(history_file, "r") as f:
             return json.load(f)
     else:
-        # Initialize with empty history if not present.
         return {"unlocked": [], "locked": [], "last_announced": ""}
 
 def save_history(history, history_file):
@@ -26,24 +25,15 @@ def format_stored_title(title):
     Returns: "**【Arc 16】** The Abandoned Supporting Female Role"
     """
     match = re.match(r"(【Arc\s+\d+】)\s*(.*)", title)
-    if match:
-        return f"**{match.group(1)}**{match.group(2)}"
-    return f"**{title}**"
+    return f"**{match.group(1)}**{match.group(2)}" if match else f"**{title}**"
 
 def extract_arc_number(title):
     match = re.search(r"【Arc\s*(\d+)】", title)
-    if match:
-        return int(match.group(1))
-    return None
+    return int(match.group(1)) if match else None
 
 def deduplicate(lst):
     seen = set()
-    result = []
-    for item in lst:
-        if item not in seen:
-            seen.add(item)
-            result.append(item)
-    return result
+    return [x for x in lst if not (x in seen or seen.add(x))]
 
 def nsfw_detected(feed_entries, novel_title):
     """
@@ -51,10 +41,8 @@ def nsfw_detected(feed_entries, novel_title):
     Returns True if found, otherwise False.
     """
     for entry in feed_entries:
-        # Check if the entry's title includes the novel title (case-insensitive)
         if novel_title.lower() in entry.get("title", "").lower():
-            category = entry.get("category", "")
-            if "nsfw" in category.lower():
+            if "nsfw" in entry.get("category", "").lower():
                 return True
     return False
 
@@ -62,17 +50,16 @@ def extract_arc_title(nameextend):
     """
     Extracts the arc title by removing " 001" or "(1)" if present.
     """
-    if " 001" in nameextend:
-        return clean_feed_title(nameextend.split(" 001")[0])
-    elif "(1)" in nameextend:
-        return clean_feed_title(nameextend.split("(1)")[0])
+    for suffix in [" 001", "(1)"]:
+        if suffix in nameextend:
+            return clean_feed_title(nameextend.split(suffix)[0])
     return clean_feed_title(nameextend)
 
+# === PROCESS NOVEL FUNCTION ===
 def process_novel(novel):
     # Unpack novel configuration.
     free_feed_url = novel["free_feed"]
     paid_feed_url = novel["paid_feed"]
-    # Use global webhook from environment (DISCORD_WEBHOOK)
     discord_webhook = os.getenv("DISCORD_WEBHOOK")
     role_mention = novel["role_mention"]
     novel_title = novel["novel_title"]
@@ -86,12 +73,11 @@ def process_novel(novel):
     free_feed = feedparser.parse(free_feed_url)
     paid_feed = feedparser.parse(paid_feed_url)
 
-    # Detect if NSFW is present in any free feed entry.
+    # Detect NSFW flag
     if nsfw_detected(free_feed.entries, novel_title):
-        # Append additional role mention.
         role_mention = f"{role_mention} <@&1329502951764525187> <@&1343352825811439616>"
 
-    # ✅ Correctly indented - Extract arc titles inside process_novel()
+    # Extract arcs
     free_arcs_feed = [extract_arc_title(entry.get("nameextend", ""))
                       for entry in free_feed.entries if " 001" in entry.get("nameextend", "") or "(1)" in entry.get("nameextend", "")]
 
@@ -108,6 +94,7 @@ def process_novel(novel):
             history["unlocked"].append(arc)
         if arc in history["locked"]:
             history["locked"].remove(arc)
+
     # - Arcs from paid feed (that are not in unlocked or locked) get added to "locked".
     for arc in paid_arcs_feed:
         if arc not in history["unlocked"] and arc not in history["locked"]:
@@ -121,9 +108,9 @@ def process_novel(novel):
     # Determine the new locked arc.
     new_locked_arc = history["locked"][-1] if history["locked"] else None
 
-    # Check the last announced arc stored in history.
+    # Prevent duplicate announcements
     if new_locked_arc == history.get("last_announced", ""):
-        print(f"✅ [{novel['novel_title']}] No new arc detected. Last announced: {history.get('last_announced', '')}")
+        print(f"✅ [{novel_title}] No new arc detected. Last announced: {history.get('last_announced', '')}")
         return
 
     # Update last_announced in the same history file.
@@ -161,9 +148,9 @@ def process_novel(novel):
 
     response = requests.post(discord_webhook, json={"content": message, "allowed_mentions": {"parse": []}, "flags": 4})
     if response.status_code == 204:
-        print(f"✅ [{novel['novel_title']}] Sent notification for new arc: {new_locked_arc}")
+        print(f"✅ [{novel_title}] Sent notification for new arc: {new_locked_arc}")
     else:
-        print(f"❌ [{novel['novel_title']}] Failed to send notification. Status Code: {response.status_code}")
+        print(f"❌ [{novel_title}] Failed to send notification. Status Code: {response.status_code}")
 
 # === MAIN PROCESS ===
 with open("config.json", "r") as cf:
