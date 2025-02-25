@@ -27,6 +27,12 @@ def save_history(history, history_file):
 
     with open(history_file, "r") as f:
         print(f"📂 After Update: {json.load(f)}")  # Print updated content
+        
+def commit_history_update(history_file):
+    """Commits and pushes the updated history file to GitHub."""
+    os.system(f"git add {history_file}")
+    os.system(f"git commit -m 'Auto-update: {history_file}' || echo 'No changes to commit'")
+    os.system("git push origin main || echo 'Push failed, check permissions'")
 
 def clean_feed_title(raw_title):
     """Removes extra characters from feed titles."""
