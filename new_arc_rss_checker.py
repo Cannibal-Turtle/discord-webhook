@@ -107,15 +107,17 @@ def process_novel(novel):
 
     # Determine the new locked arc.
     new_locked_arc = history["locked"][-1] if history["locked"] else None
-
+    
     # Prevent duplicate announcements
-    if new_locked_arc == history.get("last_announced", ""):
+    if new_locked_arc and new_locked_arc == history.get("last_announced", ""):
         print(f"✅ [{novel_title}] No new arc detected. Last announced: {history.get('last_announced', '')}")
         return
-
-    # Update last_announced in the same history file.
-    history["last_announced"] = new_locked_arc
-    save_history(history, history_file)
+    
+    # 🔽 Ensure last_announced is always updated
+    if new_locked_arc:
+        history["last_announced"] = new_locked_arc
+        save_history(history, history_file)
+        print(f"📌 Updated last_announced to: {new_locked_arc}")
 
     # Use the arc number from the new locked arc for the header.
     world_number = extract_arc_number(new_locked_arc)
