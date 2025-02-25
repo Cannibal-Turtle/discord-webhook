@@ -14,12 +14,19 @@ def load_history(history_file):
         return {"unlocked": [], "locked": [], "last_announced": ""}
 
 def save_history(history, history_file):
-    """Saves the novel's arc history to JSON file."""
+    """Saves the novel's arc history to JSON file and verifies the update."""
+    print(f"📂 Checking before saving: {history_file}")
+    if os.path.exists(history_file):
+        with open(history_file, "r") as f:
+            print(f"🔍 Before Update: {json.load(f)}")  # Print old content
+
     with open(history_file, "w") as f:
         json.dump(history, f, indent=4)
-        f.flush()  # Force write to disk
-        os.fsync(f.fileno())  # Ensure file is fully saved
-    print(f"✅ Successfully updated history file: {history_file}")  # Debugging
+
+    print(f"✅ Successfully updated history file: {history_file}")
+
+    with open(history_file, "r") as f:
+        print(f"📂 After Update: {json.load(f)}")  # Print updated content
 
 def clean_feed_title(raw_title):
     """Removes extra characters from feed titles."""
