@@ -2,7 +2,9 @@ name: Check RSS and Send to Discord
 
 on:
   schedule:
-    - cron: "0 13 * * *"  # Runs daily at 13:00 UTC
+    - cron: "0 13 * * *"  # Runs daily at 13:00 UTC (backup in case dispatch fails)
+  repository_dispatch:
+    types: [trigger-discord-notify]  # 🔽 NEW: Listen for trigger
   workflow_dispatch:  # Allows manual trigger
 
 jobs:
@@ -24,7 +26,19 @@ jobs:
     - name: Install dependencies
       run: pip install feedparser requests
 
+    - name: Check if another workflow is running
+      run: |
+        if [ -f "rss_lockfile.lock" ]; then
+          echo "🚫 Another instance is running. Exiting."
+          exit 1
+        fi
+        echo "🔓 Lock acquired" > rss_lockfile.lock
+
     - name: Run Multi-Novel RSS Checker
       run: python new_arc_rss_checker.py
       env:
         DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+
+    - name: Remove Lock File
+      if: always()
+      run: rm -f rss_lockfile.lock
