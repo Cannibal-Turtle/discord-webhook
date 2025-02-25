@@ -13,7 +13,32 @@ This project automatically checks RSS feeds for new novel arcs and sends formatt
 4. Set **Value** to your Discord webhook URL.
 5. Click **Add secret**.
 
-### 🛠️ 2. Set GitHub Actions Permissions
+### 🔑 2. Add a Personal Access Token (PAT) from the Source Repository
+To allow the script to update the **novel history JSON files** and push changes back to GitHub, you need to **generate and store a Personal Access Token (PAT) from the source repository that triggers this script**.
+
+#### ✅ **Generate a PAT from the Source Repository**
+1. Go to [GitHub Personal Access Tokens](https://github.com/settings/tokens).
+2. Click **"Generate new token (classic)"**.
+3. Select **Expiration** (e.g., 90 days or no expiration).
+4. Under **Scopes**, check:
+   - ✅ `repo` (Full control of private repositories)
+   - ✅ `workflow` (Required for GitHub Actions)
+5. Click **Generate token** and **copy** it.
+
+#### ✅ **Store the PAT in the Source Repository**
+1. Go to **Settings** → **Secrets and variables** → **Actions**.
+2. Click **New repository secret**.
+3. Set **Name** to `GH_PAT`.
+4. Set **Value** to the **Personal Access Token** copied earlier.
+5. Click **Add secret**.
+
+🚨 **Important:**  
+- The PAT must be set in **the repository where GitHub Actions runs the script** (i.e., the **source repo that triggers Discord updates**).  
+- If this repo is **forked**, the PAT must be added to the **forked repository’s** secrets, not just the original.
+
+---
+
+### 🛠️ 3. Set GitHub Actions Permissions
 1. Go to **Settings** → **Actions** → **General**.
 2. Under **Workflow permissions**, select:
    - ✅ **Allow all actions and reusable workflows**
@@ -24,7 +49,7 @@ This project automatically checks RSS feeds for new novel arcs and sends formatt
 
 ## 📂 User Setup Guide
 
-### ✅ 3. Add a New Novel to Track
+### ✅ 4. Add a New Novel to Track
 To add a new novel, update `config.json` with the following fields:
 
 ```json
