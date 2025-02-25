@@ -43,8 +43,13 @@ def save_history(history, history_file):
 def commit_history_update(history_file):
     """Commits and pushes the updated history file to GitHub."""
     print(f"📌 Committing changes for {history_file}...")
+
+    os.system(f"git config --global user.name 'GitHub Actions'")
+    os.system(f"git config --global user.email 'actions@github.com'")
+    
     os.system(f"git add {history_file}")
     os.system(f"git commit -m 'Auto-update: {history_file}' || echo 'No changes to commit'")
+    
     os.system("git push origin main || echo '❌ Push failed, check permissions'")
 
 def clean_feed_title(raw_title):
