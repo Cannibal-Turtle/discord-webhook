@@ -4,9 +4,27 @@ This project automatically checks RSS feeds for new novel arcs and sends formatt
 
 ---
 
+## ⚙️ GitHub Repository Settings
+
+### 🔑 1. Add the Discord Webhook URL to Secrets
+1. Go to **Settings** → **Secrets and variables** → **Actions**.
+2. Click **New repository secret**.
+3. Set **Name** to `DISCORD_WEBHOOK`.
+4. Set **Value** to your Discord webhook URL.
+5. Click **Add secret**.
+
+### 🛠️ 2. Set GitHub Actions Permissions
+1. Go to **Settings** → **Actions** → **General**.
+2. Under **Workflow permissions**, select:
+   - ✅ **Allow all actions and reusable workflows**
+   - ✅ **Read and write permissions**
+3. Click **Save**.
+
+---
+
 ## 📂 User Setup Guide
 
-### ✅ 1. Add a New Novel to Track
+### ✅ 3. Add a New Novel to Track
 To add a new novel, update `config.json` with the following fields:
 
 ```json
