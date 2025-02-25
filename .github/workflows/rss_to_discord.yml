@@ -4,11 +4,15 @@ on:
   repository_dispatch:
     types: [trigger-discord-notify]
   schedule:
-    - cron: "0 13 * * *"
+    - cron: "0 13 * * *"  # Runs daily at 13:00 UTC
   workflow_dispatch:
 
 permissions:
   contents: write  # ✅ Allows GitHub Actions to commit changes
+
+concurrency:
+  group: rss-to-discord
+  cancel-in-progress: true  # ✅ Cancels the previous run if a new one starts
 
 jobs:
   rss_to_discord:
