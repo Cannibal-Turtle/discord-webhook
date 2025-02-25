@@ -2,10 +2,13 @@ name: Check RSS and Send to Discord
 
 on:
   repository_dispatch:
-    types: [trigger-discord-notify]  
+    types: [trigger-discord-notify]
   schedule:
     - cron: "0 13 * * *"
   workflow_dispatch:
+
+permissions:
+  contents: write  # ✅ Allows GitHub Actions to commit changes
 
 jobs:
   rss_to_discord:
@@ -16,7 +19,7 @@ jobs:
       uses: actions/checkout@v3
       with:
         persist-credentials: true
-        token: ${{ secrets.GITHUB_TOKEN }}
+        token: ${{ secrets.GITHUB_TOKEN }}  # ✅ Uses GitHub token with write permissions
 
     - name: Set up Python
       uses: actions/setup-python@v4
@@ -26,19 +29,7 @@ jobs:
     - name: Install dependencies
       run: pip install feedparser requests
 
-    - name: Check if another workflow is running
-      run: |
-        if [ -f "rss_lockfile.lock" ]; then
-          echo "🚫 Another instance is running. Exiting."
-          exit 1
-        fi
-        echo "🔓 Lock acquired" > rss_lockfile.lock
-
     - name: Run Multi-Novel RSS Checker
       run: python new_arc_rss_checker.py
       env:
         DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
-
-    - name: Remove Lock File
-      if: always()
-      run: rm -f rss_lockfile.lock
