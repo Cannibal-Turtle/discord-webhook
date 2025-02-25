@@ -1,22 +1,24 @@
 {
-  "unlocked": [
-    "【Arc 1】 The Heiress Will Not Be a Cannon Fodder",
-    "【Arc 2】 The Humble Concubine Will Not Be a Cannon Fodder",
-    "【Arc 3】 The Stand-In Lover Will Not Be a Cannon Fodder",
-    "【Arc 4】 The Disfigured Girlfriend Will Not Be a Cannon Fodder",
-    "【Arc 5】 The Village Girl Supporting Role Will Not Be a Cannon Fodder"
-  ],
-  "locked": [
-    "【Arc 6】 The Fake Daughter Will Not Be a Cannon Fodder",
-    "【Arc 7】 I Abused the Vampire Lord",
-    "【Arc 8】 I Inflict a Love Tribulation on the Demon God",
-    "【Arc 9】 My Fiancé Is Definitely Not a Little Pitiful Person",
-    "【Arc 10】 Flirtatious Vixen vs. Abstinent Feudal Warlord",
-    "【Arc 11】 Raising a Loyal Dog Boyfriend",
-    "【Arc 12】 Deep-Sea Mermaid",
-    "【Arc 13】 It’s Hard Being the Elder Sister-in-Law",
-    "【Arc 14】 The Beautiful Cannon Fodder in a Horror World",
-    "【Arc 15】 The Imprisoned Evil Queen"
-  ],
-  "last_announced": ""
+    "unlocked": [
+        "\u3010Arc 1\u3011 The Heiress Will Not Be a Cannon Fodder",
+        "\u3010Arc 2\u3011 The Humble Concubine Will Not Be a Cannon Fodder",
+        "\u3010Arc 3\u3011 The Stand-In Lover Will Not Be a Cannon Fodder",
+        "\u3010Arc 4\u3011 The Disfigured Girlfriend Will Not Be a Cannon Fodder",
+        "\u3010Arc 5\u3011 The Village Girl Supporting Role Will Not Be a Cannon Fodder",
+        "\u3010Arc 5\u3011The Village Girl Supporting Role Will Not Be a Cannon Fodder"
+    ],
+    "locked": [
+        "\u3010Arc 6\u3011 The Fake Daughter Will Not Be a Cannon Fodder",
+        "\u3010Arc 7\u3011 I Abused the Vampire Lord",
+        "\u3010Arc 8\u3011 I Inflict a Love Tribulation on the Demon God",
+        "\u3010Arc 9\u3011 My Fianc\u00e9 Is Definitely Not a Little Pitiful Person",
+        "\u3010Arc 10\u3011 Flirtatious Vixen vs. Abstinent Feudal Warlord",
+        "\u3010Arc 11\u3011 Raising a Loyal Dog Boyfriend",
+        "\u3010Arc 12\u3011 Deep-Sea Mermaid",
+        "\u3010Arc 13\u3011 It\u2019s Hard Being the Elder Sister-in-Law",
+        "\u3010Arc 14\u3011 The Beautiful Cannon Fodder in a Horror World",
+        "\u3010Arc 15\u3011 The Imprisoned Evil Queen",
+        "\u3010Arc 16\u3011The Abandoned Supporting Female Role"
+    ],
+    "last_announced": "\u3010Arc 16\u3011The Abandoned Supporting Female Role"
 }
