@@ -15,12 +15,11 @@ def load_history(history_file):
 
 def save_history(history, history_file):
     """Saves the novel's arc history to JSON file."""
-    try:
-        with open(history_file, "w") as f:
-            json.dump(history, f, indent=4)
-        print(f"✅ Successfully updated history file: {history_file}")
-    except Exception as e:
-        print(f"❌ Failed to write history file: {e}")
+    with open(history_file, "w") as f:
+        json.dump(history, f, indent=4)
+        f.flush()  # Force write to disk
+        os.fsync(f.fileno())  # Ensure file is fully saved
+    print(f"✅ Successfully updated history file: {history_file}")  # Debugging
 
 def clean_feed_title(raw_title):
     """Removes extra characters from feed titles."""
