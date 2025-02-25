@@ -39,18 +39,35 @@ def save_history(history, history_file):
     # If the file did not update, print an error
     if new_data == old_data:
         print("❌ ERROR: File did not update correctly!")
-        
+
 def commit_history_update(history_file):
     """Commits and pushes the updated history file to GitHub."""
     print(f"📌 Committing changes for {history_file}...")
 
-    os.system(f"git config --global user.name 'GitHub Actions'")
-    os.system(f"git config --global user.email 'actions@github.com'")
-    
+    os.system("git config --global user.name 'GitHub Actions'")
+    os.system("git config --global user.email 'actions@github.com'")
+
+    # Check if there are any changes
+    os.system("git status")  # Debugging: See what Git detects
+
+    # Ensure the file is staged
     os.system(f"git add {history_file}")
-    os.system(f"git commit -m 'Auto-update: {history_file}' || echo 'No changes to commit'")
-    
-    os.system("git push origin main || echo '❌ Push failed, check permissions'")
+
+    # Check if there are actually any changes before committing
+    changes_detected = os.system("git diff --staged --quiet")  # Exits 1 if changes exist
+
+    if changes_detected != 0:
+        os.system(f"git commit -m 'Auto-update: {history_file}'")
+        print(f"✅ Committed changes for {history_file}")
+    else:
+        print(f"⚠️ No changes detected in {history_file}, skipping commit.")
+
+    # Attempt to push, with retry logic in case of failure
+    push_status = os.system("git push origin main")
+
+    if push_status != 0:
+        print("❌ Git push failed. Trying again with force...")
+        os.system("git push origin main --force")  # Force push if necessary
 
 def clean_feed_title(raw_title):
     """Removes extra characters from feed titles."""
@@ -98,10 +115,10 @@ def process_novel(novel):
         role_mention = f"{role_mention} <@&1329502951764525187> <@&1343352825811439616>"
 
     # Extract arcs
-    free_arcs_feed = [extract_arc_title(entry.get("nameextend", "")) 
+    free_arcs_feed = [extract_arc_title(entry.get("nameextend", ""))
                       for entry in free_feed.entries if " 001" in entry.get("nameextend", "") or "(1)" in entry.get("nameextend", "")]
-    
-    paid_arcs_feed = [extract_arc_title(entry.get("nameextend", "")) 
+
+    paid_arcs_feed = [extract_arc_title(entry.get("nameextend", ""))
                       for entry in paid_feed.entries if " 001" in entry.get("nameextend", "") or "(1)" in entry.get("nameextend", "")]
 
     # Load novel history
@@ -133,7 +150,8 @@ def process_novel(novel):
     # 🔽 Ensure last_announced is always updated
     if new_locked_arc:
         history["last_announced"] = new_locked_arc
-        save_history(history, novel["history_file"])
+        save_history(history, novel["history_file"])  # ✅ Save updated history
+        commit_history_update(novel["history_file"])  # ✅ Commit and push changes
         print(f"📌 Updated last_announced to: {new_locked_arc}")
 
     # Use the arc number from the new locked arc for the header.
