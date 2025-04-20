@@ -107,33 +107,33 @@ def extract_arc_title(nameextend):
 
 # === PROCESS NOVEL FUNCTION ===
 def process_novel(novel):
-    …
-    # 1) build a list of candidate arcs (both free & paid)
+    # first, actually fetch the RSS feeds
+    free_feed = feedparser.parse(novel["free_feed"])
+    paid_feed = feedparser.parse(novel["paid_feed"])
+
+    # helper: volume‑first / nameextend‑fallback
     def extract_arcs(feed):
         arcs = []
         for entry in feed.entries:
-            vol = entry.get("volume","").strip()
-            raw = entry.get("nameextend","")
-            # do we have the new‐arc marker?
+            vol        = entry.get("volume","").strip()
+            raw        = entry.get("nameextend","")
             has_marker = "001" in raw or "(1)" in raw
             if vol:
-                # volume present → only treat it as a new arc if it has a 001/(1) marker
                 if has_marker:
-                    arcs.append({"title": vol,       "raw": raw})
+                    arcs.append({"title": vol, "raw": raw})
             else:
-                # no volume → fall back to your old title+suffix logic
                 if has_marker:
                     title = extract_arc_title(raw)
-                    arcs.append({"title": title,     "raw": raw})
+                    arcs.append({"title": title, "raw": raw})
         return arcs
+
+    free_arcs_feed = extract_arcs(free_feed)
+    paid_arcs_feed = extract_arcs(paid_feed)
     
     # Detect NSFW flag
     role_mention = novel["role_mention"]
     if nsfw_detected(free_feed.entries, novel["novel_title"]):
         role_mention = f"{role_mention} <@&1329502951764525187> <@&1343352825811439616>"
-
-    free_arcs_feed = extract_arcs(free_feed)
-    paid_arcs_feed = extract_arcs(paid_feed)
 
     history = load_history(novel["history_file"])
     for item in free_arcs_feed:
