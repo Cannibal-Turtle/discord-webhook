@@ -82,6 +82,18 @@ def extract_arc_title(nameextend):
     clean = re.sub(r"(?:\s+001|\(1\)|\.\s*1)$", "", clean).strip()
     return clean
 
+def strip_any_number_prefix(s: str) -> str:
+    """
+    Remove any leading text up through the first run of digits (plus
+    any immediately following punctuation and spaces).
+    E.g.  
+      "【Arc 22】Foo"    → "Foo"  
+      "Arc 22: Foo"     → "Foo"  
+      "World10 - Bar"   → "Bar"  
+      "Prefix 3) Baz"   → "Baz"
+    """
+    return re.sub(r"^.*?\d+[^\w\s]*\s*", "", s)
+
 def next_arc_number(history):
     """Returns last announced arc number + 1, or 1 if none."""
     last = history.get("last_announced", "")
@@ -128,8 +140,8 @@ def process_novel(novel):
             else:
                 base = extract_arc_title(raw)
     
-            # ◀️ HERE: drop any feed‑provided “[Arc N]” prefix
-            base = re.sub(r"^【Arc\s*\d+】\s*", "", base)
+            # strip ANY leading prefix that ends in a number (and punctuation)
+            base = strip_any_number_prefix(base)
     
             bases.append(base)
         return bases
