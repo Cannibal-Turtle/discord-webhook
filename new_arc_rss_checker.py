@@ -61,10 +61,29 @@ def format_stored_title(title):
     match = re.match(r"(【Arc\s+\d+】)\s*(.*)", title)
     return f"**{match.group(1)}**{match.group(2)}" if match else f"**{title}**"
 
-def extract_arc_number(title):
-    """Extracts arc number from title."""
-    match = re.search(r"【Arc\s*(\d+)】", title)
-    return int(match.group(1)) if match else None
+def extract_arc_number_from_suffix(nameextend):
+    if nameextend.endswith(" 001"):
+        return 1
+    m = re.search(r"\((\d+)\)$", nameextend)
+    if m:
+        return int(m.group(1))
+    return None
+
+def next_arc_number(history):
+    # 1) Try parsing last_announced
+    last = history.get("last_announced", "")
+    m = re.search(r"【Arc\s*(\d+)】", last)
+    if m:
+        return int(m.group(1)) + 1
+
+    # 2) Otherwise scan unlocked+locked for the max Arc n
+    nums = []
+    for section in ("unlocked","locked"):
+        for title in history[section]:
+            m = re.search(r"【Arc\s*(\d+)】", title)
+            if m:
+                nums.append(int(m.group(1)))
+    return max(nums, default=0) + 1
 
 def deduplicate(lst):
     """Removes duplicates while preserving order."""
@@ -88,57 +107,59 @@ def extract_arc_title(nameextend):
 
 # === PROCESS NOVEL FUNCTION ===
 def process_novel(novel):
-    """Processes a novel, updates history, and sends a Discord message if a new arc is detected."""
-    free_feed = feedparser.parse(novel["free_feed"])
-    paid_feed = feedparser.parse(novel["paid_feed"])
+    …
+    # 1) build a list of candidate arcs (both free & paid)
+    def extract_arcs(feed):
+        arcs = []
+        for entry in feed.entries:
+            vol = entry.get("volume","").strip()
+            raw = entry.get("nameextend","")
+            # do we have the new‐arc marker?
+            has_marker = "001" in raw or "(1)" in raw
+            if vol:
+                # volume present → only treat it as a new arc if it has a 001/(1) marker
+                if has_marker:
+                    arcs.append({"title": vol,       "raw": raw})
+            else:
+                # no volume → fall back to your old title+suffix logic
+                if has_marker:
+                    title = extract_arc_title(raw)
+                    arcs.append({"title": title,     "raw": raw})
+        return arcs
     
     # Detect NSFW flag
     role_mention = novel["role_mention"]
     if nsfw_detected(free_feed.entries, novel["novel_title"]):
         role_mention = f"{role_mention} <@&1329502951764525187> <@&1343352825811439616>"
 
-    # Extract arcs
-    free_arcs_feed = [extract_arc_title(entry.get("nameextend", ""))
-                      for entry in free_feed.entries if " 001" in entry.get("nameextend", "") or "(1)" in entry.get("nameextend", "")]
+    free_arcs_feed = extract_arcs(free_feed)
+    paid_arcs_feed = extract_arcs(paid_feed)
 
-    paid_arcs_feed = [extract_arc_title(entry.get("nameextend", ""))
-                      for entry in paid_feed.entries if " 001" in entry.get("nameextend", "") or "(1)" in entry.get("nameextend", "")]
-
-    # Load novel history
     history = load_history(novel["history_file"])
-
-    # Update history
-    for arc in free_arcs_feed:
-        if arc not in history["unlocked"]:
-            history["unlocked"].append(arc)
-        if arc in history["locked"]:
-            history["locked"].remove(arc)
-
-    for arc in paid_arcs_feed:
-        if arc not in history["unlocked"] and arc not in history["locked"]:
-            history["locked"].append(arc)
-
+    for item in free_arcs_feed:
+        t = item["title"]
+        if t not in history["unlocked"]:
+            history["unlocked"].append(t)
+        if t in history["locked"]:
+            history["locked"].remove(t)
+    for item in paid_arcs_feed:
+        t = item["title"]
+        if t not in history["unlocked"] and t not in history["locked"]:
+            history["locked"].append(t)
     history["unlocked"] = deduplicate(history["unlocked"])
-    history["locked"] = deduplicate(history["locked"])
+    history["locked"]   = deduplicate(history["locked"])
     save_history(history, novel["history_file"])
 
     # Detect new locked arc
     new_locked_arc = history["locked"][-1] if history["locked"] else None
-
-    # Prevent duplicate announcements
-    if new_locked_arc and new_locked_arc == history.get("last_announced", ""):
-        print(f"✅ [{novel['novel_title']}] No new arc detected. Last announced: {history.get('last_announced', '')}")
+    if not new_locked_arc or new_locked_arc == history["last_announced"]:
         return
-    
-    # 🔽 Ensure last_announced is always updated
-    if new_locked_arc:
-        history["last_announced"] = new_locked_arc
-        save_history(history, novel["history_file"])  # ✅ Save updated history
-        commit_history_update(novel["history_file"])  # ✅ Commit and push changes
-        print(f"📌 Updated last_announced to: {new_locked_arc}")
 
-    # Use the arc number from the new locked arc for the header.
-    world_number = extract_arc_number(new_locked_arc) or len(history["unlocked"]) + len(history["locked"]) + 1
+    history["last_announced"] = new_locked_arc
+    save_history(history, novel["history_file"])
+    commit_history_update(novel["history_file"])
+        
+    world_number = next_arc_number(history)
 
     # Build message sections.
     unlocked_section = "\n".join([format_stored_title(title) for title in history["unlocked"]])
