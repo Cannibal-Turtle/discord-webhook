@@ -118,14 +118,19 @@ def process_novel(novel):
     def extract_new_bases(feed):
         bases = []
         for e in feed.entries:
-            raw = e.get("nameextend", "")
+            raw = e.get("nameextend","")
             if not is_new_marker(raw):
                 continue
-            vol = e.get("volume", "").strip()
+    
+            vol = e.get("volume","").strip()
             if vol:
                 base = clean_feed_title(vol)
             else:
                 base = extract_arc_title(raw)
+    
+            # ◀️ HERE: drop any feed‑provided “[Arc N]” prefix
+            base = re.sub(r"^【Arc\s*\d+】\s*", "", base)
+    
             bases.append(base)
         return bases
 
