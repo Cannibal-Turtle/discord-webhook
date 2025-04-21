@@ -43,7 +43,7 @@ def build_paid_completion(novel, chap_field, chap_link):
     host       = novel.get("host", "")
 
     return (
-        f"{role} | {comp_role}\n\n"
+        f"{role} | {comp_role}\n"
         "## ꧁ᐟᐟ ⟢  Completion Announcement  :blueberries: ˚. ᵎᵎ˖ˎˊ-\n"
         "◈· ─ · ─ · ─ · ❁ · ─ ·𖥸· ─ · ❁ · ─ · ─ · ─ ·◈\n"
         f"***『[{title}]({link})』officially completed***\n\n"
@@ -61,7 +61,7 @@ def build_free_completion(novel, chap_field, chap_link):
     count      = novel.get("chapter_count", "the entire series")
 
     return (
-        f"{role} | {comp_role}\n\n"
+        f"{role} | {comp_role}\n"
         "## 𐔌  Announcing: Complete Series Unlocked ,, :cherries: — 𝝑𝝔  ꒱\n"
         "◈· ─ · ─ · ─ · ❁ · ─ ·𖥸· ─ · ❁ · ─ · ─ · ─ ·◈\n"
         f"***『[{title}]({link})』— complete access granted!***\n\n"
