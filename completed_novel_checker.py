@@ -42,27 +42,44 @@ def send_discord_message(webhook_url: str, content: str):
 
 def get_duration(start_date_str: str, end_date: datetime) -> str:
     """
-    Given start_date in 'dd/mm/YYYY' and an end datetime,
-    return a human-readable duration:
-      - 'X years Y months' if >=1 year,
-      - 'X months' if >=1 month and <1 year,
-      - 'W weeks' otherwise.
+    Converts a start date to a human-readable duration compared to end date.
+    Uses 'more than' if days exceed clean year/month/week thresholds.
     """
     day, month, year = map(int, start_date_str.split("/"))
     start = datetime(year, month, day)
     delta = relativedelta(end_date, start)
 
-    if delta.years > 0:
-        parts = f"{delta.years} year{'s' if delta.years > 1 else ''}"
-        if delta.months > 0:
-            parts += f" {delta.months} month{'s' if delta.months > 1 else ''}"
-        return parts
-    if delta.months > 0:
-        return f"{delta.months} month{'s' if delta.months > 1 else ''}"
+    years = delta.years
+    months = delta.months
+    days = delta.days
 
-    # fewer than a month → show weeks
-    weeks = delta.days // 7 or 1
-    return f"{weeks} week{'s' if weeks != 1 else ''}"
+    # Handle year and month logic
+    if years > 0:
+        if months > 0:
+            if days > 0:
+                return f"more than {'a' if years == 1 else years} year{'s' if years > 1 else ''} and {'a' if months == 1 else months} month{'s' if months > 1 else ''}"
+            return f"{'a' if years == 1 else years} year{'s' if years > 1 else ''} and {'a' if months == 1 else months} month{'s' if months > 1 else ''}"
+        else:
+            if days > 0:
+                return f"more than {'a' if years == 1 else years} year{'s' if years > 1 else ''}"
+            return f"{'a' if years == 1 else years} year{'s' if years > 1 else ''}"
+    elif months > 0:
+        if days > 0:
+            return f"more than {'a' if months == 1 else months} month{'s' if months > 1 else ''}"
+        return f"{'a' if months == 1 else months} month{'s' if months > 1 else ''}"
+
+    # Handle week and day logic for durations less than a month
+    weeks = days // 7
+    remaining_days = days % 7
+
+    if weeks > 0:
+        if remaining_days > 0:
+            return f"more than {weeks} week{'s' if weeks != 1 else ''}"
+        return f"{weeks} week{'s' if weeks != 1 else ''}"
+    elif remaining_days > 0:
+        return f"more than a week"
+    else:
+        return "less than a week"
 
 def build_paid_completion(novel, chap_field, chap_link, duration: str):
     role      = novel.get("role_mention", "").strip()
