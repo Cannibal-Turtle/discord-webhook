@@ -1,7 +1,7 @@
 # .github/workflows/discord-notifier.yml
 name: Check RSS & Send to Discord
 
-on:
+on:SD
   # Manual dispatch (you can pass {"feed":"paid"} or {"feed":"free"} in client_payload)
   repository_dispatch:
     types: [trigger-discord-notify]
