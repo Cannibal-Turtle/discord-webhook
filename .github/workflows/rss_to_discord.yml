@@ -4,13 +4,15 @@ name: Check RSS & Send to Discord
 on:
   repository_dispatch:
     types: [trigger-discord-notify]
+  schedule:
+    - cron: '0 15 * * *'
   workflow_dispatch:
 
 permissions:
   contents: write
 
 concurrency:
-  group: rss-to-discord
+  group: rss-to-discord-${{ github.event.client_payload.feed || 'all' }}
   cancel-in-progress: true
 
 jobs:
@@ -37,6 +39,8 @@ jobs:
   # 2) Paid‑feed completion (only when payload.feed == "paid")
   paid_completion:
     if: ${{ github.event.client_payload.feed == 'paid' }}
+    concurrency:
+      group: rss-to-discord-paid
     runs-on: ubuntu-latest
     needs: rss_to_discord
     steps:
@@ -62,6 +66,8 @@ jobs:
   # 3) Free‑feed completion (only when payload.feed == "free")
   free_completion:
     if: ${{ github.event.client_payload.feed == 'free' }}
+    concurrency:
+      group: rss-to-discord-free
     runs-on: ubuntu-latest
     needs: rss_to_discord
     steps:
