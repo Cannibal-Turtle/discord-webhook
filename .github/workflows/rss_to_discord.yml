@@ -62,7 +62,7 @@ jobs:
           python-version: '3.x'
 
       - name: Install dependencies
-        run: pip install feedparser requests
+        run: pip install feedparser requests python-dateutil
 
       - name: Run Paid Completion Checker
         env:
@@ -91,7 +91,7 @@ jobs:
           python-version: '3.x'
 
       - name: Install dependencies
-        run: pip install feedparser requests
+        run: pip install feedparser requests python-dateutil
 
       - name: Run Free Completion Checker
         env:
