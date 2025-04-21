@@ -1,44 +1,85 @@
-name: Check RSS and Send to Discord
+# .github/workflows/discord-notifier.yml
+name: Check RSS & Send to Discord
 
 on:
   repository_dispatch:
     types: [trigger-discord-notify]
-  schedule:
-    - cron: "0 13 * * *"  # Runs daily at 13:00 UTC
   workflow_dispatch:
 
 permissions:
-  contents: write  # Allows GitHub Actions to commit changes
+  contents: write
 
 concurrency:
   group: rss-to-discord
-  cancel-in-progress: true  # Cancels the previous run if a new one starts
+  cancel-in-progress: true
 
 jobs:
+  # 1) Always regenerate/update your combined RSS → GitHub (if you still need it)
   rss_to_discord:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout repository
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.10
+
+      - name: Install dependencies
+        run: pip install feedparser requests
+
+      - name: Run Multi‑Novel RSS Checker
+        run: python new_arc_rss_checker.py
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+
+  # 2) Paid‑feed completion (only when payload.feed == "paid")
+  paid_completion:
+    if: ${{ github.event.client_payload.feed == 'paid' }}
+    runs-on: ubuntu-latest
+    needs: rss_to_discord
+    steps:
+      - name: Checkout
         uses: actions/checkout@v3
         with:
           persist-credentials: true
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Set up Python
+      - name: Setup Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.10'
+          python-version: 3.10
 
       - name: Install dependencies
         run: pip install feedparser requests
 
-      - name: Run Multi-Novel RSS Checker
-        run: python new_arc_rss_checker.py
+      - name: Run Paid‑Feed Completion Checker
+        run: python completed_novel_checker.py --feed paid
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
 
-      - name: Run Completed Novel Checker
-        run: python completed_novel_checker.py --feed paid
+  # 3) Free‑feed completion (only when payload.feed == "free")
+  free_completion:
+    if: ${{ github.event.client_payload.feed == 'free' }}
+    runs-on: ubuntu-latest
+    needs: rss_to_discord
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          persist-credentials: true
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.10
+
+      - name: Install dependencies
+        run: pip install feedparser requests
+
+      - name: Run Free‑Feed Completion Checker
+        run: python completed_novel_checker.py --feed free
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
