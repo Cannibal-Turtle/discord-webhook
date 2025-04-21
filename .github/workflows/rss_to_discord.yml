@@ -39,6 +39,6 @@ jobs:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
 
       - name: Run Completed Novel Checker
-        run: python completed_novel_checker.py
+        run: python completed_novel_checker.py --feed paid
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
