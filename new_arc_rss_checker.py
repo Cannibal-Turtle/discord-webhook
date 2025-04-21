@@ -219,16 +219,25 @@ def process_novel(novel):
         f"-# React to the {novel['custom_emoji']} @ {novel['discord_role_url']}"
     )
 
+    # === SEND DISCORD NOTIFICATION ===
+    payload = {
+        "content": message,
+        "allowed_mentions": {"parse": ["roles"]},
+        "flags": 4
+    }
     resp = requests.post(
         os.getenv("DISCORD_WEBHOOK"),
-        json={"content": message, "allowed_mentions": {"parse": []}, "flags": 4}
+        json={
+            "content": message,
+            "flags": 4,
+            "allowed_mentions": { "parse": ["roles"] }
+        }
     )
     if resp.status_code == 204:
         print(f"✅ Sent Discord notification for: {new_full}")
     else:
         print(f"❌ Failed to send Discord notification (status {resp.status_code})")
-
-
+        
 # === MAIN PROCESS ===
 with open("config.json", "r", encoding="utf-8") as cf:
     config = json.load(cf)
