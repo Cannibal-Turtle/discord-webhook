@@ -72,6 +72,7 @@ To add a new novel, update `config.json` with the following fields:
       "role_mention": "<@&DISCORD_ROLE_ID>",
       "chapter_count": "Total number of chapters",
       "last_chapter": "Last chapter for novel",
+      "start_date": "31/8/2024",
       "complete_role_mention": "<@&DISCORD_ROLE_ID",
       "free_feed": "https://your-free-feed-url.xml",
       "paid_feed": "https://your-paid-feed-url.xml",
