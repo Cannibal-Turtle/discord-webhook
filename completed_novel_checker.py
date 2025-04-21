@@ -33,7 +33,8 @@ def send_discord_message(webhook_url: str, content: str):
     # Include allowed_mentions so webhooks color role pings correctly
     payload = {
         "content": content,
-        "allowed_mentions": { "parse": ["roles"] }
+        "allowed_mentions": { "parse": ["roles"] },
+        "flags": 4
     }
     resp = requests.post(webhook_url, json=payload)
     resp.raise_for_status()
