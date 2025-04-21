@@ -61,7 +61,7 @@ To allow the script to update the **novel history JSON files** and push changes 
 
 ## 📂 User Setup Guide
 
-### 📋 4. Configuration to add a New Novel to Track
+### 📋 4. Configuration to Add a New Novel to Track
 To add a new novel, update `config.json` with the following fields:
 
 ```json
