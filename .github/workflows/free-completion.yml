@@ -1,0 +1,24 @@
+name: Free‑Feed Completion Checker
+
+on:
+  repository_dispatch:
+    types: [trigger-free-complete]
+
+jobs:
+  free_complete:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+
+      - name: Install deps
+        run: pip install feedparser requests
+
+      - name: Check free feed completion
+        run: python completed_novel_checker.py --feed free
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
