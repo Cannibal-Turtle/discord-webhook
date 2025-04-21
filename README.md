@@ -81,6 +81,57 @@ To add a new novel, update `config.json` with the following fields:
 Each novel must have a **unique `history_file`** to store its arc history.
 
 ---
+## 📑 Supported RSS Item Fields
+
+The scripts look for these XML tags in each `<item>`:
+
+| Tag           | Purpose                                             |
+|---------------|-----------------------------------------------------|
+| `<chaptername>` | Contains the chapter label (e.g. “Chapter 5”, “Extra 8”) — used to detect paid & free completions   |
+| `<link>`        | URL to the chapter page — used to construct message links                                    |
+| `<nameextend>`  | Used for arc detection (looks for markers like “001”, “(1)”, “.1”) when generating New Arc Alerts |
+| `<volume>`      | Optional alternative base name for arcs if present                                           |
+
+> Only `<chaptername>` and `<link>` are strictly required for completion checks. Arc alerts also use `<nameextend>` or `<volume>`.
+
+---
+
+## ⚙️ Workflows
+
+### Feed Generation (in your feeds repo)
+
+- `update-paid-feed.yml` and `update-free-feed.yml`:
+  - Cron/dispatch regenerates the respective XML feed file.
+  - Commits changes and triggers the notifier via:
+    ```bash
+    curl -X POST \
+      -H "Accept: application/vnd.github.v3+json" \
+      -H "Authorization: Bearer $GH_PAT" \
+      https://api.github.com/repos/USER/discord-notifier/dispatches \
+      -d '{"event_type":"trigger-discord-notify"}'
+    ```
+
+### Discord Notifier (in your notifier repo)
+
+The workflow listens for:
+- `on: repository_dispatch.types = [trigger-discord-notify]`
+- A scheduled cron
+- Manual workflow dispatch
+
+**Jobs:**
+1. **New Arc Checker**
+   ```bash
+   python new_arc_rss_checker.py
+   ```
+2. **Completion Checker**
+   ```yaml
+   - name: Paid Completion
+     run: python completed_novel_checker.py --feed paid
+
+   - name: Free Completion
+     run: python completed_novel_checker.py --feed free
+   ```
+---
 
 ## 🎯 Notes
 - If a novel has no history of previous arcs, then history file like `tvitpa_history.json` must be inserted manually before it can pick up automatically from the RSS feed.
