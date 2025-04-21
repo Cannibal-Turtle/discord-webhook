@@ -41,6 +41,7 @@ def build_paid_completion(novel, chap_field, chap_link):
     title     = novel.get("novel_title", "")
     link      = novel.get("novel_link", "")
     host      = novel.get("host", "")
+    count     = novel.get("chapter_count", "the entire series")
 
     # normalize NBSP
     chap_text = chap_field.replace("\u00A0", " ")
@@ -50,9 +51,8 @@ def build_paid_completion(novel, chap_field, chap_link):
         "◈· ─ · ─ · ─ · ❁ · ─ ·𖥸· ─ · ❁ · ─ · ─ · ─ ·◈\n"
         f"***『[{title}]({link})』— officially completed***\n\n"
         f"*The last chapter, [{chap_text}]({chap_link}), has now been released.\n"
-        f"After months of updates, {title} is now fully translated! Thank you for coming on this journey and for your continued support :pandalove: You can now visit {host} to binge all advance releases~♡*"
+        f"After months of updates, {title} is now fully translated with {count}! Thank you for coming on this journey and for your continued support :pandalove: You can now visit {host} to binge all advance releases~♡*"
     )
-
 
 def build_free_completion(novel, chap_field, chap_link):
     role      = novel.get("role_mention", "").strip()
