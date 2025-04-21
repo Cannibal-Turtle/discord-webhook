@@ -27,7 +27,7 @@ jobs:
       github.event_name == 'workflow_dispatch' ||
       (github.event_name == 'repository_dispatch' && github.event.client_payload.feed == 'paid')
     concurrency:
-      group: rss-to-discord-rss
+      group: rss-to-discord-arc
       cancel-in-progress: true
     runs-on: ubuntu-latest
     steps:
