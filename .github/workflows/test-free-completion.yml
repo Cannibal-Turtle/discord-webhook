@@ -1,3 +1,4 @@
+# .github/workflows/test-free-completion.yml
 name: Test Free‑Completion Notification
 
 on:
@@ -14,4 +15,5 @@ jobs:
         run: |
           curl -X POST \
                -H "Content-Type: application/json" \
-               -d '{"content":"<@&1329391480435114005> | <@&1329502614110474270>\\n\\n## 𐔌  Announcing: Complete Series Unlocked ,, :cherries: — 𝝑𝝔  ꒱\\n◈· ─ · ─ · ─ · ❁ · ─ ·𖥸· ─ · ❁ · ─ · ─ · ─ ·◈\\n***『[Quick Transmigration: The Villain Is Too Pampered and Alluring](https://dragonholic.com/novel/quick-transmigration-the-villain-is-too-pampered-and-alluring/)』— complete access granted!***\\n\\n*All 1184 chapters + 8 extras has been unlocked and ready for you to binge—completely free!  \\nThank you all for your amazing
+               -d "{\"content\":\"<@&1329391480435114005> | <@&1329502614110474270>\\n\\n## 𐔌  Announcing: Complete Series Unlocked ,, :cherries: — 𝝑𝝔  ꒱\\n◈· ─ · ─ · ─ · ❁ · ─ ·𖥸· ─ · ❁ · ─ · ─ · ─ ·◈\\n***『[Quick Transmigration: The Villain Is Too Pampered and Alluring](https://dragonholic.com/novel/quick-transmigration-the-villain-is-too-pampered-and-alluring/)』— complete access granted!***\\n\\n*All 1184 chapters + 8 extras has been unlocked and ready for you to binge—completely free!  \\nThank you all for your amazing support   :green_turtle_heart:  \\nHead over to Dragonholic to dive straight in~♡*\"}" \
+               "$DIS
