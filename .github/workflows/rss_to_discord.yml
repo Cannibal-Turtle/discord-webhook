@@ -2,47 +2,59 @@
 name: Check RSS & Send to Discord
 
 on:
+  # Manual dispatch (you can pass {"feed":"paid"} or {"feed":"free"} in client_payload)
   repository_dispatch:
     types: [trigger-discord-notify]
+  # Daily at 15:00 UTC
   schedule:
-    - cron: "0 15 * * *"       # daily at 15:00 UTC
-  workflow_dispatch:          # manual run
+    - cron: '0 15 * * *'
+  # Manual run from GitHub UI
+  workflow_dispatch:
 
 permissions:
   contents: write
 
+# throttle the workflow as a whole
 concurrency:
-  group: rss-to-discord-${{ github.event.client_payload.feed || 'all' }}
+  group: rss-to-discord-workflow
   cancel-in-progress: true
 
 jobs:
-  # 1) Always run the RSS/arc checker
+  # 1) Run your new-arc RSS checker every time
   rss_to_discord:
+    if: >
+      github.event_name == 'schedule' ||
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'repository_dispatch' && github.event.client_payload.feed == 'paid')
+    concurrency:
+      group: rss-to-discord-rss
+      cancel-in-progress: true
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
 
       - uses: actions/setup-python@v4
         with:
-          python-version: "3.x"
+          python-version: '3.x'
 
       - run: pip install feedparser requests
 
-      - run: python new_arc_rss_checker.py
+      - name: Run Arc Checker
+        run: python new_arc_rss_checker.py
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
 
-  # 2) Paid‑feed completion
+  # 2) Paid‑feed completion — on schedule, manual, or dispatch with feed=paid
   paid_completion:
     if: >
       github.event_name == 'schedule' ||
       github.event_name == 'workflow_dispatch' ||
       (github.event_name == 'repository_dispatch' && github.event.client_payload.feed == 'paid')
     needs: rss_to_discord
-    runs-on: ubuntu-latest
     concurrency:
       group: rss-to-discord-paid
       cancel-in-progress: true
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
         with:
@@ -51,25 +63,26 @@ jobs:
 
       - uses: actions/setup-python@v4
         with:
-          python-version: "3.x"
+          python-version: '3.x'
 
       - run: pip install feedparser requests
 
-      - run: python completed_novel_checker.py --feed paid
+      - name: Run Paid‑Feed Completion Checker
+        run: python completed_novel_checker.py --feed paid
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
 
-  # 3) Free‑feed completion
+  # 3) Free‑feed completion — on schedule, manual, or dispatch with feed=free
   free_completion:
     if: >
       github.event_name == 'schedule' ||
       github.event_name == 'workflow_dispatch' ||
       (github.event_name == 'repository_dispatch' && github.event.client_payload.feed == 'free')
     needs: rss_to_discord
-    runs-on: ubuntu-latest
     concurrency:
       group: rss-to-discord-free
       cancel-in-progress: true
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
         with:
@@ -78,10 +91,11 @@ jobs:
 
       - uses: actions/setup-python@v4
         with:
-          python-version: "3.x"
+          python-version: '3.x'
 
       - run: pip install feedparser requests
 
-      - run: python completed_novel_checker.py --feed free
+      - name: Run Free‑Feed Completion Checker
+        run: python completed_novel_checker.py --feed free
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
