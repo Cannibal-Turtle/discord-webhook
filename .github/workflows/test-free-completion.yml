@@ -12,15 +12,6 @@ jobs:
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
         run: |
-          curl -X POST -H "Content-Type: application/json" \
-               -d @- "$DISCORD_WEBHOOK" << 'EOF'
-{
-  "content": "<@&1329391480435114005> | <@&1329502614110474270>\n\n\
-## 𐔌  Announcing: Complete Series Unlocked ,, :cherries: — 𝝑𝝔  ꒱\n\
-◈· ─ · ─ · ─ · ❁ · ─ ·𖥸· ─ · ❁ · ─ · ─ · ─ ·◈\n\
-***『[Quick Transmigration: The Villain Is Too Pampered and Alluring](https://dragonholic.com/novel/…)』— complete access granted!***\n\n\
-*All 1184 chapters + 8 extras has been unlocked and ready for you to binge—completely free!  \n\
-Thank you all for your amazing support   :green_turtle_heart:  \n\
-Head over to Dragonholic to dive straight in~♡*"
-}
-EOF
+          curl -X POST \
+               -H "Content-Type: application/json" \
+               -d '{"content":"<@&1329391480435114005> | <@&1329502614110474270>\\n\\n## 𐔌  Announcing: Complete Series Unlocked ,, :cherries: — 𝝑𝝔  ꒱\\n◈· ─ · ─ · ─ · ❁ · ─ ·𖥸· ─ · ❁ · ─ · ─ · ─ ·◈\\n***『[Quick Transmigration: The Villain Is Too Pampered and Alluring](https://dragonholic.com/novel/quick-transmigration-the-villain-is-too-pampered-and-alluring/)』— complete access granted!***\\n\\n*All 1184 chapters + 8 extras has been unlocked and ready for you to binge—completely free!  \\nThank you all for your amazing
