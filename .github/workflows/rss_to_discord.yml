@@ -14,7 +14,7 @@ concurrency:
   group: rss-to-discord-workflow
 
 jobs:
-  rss_to_discord:
+  arc_checker:
     runs-on: ubuntu-latest
     if: >
       github.event_name == 'schedule' ||
