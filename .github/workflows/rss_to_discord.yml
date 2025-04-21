@@ -11,8 +11,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: rss-to-discord-${{ github.event.client_payload.feed }}
-  cancel-in-progress: true
+  group: rss-to-discord-workflow
 
 jobs:
   rss_to_discord:
