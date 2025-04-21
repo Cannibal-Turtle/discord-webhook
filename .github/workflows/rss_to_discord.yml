@@ -72,34 +72,34 @@ jobs:
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
 
-# 3) Free‑feed completion — on schedule, manual, or dispatch with feed=free
-free_completion:
-  if: >
-    github.event_name == 'schedule' ||
-    github.event_name == 'workflow_dispatch' ||
-    (github.event_name == 'repository_dispatch' && github.event.client_payload.feed == 'free')
-  needs: rss_to_discord
-  concurrency:
-    group: rss-to-discord-free
-    cancel-in-progress: true
-  runs-on: ubuntu-latest
-  steps:
-    # Debugging Event Payload to check if it contains the correct feed value
-    - name: Debug Event Payload
-      run: echo "Event Payload: ${{ toJson(github.event.client_payload) }}"
+  # 3) Free‑feed completion — on schedule, manual, or dispatch with feed=free
+  free_completion:
+    if: >
+      github.event_name == 'schedule' ||
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'repository_dispatch' && github.event.client_payload.feed == 'free')
+    needs: rss_to_discord
+    concurrency:
+      group: rss-to-discord-free
+      cancel-in-progress: true
+    runs-on: ubuntu-latest
+    steps:
+      # Debugging Event Payload to check if it contains the correct feed value
+      - name: Debug Event Payload
+        run: echo "Event Payload: ${{ toJson(github.event.client_payload) }}"
 
-    - uses: actions/checkout@v3
-      with:
-        persist-credentials: true
-        token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/checkout@v3
+        with:
+          persist-credentials: true
+          token: ${{ secrets.GITHUB_TOKEN }}
 
-    - uses: actions/setup-python@v4
-      with:
-        python-version: '3.x'
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
 
-    - run: pip install feedparser requests
+      - run: pip install feedparser requests
 
-    - name: Run Free‑Feed Completion Checker
-      run: python completed_novel_checker.py --feed free
-      env:
-        DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+      - name: Run Free‑Feed Completion Checker
+        run: python completed_novel_checker.py --feed free
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
