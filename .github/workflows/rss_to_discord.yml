@@ -8,32 +8,37 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write  # ✅ Allows GitHub Actions to commit changes
+  contents: write  # Allows GitHub Actions to commit changes
 
 concurrency:
   group: rss-to-discord
-  cancel-in-progress: true  # ✅ Cancels the previous run if a new one starts
+  cancel-in-progress: true  # Cancels the previous run if a new one starts
 
 jobs:
   rss_to_discord:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
-      with:
-        persist-credentials: true
-        token: ${{ secrets.GITHUB_TOKEN }}  # ✅ Uses GitHub token with write permissions
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          persist-credentials: true
+          token: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.10'
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
 
-    - name: Install dependencies
-      run: pip install feedparser requests
+      - name: Install dependencies
+        run: pip install feedparser requests
 
-    - name: Run Multi-Novel RSS Checker
-      run: python new_arc_rss_checker.py
-      env:
-        DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+      - name: Run Multi-Novel RSS Checker
+        run: python new_arc_rss_checker.py
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+
+      - name: Run Completed Novel Checker
+        run: python completed_novel_checker.py
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
