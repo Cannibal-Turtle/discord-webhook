@@ -204,7 +204,7 @@ def process_novel(novel):
     locked_md = "\n".join(locked_lines)
 
     message = (
-        f"{novel['role_mention']} <@&1329502951764525187>\n"
+        f"{novel['role_mention']} | <@&1329502951764525187>\n"
         "## :loudspeaker: NEW ARC ALERT˚ · .˚ ༘:butterfly:⋆｡˚\n"
         f"***《World {world_number}》is Live for***\n"
         f"### [{novel['novel_title']}]({novel['novel_link']}) <:Hehe:1329429547229122580>\n"
