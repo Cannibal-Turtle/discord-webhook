@@ -29,11 +29,14 @@ def load_config(path=CONFIG_PATH):
         print(f"ERROR: cannot open {path}", file=sys.stderr)
         sys.exit(1)
 
-
 def send_discord_message(webhook_url: str, content: str):
-    resp = requests.post(webhook_url, json={"content": content})
+    # Include allowed_mentions so webhooks color role pings correctly
+    payload = {
+        "content": content,
+        "allowed_mentions": { "parse": ["roles"] }
+    }
+    resp = requests.post(webhook_url, json=payload)
     resp.raise_for_status()
-
 
 def build_paid_completion(novel, chap_field, chap_link):
     role      = novel.get("role_mention", "").strip()
