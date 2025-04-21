@@ -11,6 +11,13 @@ All notifications use a single Discord webhook URL stored in the `DISCORD_WEBHOO
 
 ## ⚙️ GitHub Repository Settings
 
+### 🔧 Repository Secrets Setup
+
+| Name              | Value                                  |
+|-------------------|----------------------------------------|
+| `DISCORD_WEBHOOK` | Your Discord webhook URL               |
+| `GH_PAT`          | Personal Access Token for history push |
+
 ### 🔑 1. Add the Discord Webhook URL to Secrets
 1. Go to **Settings** → **Secrets and variables** → **Actions**.
 2. Click **New repository secret**.
