@@ -1,6 +1,11 @@
-# Discord Novel Arc Notifier
+# Discord Novel Arc & Completion Notifier
 
-This project automatically checks RSS feeds for new novel arcs and sends formatted Discord notifications. It supports multiple novels with persistent arc history and NSFW detection (restricted by novel title). All messages use a global Discord webhook (set as a GitHub secret named `DISCORD_WEBHOOK`).
+Automatically monitors paid and free RSS feeds for your novels, tracks arc history, and fires two types of Discord announcements via webhook:
+
+1. **New Arc Alerts** (locked‑advance content)
+2. **Completion Announcements** when the final chapter appears (paid) and full series unlocks (free)
+
+All notifications use a single Discord webhook URL stored in the `DISCORD_WEBHOOK` secret.
 
 ---
 
@@ -49,7 +54,7 @@ To allow the script to update the **novel history JSON files** and push changes 
 
 ## 📂 User Setup Guide
 
-### ✅ 4. Add a New Novel to Track
+### 📋 4. Configuration to add a New Novel to Track
 To add a new novel, update `config.json` with the following fields:
 
 ```json
@@ -58,6 +63,9 @@ To add a new novel, update `config.json` with the following fields:
     {
       "novel_title": "Your Novel Title",
       "role_mention": "<@&DISCORD_ROLE_ID>",
+      "chapter_count": "Total number of chapters",
+      "last_chapter": "Last chapter for novel",
+      "complete_role_mention": "<@&DISCORD_ROLE_ID",
       "free_feed": "https://your-free-feed-url.xml",
       "paid_feed": "https://your-paid-feed-url.xml",
       "novel_link": "https://your-novel-link/",
@@ -80,4 +88,4 @@ Each novel must have a **unique `history_file`** to store its arc history.
 - NSFW detection adds an extra Discord role mention.
 
 ---
-🚀 **Now, you're ready to automate novel arc announcements to Discord!**
+🚀 **Now, you're ready to automate new arc and novel completion announcements to Discord!**
