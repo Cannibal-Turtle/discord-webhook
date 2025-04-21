@@ -1,4 +1,4 @@
-# .github/workflows/discord-notifier.yml
+# .github/workflows/discord-notifier.ymlSWDE
 name: Check RSS & Send to Discord
 
 on:
