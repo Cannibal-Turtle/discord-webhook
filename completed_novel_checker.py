@@ -36,30 +36,34 @@ def send_discord_message(webhook_url: str, content: str):
 
 
 def build_paid_completion(novel, chap_field, chap_link):
-    role       = novel.get("role_mention", "").strip()
-    comp_role  = novel.get("complete_role_mention", "").strip()
-    title      = novel.get("novel_title", "")
-    link       = novel.get("novel_link", "")
-    host       = novel.get("host", "")
+    role      = novel.get("role_mention", "").strip()
+    comp_role = novel.get("complete_role_mention", "").strip()
+    title     = novel.get("novel_title", "")
+    link      = novel.get("novel_link", "")
+    host      = novel.get("host", "")
 
+    # normalize NBSP
+    chap_text = chap_field.replace("\u00A0", " ")
     return (
         f"{role} | {comp_role}\n"
         "## ꧁ᐟᐟ ⟢  Completion Announcement  :blueberries: ˚. ᵎᵎ˖ˎˊ-\n"
         "◈· ─ · ─ · ─ · ❁ · ─ ·𖥸· ─ · ❁ · ─ · ─ · ─ ·◈\n"
         f"***『[{title}]({link})』— officially completed***\n\n"
-        f"*The last chapter, [{chap_field}]({chap_link}), has now been released.\n"
+        f"*The last chapter, [{chap_text}]({chap_link}), has now been released.\n"
         f"After months of updates, {title} is now fully translated! Thank you for coming on this journey and for your continued support :pandalove: You can now visit {host} to binge all advance releases~♡*"
     )
 
 
 def build_free_completion(novel, chap_field, chap_link):
-    role       = novel.get("role_mention", "").strip()
-    comp_role  = novel.get("complete_role_mention", "").strip()
-    title      = novel.get("novel_title", "")
-    link       = novel.get("novel_link", "")
-    host       = novel.get("host", "")
-    count      = novel.get("chapter_count", "the entire series")
+    role      = novel.get("role_mention", "").strip()
+    comp_role = novel.get("complete_role_mention", "").strip()
+    title     = novel.get("novel_title", "")
+    link      = novel.get("novel_link", "")
+    host      = novel.get("host", "")
+    count     = novel.get("chapter_count", "the entire series")
 
+    # normalize NBSP
+    chap_text = chap_field.replace("\u00A0", " ")
     return (
         f"{role} | {comp_role}\n"
         "## 𐔌  Announcing: Complete Series Unlocked ,, :cherries: — 𝝑𝝔  ꒱\n"
@@ -83,7 +87,7 @@ def main():
 
     webhook_url = os.getenv(WEBHOOK_ENV)
     if not webhook_url:
-        print(f"ERROR: {WEBHOOK_ENV} not set", file=sys.stderr)
+        print(f"ERROR: environment variable {WEBHOOK_ENV} is not set", file=sys.stderr)
         sys.exit(1)
 
     config = load_config()
@@ -105,19 +109,24 @@ def main():
         for entry in feed.entries:
             chap_field = entry.get("chaptername") or entry.get("chapter", "")
             if last_chap in chap_field:
+                # normalize NBSP
+                chap_text = chap_field.replace("\u00A0", " ")
                 chap_link = entry.get("link", "")
+
+                print(f"→ [{key}] MATCH for “{novel.get('novel_title')}”: {chap_text}")
+
                 if args.feed == "paid":
                     msg = build_paid_completion(novel, chap_field, chap_link)
                 else:
                     msg = build_free_completion(novel, chap_field, chap_link)
 
-                print(f"→ [{key}] MATCH for “{novel.get('novel_title')}”: {chap_field}")
                 try:
                     send_discord_message(webhook_url, msg)
                     print(f"✔️ Sent {args.feed}-completion announcement.")
                 except Exception as e:
                     print(f"ERROR sending {args.feed}-completion message: {e}", file=sys.stderr)
                     sys.exit(1)
+
                 return
 
 
