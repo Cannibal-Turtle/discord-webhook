@@ -144,6 +144,7 @@ The workflow listens for:
 - If a novel has no history of previous arcs, then history file like `tvitpa_history.json` must be inserted manually before it can pick up automatically from the RSS feed.
 - Arcs are stored persistently and prevent duplicate notifications.
 - NSFW detection adds an extra Discord role mention.
+- Every Discord webhook payload uses `"allowed_mentions":{"parse":["roles"]}` to color role pings and `"flags":4` to suppress all link‑preview embeds.
 
 ---
 🚀 **Now, you're ready to automate new arc and novel completion announcements to Discord!**
