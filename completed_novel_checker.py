@@ -16,10 +16,11 @@ import sys
 
 import feedparser
 import requests
+from datetime import datetime
+from dateutil.relativedelta import relativedelta
 
 CONFIG_PATH = "config.json"
 WEBHOOK_ENV = "DISCORD_WEBHOOK"
-
 
 def load_config(path=CONFIG_PATH):
     try:
@@ -39,7 +40,31 @@ def send_discord_message(webhook_url: str, content: str):
     resp = requests.post(webhook_url, json=payload)
     resp.raise_for_status()
 
-def build_paid_completion(novel, chap_field, chap_link):
+def get_duration(start_date_str: str, end_date: datetime) -> str:
+    """
+    Given start_date in 'dd/mm/YYYY' and an end datetime,
+    return a human-readable duration:
+      - 'X years Y months' if >=1 year,
+      - 'X months' if >=1 month and <1 year,
+      - 'W weeks' otherwise.
+    """
+    day, month, year = map(int, start_date_str.split("/"))
+    start = datetime(year, month, day)
+    delta = relativedelta(end_date, start)
+
+    if delta.years > 0:
+        parts = f"{delta.years} year{'s' if delta.years > 1 else ''}"
+        if delta.months > 0:
+            parts += f" {delta.months} month{'s' if delta.months > 1 else ''}"
+        return parts
+    if delta.months > 0:
+        return f"{delta.months} month{'s' if delta.months > 1 else ''}"
+
+    # fewer than a month → show weeks
+    weeks = delta.days // 7 or 1
+    return f"{weeks} week{'s' if weeks != 1 else ''}"
+
+def build_paid_completion(novel, chap_field, chap_link, duration: str):
     role      = novel.get("role_mention", "").strip()
     comp_role = novel.get("complete_role_mention", "").strip()
     title     = novel.get("novel_title", "")
@@ -55,7 +80,7 @@ def build_paid_completion(novel, chap_field, chap_link):
         "◈· ─ · ─ · ─ · ❁ · ─ ·𖥸· ─ · ❁ · ─ · ─ · ─ ·◈\n"
         f"***『[{title}]({link})』— officially completed!***\n\n"
         f"*The last chapter, [{chap_text}]({chap_link}), has now been released.\n"
-        f"After months of updates, {title} is now fully translated with {count}! Thank you for coming on this journey and for your continued support :pandalove: You can now visit {host} to binge all advance releases~♡*"
+        f"After {duration} of updates, {title} is now fully translated with {count}! Thank you for coming on this journey and for your continued support :pandalove: You can now visit {host} to binge all advance releases~♡*"
     )
 
 def build_free_completion(novel, chap_field, chap_link):
@@ -119,18 +144,32 @@ def main():
 
                 print(f"→ [{key}] MATCH for “{novel.get('novel_title')}”: {chap_text}")
 
-                if args.feed == "paid":
-                    msg = build_paid_completion(novel, chap_field, chap_link)
+                # determine chapter date
+                if entry.get("published_parsed"):
+                    chap_date = datetime(*entry.published_parsed[:6])
+                elif entry.get("updated_parsed"):
+                    chap_date = datetime(*entry.updated_parsed[:6])
                 else:
-                    msg = build_free_completion(novel, chap_field, chap_link)
-
+                    chap_date = datetime.now()
+    
+                # compute duration
+                start_date = novel.get("start_date", "")
+                duration_str = get_duration(start_date, chap_date)
+    
+                # build message
+                if args.feed == "paid":
+                    msg = build_paid_completion(novel, chap_field, entry.get("link", ""), duration_str)
+                else:
+                    msg = build_free_completion(novel, chap_field, entry.get("link", ""))
+    
+                # send  log
                 try:
                     send_discord_message(webhook_url, msg)
                     print(f"✔️ Sent {args.feed}-completion announcement.")
                 except Exception as e:
                     print(f"ERROR sending {args.feed}-completion message: {e}", file=sys.stderr)
                     sys.exit(1)
-
+    
                 return
 
 
