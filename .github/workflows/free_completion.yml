@@ -1,0 +1,40 @@
+# .github/workflows/free-completion.yml
+name: Free‑Feed Completion Checker
+
+on:
+  repository_dispatch:
+    types: [trigger-discord-notify]
+  schedule:
+    - cron: "0 13 * * *"  # Runs daily at 13:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write  # Allows GitHub Actions to commit changes
+
+concurrency:
+  group: rss-to-discord
+  cancel-in-progress: true  # Cancels the previous run if a new one starts
+
+jobs:
+  free_novel_completion:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          persist-credentials: true
+          token: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: pip install feedparser requests
+
+      - name: Run Free‑Feed Completion Checker
+        run: python completed_novel_checker.py --feed free
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
