@@ -130,20 +130,27 @@ def process_novel(novel):
     def extract_new_bases(feed):
         bases = []
         for e in feed.entries:
-            raw = e.get("nameextend","")
-            if not is_new_marker(raw):
+            # 1) normalize any NBSPs and strip
+            raw_vol    = e.get("volume", "").replace("\u00A0", " ").strip()
+            raw_extend = e.get("nameextend", "").replace("\u00A0", " ").strip()
+            raw_chap   = e.get("chaptername", "").replace("\u00A0", " ").strip()
+    
+            # 2) skip anything that doesn’t look like “001” / “(1)” / “.1”
+            if not (is_new_marker(raw_extend) or is_new_marker(raw_chap)):
                 continue
     
-            vol = e.get("volume","").strip()
-            if vol:
-                base = clean_feed_title(vol)
+            # 3) pick your base name in priority order
+            if raw_vol:
+                base = clean_feed_title(raw_vol)
+            elif raw_extend:
+                base = extract_arc_title(raw_extend)
             else:
-                base = extract_arc_title(raw)
+                base = raw_chap
     
-            # strip ANY leading prefix that ends in a number (and punctuation)
+            # 4) finally strip off any leading “Arc N” prefix, etc.
             base = strip_any_number_prefix(base)
-    
             bases.append(base)
+    
         return bases
 
     free_new = extract_new_bases(free_feed)
