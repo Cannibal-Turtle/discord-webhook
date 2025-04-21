@@ -47,7 +47,7 @@ def build_paid_completion(novel, chap_field, chap_link):
         "## ꧁ᐟᐟ ⟢  Completion Announcement  :blueberries: ˚. ᵎᵎ˖ˎˊ-\n"
         "◈· ─ · ─ · ─ · ❁ · ─ ·𖥸· ─ · ❁ · ─ · ─ · ─ ·◈\n"
         f"***『[{title}]({link})』— officially completed***\n\n"
-        f"*The last chapter, [{chap_field}](<{chap_link}>), has now been released.\n"
+        f"*The last chapter, [{chap_field}]({chap_link}), has now been released.\n"
         f"After months of updates, {title} is now fully translated! Thank you for coming on this journey and for your continued support :pandalove: You can now visit {host} to binge all advance releases~♡*"
     )
 
