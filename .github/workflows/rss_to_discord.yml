@@ -86,7 +86,7 @@ jobs:
     steps:
       - name: Debug Event Payload
         run: echo "Event Payload: ${{ toJson(github.event.client_payload) }}"
-        
+
       - uses: actions/checkout@v3
         with:
           persist-credentials: true
