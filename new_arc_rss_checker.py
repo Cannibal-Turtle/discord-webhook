@@ -106,7 +106,7 @@ def parse_extras_info(chapter_count):
     if not m:
         return 0, None
     total = int(m.group(1))
-    raw_kw = m.group(2).lower()  # e.g. "extras" or "side story"
+    raw_kw = m.group(2).lower().rstrip('s')  # force singular: "side story"
     return total, raw_kw
 
 def find_released_extras(paid_feed, raw_kw):
