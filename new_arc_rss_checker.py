@@ -176,35 +176,43 @@ def process_novel(novel):
     last = history.get("last_extra_announced", 0)
     current = max(max_ex, max_ss)
     if current > last:
-        # choose wording
-        if final_type == "extra" and max_ex >= final_index:
+        # — extract totals from config —
+        m_ex   = re.search(r"(\d+)\s*extras?",       novel["chapter_count"], re.IGNORECASE)
+        m_ss   = re.search(r"(\d+)\s*side stories?", novel["chapter_count"], re.IGNORECASE)
+        tot_ex = int(m_ex.group(1)) if m_ex else 0
+        tot_ss = int(m_ss.group(1)) if m_ss else 0
+
+        # — build the header label —
+        parts = []
+        if tot_ex: parts.append("EXTRA" if tot_ex == 1 else "EXTRAS")
+        if tot_ss: parts.append("SIDE STORY" if tot_ss == 1 else "SIDE STORIES")
+        disp_label = " + ".join(parts)
+
+        # — decide which “dropped” message to use —
+        if max_ex >= tot_ex and max_ss >= tot_ss:
+            cm = "All extras and side stories just dropped"
+        elif final_type == "extra" and max_ex >= final_index:
             cm = "All extras just dropped"
         elif final_type == "side story" and max_ss >= final_index:
             cm = "All side stories just dropped"
         elif max_ex + max_ss == 1:
             cm = "The first of those extras just dropped"
         else:
-            cm = "New extras just dropped"
+            cm = f"New {disp_label.lower()} just dropped"
 
-        # build title/link line
+        # — build the “remaining” line —
         base = f"***[《{novel['novel_title']}》]({novel['novel_link']})***"
-        # always show the configured totals
-        m_ex = re.search(r"(\d+)\s*extras?", novel["chapter_count"], re.IGNORECASE)
-        m_ss = re.search(r"(\d+)\s*side stories?", novel["chapter_count"], re.IGNORECASE)
-        tot_ex = int(m_ex.group(1)) if m_ex else 0
-        tot_ss = int(m_ss.group(1)) if m_ss else 0
-
         extra_label = "extra" if tot_ex == 1 else "extras"
         ss_label    = "side story" if tot_ss == 1 else "side stories"
-
         remaining = (
             f"{base} is almost at the very end — just "
             f"{tot_ex} {extra_label} and {tot_ss} {ss_label} left before we wrap up this journey for good."
         )
 
+        # — assemble & send the Discord message —
         msg = (
             f"{novel['role_mention']} | <@&1329502951764525187>\n"
-            f"## :lotus:･ﾟ✧ NEW {'EXTRAS' if tot_ex>1 else 'EXTRA'} JUST DROPPED ✧ﾟ･:lotus:\n"
+            f"## :lotus:･ﾟ✧ NEW {disp_label} JUST DROPPED ✧ﾟ･:lotus:\n"
             f"{remaining}\n"
             f"{cm} in {novel['host']}'s advance access today. "
             "Thanks for sticking with this one ‘til the end. It means a lot. "
