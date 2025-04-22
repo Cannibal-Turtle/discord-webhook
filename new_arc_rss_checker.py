@@ -156,64 +156,69 @@ def process_novel(novel):
     # 2. load history immediately after fetching feeds
     history = load_history(novel["history_file"])
 
-    # --- Extras + Side‑Stories Announcement Logic ---
-    # 1) pull totals straight from config
-    m_ex = re.search(r"(\d+)\s*extras?", novel["chapter_count"], re.IGNORECASE)
-    total_extras = int(m_ex.group(1)) if m_ex else 0
-    m_ss = re.search(r"(\d+)\s*side stories?", novel["chapter_count"], re.IGNORECASE)
-    total_ss = int(m_ss.group(1)) if m_ss else 0
+    # --- Extras / Side‑Stories Announcement Logic (uses last_chapter) ---
+    # 1) pull final‐chapter marker straight from config
+    last_cfg = novel.get("last_chapter", "")
+    m = re.match(r"(Extras?|Side Story|Side Stories?)\s+(\d+)", last_cfg, re.IGNORECASE)
+    if m:
+        final_type  = m.group(1).lower().rstrip("s")   # "extra" or "side story"
+        final_index = int(m.group(2))
+    else:
+        final_type, final_index = None, 0
 
-    # only proceed if there are any extras or side stories configured
-    if total_extras or total_ss:
-        # 2) see what’s actually dropped in the feed
-        dropped_extras = find_released_extras(paid_feed, "extra")
-        dropped_ss     = find_released_extras(paid_feed, "side story")
-        max_ex = max(dropped_extras) if dropped_extras else 0
-        max_ss = max(dropped_ss)     if dropped_ss     else 0
+    # 2) see what’s actually dropped in the feed
+    dropped_extras = find_released_extras(paid_feed, "extra")
+    dropped_ss     = find_released_extras(paid_feed, "side story")
+    max_ex = max(dropped_extras) if dropped_extras else 0
+    max_ss = max(dropped_ss)     if dropped_ss     else 0
 
-        last = history.get("last_extra_announced", 0)
-        # fire as soon as *either* type appears beyond what we’ve announced
-        if max(max_ex, max_ss) > last:
-            # 3) build your header label
-            parts = []
-            if total_extras:
-                parts.append("EXTRA"  if total_extras == 1 else "EXTRAS")
-            if total_ss:
-                parts.append("SIDE STORY" if total_ss == 1 else "SIDE STORIES")
-            disp_label = " + ".join(parts)  # e.g. "EXTRAS + SIDE STORIES"
+    # 3) only announce when something new appears
+    last = history.get("last_extra_announced", 0)
+    current = max(max_ex, max_ss)
+    if current > last:
+        # choose wording
+        if final_type == "extra" and max_ex >= final_index:
+            cm = "All extras just dropped"
+        elif final_type == "side story" and max_ss >= final_index:
+            cm = "All side stories just dropped"
+        elif max_ex + max_ss == 1:
+            cm = "The first of those extras just dropped"
+        else:
+            cm = "New extras just dropped"
 
-            # 4) remaining line uses the *totals* from config
-            base_line = f"***[《{novel['novel_title']}》]({novel['novel_link']})***"
-            extra_label = "extra" if total_extras == 1 else "extras"
-            ss_label    = "side story" if total_ss    == 1 else "side stories"
-            
-            base_line = f"***[《{novel['novel_title']}》]({novel['novel_link']})***"
-            remaining_line = (
-                f"{base_line} is almost at the very end — just "
-                f"{total_extras} {extra_label} and {total_ss} {ss_label} left before we wrap up this journey for good."
-            )
+        # build title/link line
+        base = f"***[《{novel['novel_title']}》]({novel['novel_link']})***"
+        # always show the configured totals
+        m_ex = re.search(r"(\d+)\s*extras?", novel["chapter_count"], re.IGNORECASE)
+        m_ss = re.search(r"(\d+)\s*side stories?", novel["chapter_count"], re.IGNORECASE)
+        tot_ex = int(m_ex.group(1)) if m_ex else 0
+        tot_ss = int(m_ss.group(1)) if m_ss else 0
 
-            # 5) drop message (always “New …” until it’s truly final)
-            cm = f"New {disp_label.lower()} just dropped"
+        extra_label = "extra" if tot_ex == 1 else "extras"
+        ss_label    = "side story" if tot_ss == 1 else "side stories"
 
-            msg = (
-                f"{novel['role_mention']} | <@&1329502951764525187>\n"
-                f"## :lotus:･ﾟ✧ NEW {disp_label} JUST DROPPED ✧ﾟ･:lotus:\n"
-                f"{remaining_line}\n"
-                f"{cm} in {novel['host']}'s advance access today. "
-                "Thanks for sticking with this one ‘til the end. It means a lot. "
-                "Please show your final love and support by leaving comments on the site~ :heart_hands:"
-            )
+        remaining = (
+            f"{base} is almost at the very end — just "
+            f"{tot_ex} {extra_label} and {tot_ss} {ss_label} left before we wrap up this journey for good."
+        )
 
-            # 6) send + persist
-            requests.post(
-                os.getenv("DISCORD_WEBHOOK"),
-                json={"content": msg, "flags": 4, "allowed_mentions": {"parse": ["roles"]}}
-            )
-            history["last_extra_announced"] = max(max_ex, max_ss)
-            save_history(history, novel["history_file"])
-            commit_history_update(novel["history_file"])
-    # --- End Extras + Side‑Stories Logic ---
+        msg = (
+            f"{novel['role_mention']} | <@&1329502951764525187>\n"
+            f"## :lotus:･ﾟ✧ NEW {'EXTRAS' if tot_ex>1 else 'EXTRA'} JUST DROPPED ✧ﾟ･:lotus:\n"
+            f"{remaining}\n"
+            f"{cm} in {novel['host']}'s advance access today. "
+            "Thanks for sticking with this one ‘til the end. It means a lot. "
+            "Please show your final love and support by leaving comments on the site~ :heart_hands:"
+        )
+        requests.post(
+            os.getenv("DISCORD_WEBHOOK"),
+            json={"content": msg, "flags": 4, "allowed_mentions": {"parse": ["roles"]}}
+        )
+
+        history["last_extra_announced"] = current
+        save_history(history, novel["history_file"])
+        commit_history_update(novel["history_file"])
+    # --- End Extras Logic ---
 
     # helper to detect new‐arc markers
     def is_new_marker(raw):
