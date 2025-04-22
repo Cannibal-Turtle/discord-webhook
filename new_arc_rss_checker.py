@@ -147,7 +147,7 @@ def next_arc_number(history):
 
 # === PROCESS NOVEL FUNCTION ===
 
-def process_novel(novel):
+def process_novel(novel, state):
     print(f"\n=== Processing novel: {novel['novel_title']} ===")
     # 0. parse feeds
     free_feed = feedparser.parse(novel["free_feed"])
@@ -229,7 +229,9 @@ def process_novel(novel):
             json={"content": msg, "flags": 4, "allowed_mentions": {"parse": ["roles"]}}
         )
 
-        state.setdefault(novel_id, {})["last_extra_announced"] = current
+        state.setdefault(novel_id, {
+            "last_extra_announced": 0
+        })["last_extra_announced"] = current
         save_state(state)
         print(f"📘 Updated state.json: {novel_id} last_extra_announced → {current}")
     # --- End Extras Logic ---
@@ -365,6 +367,9 @@ def load_config(path=CONFIG_PATH):
         sys.exit(1)
         
 config = load_config()
+state = load_state()
 
 for novel in config.get("novels", []):
-    process_novel(novel)
+    process_novel(novel, state)
+    
+save_state(state)
