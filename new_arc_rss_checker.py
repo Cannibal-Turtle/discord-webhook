@@ -96,19 +96,6 @@ def strip_any_number_prefix(s: str) -> str:
     """
     return re.sub(r"^.*?\d+[^\w\s]*\s*", "", s)
 
-def parse_extras_info(chapter_count):
-    """
-    From a string like "1184 chapters + 8 extras" or 
-    "950 chapters + 1 side story", return (total:int, raw_kw:str).
-    If no extras/side‑stories, returns (0, None).
-    """
-    m = re.search(r"(\d+)\s*(extras?|side stories?)", chapter_count, re.IGNORECASE)
-    if not m:
-        return 0, None
-    total = int(m.group(1))
-    raw_kw = m.group(2).lower().rstrip('s')  # force singular: "side story"
-    return total, raw_kw
-
 def find_released_extras(paid_feed, raw_kw):
     """
     Scan <chaptername>, <nameextend>, <volume> for raw_kw + any number,
@@ -157,32 +144,21 @@ def process_novel(novel):
     history = load_history(novel["history_file"])
 
     # --- Extras / Side‑Stories Announcement Logic (uses last_chapter) ---
-    # 1) pull final‐chapter marker straight from config
-    last_cfg = novel.get("last_chapter", "")
-    m = re.match(r"(Extras?|Side Story|Side Stories?)\s+(\d+)", last_cfg, re.IGNORECASE)
-    if m:
-        final_type  = m.group(1).lower().rstrip("s")   # "extra" or "side story"
-        final_index = int(m.group(2))
-    else:
-        final_type, final_index = None, 0
-
-    # 2) see what’s actually dropped in the feed
+    # 1) see what’s actually dropped in the feed
     dropped_extras = find_released_extras(paid_feed, "extra")
     dropped_ss     = find_released_extras(paid_feed, "side story")
     max_ex = max(dropped_extras) if dropped_extras else 0
     max_ss = max(dropped_ss)     if dropped_ss     else 0
 
-    # 3) only announce when something new appears
+    # 2) only announce when something new appears
     last = history.get("last_extra_announced", 0)
     current = max(max_ex, max_ss)
     if current > last:
         # — extract totals from config —
         m_ex   = re.search(r"(\d+)\s*extras?",       novel["chapter_count"], re.IGNORECASE)
-        m_ss   = re.search(r"(\d+)\s*side stories?", novel["chapter_count"], re.IGNORECASE)
+        m_ss   = re.search(r"(\d+)\s*(?:side story|side stories)", novel["chapter_count"], re.IGNORECASE)
         tot_ex = int(m_ex.group(1)) if m_ex else 0
         tot_ss = int(m_ss.group(1)) if m_ss else 0
-
-        print(f"DEBUG: tot_ex={tot_ex}, tot_ss={tot_ss}")
 
         # — build the header label —
         parts = []
@@ -191,16 +167,28 @@ def process_novel(novel):
         disp_label = " + ".join(parts)
 
         # — decide which “dropped” message to use —
-        if max_ex >= tot_ex and max_ss >= tot_ss:
-            cm = "All extras and side stories just dropped"
-        elif final_type == "extra" and max_ex >= final_index:
-            cm = "All extras just dropped"
-        elif final_type == "side story" and max_ss >= final_index:
-            cm = "All side stories just dropped"
-        elif max_ex + max_ss == 1:
-            cm = "The first of those extras just dropped"
-        else:
-            cm = f"New {disp_label.lower()} just dropped"
+        new_ex = max_ex > last
+        new_ss = max_ss > last
+    
+        if new_ex and not new_ss:
+            if max_ex == 1:
+                cm = "The first of those extras just dropped"
+            elif max_ex < tot_ex:
+                cm = "New extras just dropped"
+            else:
+                cm = "All extras just dropped"
+        elif new_ss and not new_ex:
+            if max_ss == 1:
+                cm = "The first of those side stories just dropped"
+            elif max_ss < tot_ss:
+                cm = "New side stories just dropped"
+            else:
+                cm = "All side stories just dropped"
+        else:  # both new_ex and new_ss
+            if max_ex == tot_ex and max_ss == tot_ss:
+                cm = "All extras and side stories just dropped"
+            else:
+                cm = "New extras and side stories just dropped"
 
         # — build the “remaining” line —
         base = f"***[《{novel['novel_title']}》]({novel['novel_link']})***"
