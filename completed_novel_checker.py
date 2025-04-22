@@ -113,6 +113,21 @@ def build_paid_completion(novel, chap_field, chap_link, duration: str):
         f"After {duration} of updates, {title} is now fully translated with {count}! Thank you for coming on this journey and for your continued support :pandalove: You can now visit {host} to binge all advance releases~♡*"
     )
 
+def find_released_extras(feed, keyword="extra"):
+    """
+    Scan feed for chaptername/nameextend/volume fields containing 'extra N'
+    Returns a set of detected extra numbers.
+    """
+    pattern = re.compile(rf"(?i)\b{keyword}s?\b.*?(\d+)")
+    seen = set()
+    for entry in feed.entries:
+        for field in ("chaptername", "nameextend", "volume"):
+            val = entry.get(field, "") or ""
+            m = pattern.search(val)
+            if m:
+                seen.add(int(m.group(1)))
+    return seen
+  
 def build_free_completion(novel, chap_field, chap_link):
     role      = novel.get("role_mention", "").strip()
     title     = novel.get("novel_title", "")
@@ -197,6 +212,17 @@ def main():
                 }
                 save_state(state)
                 break
+
+        # === Optional extra-drop tracking ===
+        if feed_type == "paid":
+            dropped_extras = find_released_extras(feed, "extra")
+            max_extra = max(dropped_extras) if dropped_extras else 0
+            last_announced_extra = state.get(novel_id, {}).get("last_extra_announced", 0)
+        
+            if max_extra > last_announced_extra:
+                print(f"🧧 Detected new extras! (Last: {last_announced_extra}, Now: {max_extra})")
+                state.setdefault(novel_id, {})["last_extra_announced"] = max_extra
+                save_state(state)
 
 if __name__ == "__main__":
     main()
