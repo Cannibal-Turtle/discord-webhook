@@ -164,7 +164,7 @@ def process_novel(novel):
         last_extra   = history.get("last_extra_announced", 0)
 
         if max_released > last_extra:
-            disp_kw = raw_kw.lower() + ("s" if total_extras != 1 else "")
+            disp_kw = raw_kw.lower()
 
             # choose wording:
             if max_released == 1 and total_extras > 1:
