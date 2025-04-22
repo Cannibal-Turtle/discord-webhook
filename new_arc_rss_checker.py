@@ -182,6 +182,8 @@ def process_novel(novel):
         tot_ex = int(m_ex.group(1)) if m_ex else 0
         tot_ss = int(m_ss.group(1)) if m_ss else 0
 
+        print(f"DEBUG: tot_ex={tot_ex}, tot_ss={tot_ss}")
+
         # — build the header label —
         parts = []
         if tot_ex: parts.append("EXTRA" if tot_ex == 1 else "EXTRAS")
