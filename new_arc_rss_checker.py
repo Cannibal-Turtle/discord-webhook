@@ -184,9 +184,13 @@ def process_novel(novel):
 
             # 4) remaining line uses the *totals* from config
             base_line = f"***[《{novel['novel_title']}》]({novel['novel_link']})***"
+            extra_label = "extra" if total_extras == 1 else "extras"
+            ss_label    = "side story" if total_ss    == 1 else "side stories"
+            
+            base_line = f"***[《{novel['novel_title']}》]({novel['novel_link']})***"
             remaining_line = (
                 f"{base_line} is almost at the very end — just "
-                f"{total_extras} extras and {total_ss} side stories left before we wrap up this journey for good."
+                f"{total_extras} {extra_label} and {total_ss} {ss_label} left before we wrap up this journey for good."
             )
 
             # 5) drop message (always “New …” until it’s truly final)
