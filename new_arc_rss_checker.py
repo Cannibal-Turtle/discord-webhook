@@ -50,12 +50,12 @@ def clean_feed_title(raw_title):
 
 def format_stored_title(title):
     """Formats arc titles for Discord messages."""
-    match = re.match(r"(【Arc\s\d】)\s*(.*)", title)
+    match = re.match(r"(【Arc\s+\d+】)\s*(.*)", title)
     return f"**{match.group(1)}**{match.group(2)}" if match else f"**{title}**"
 
 def extract_arc_number(title):
     """Extracts arc number from a title that begins with 【Arc N】."""
-    match = re.search(r"【Arc\s*(\d)】", title)
+    match = re.search(r"【Arc\s*(\d+)】", title)
     return int(match.group(1)) if match else None
 
 def deduplicate(lst):
@@ -81,7 +81,7 @@ def extract_arc_title(nameextend):
     # Remove leading/trailing stars
     clean = nameextend.strip("* ").strip()
     # Remove suffix markers
-    clean = re.sub(r"(?:\s001|\(1\)|\.\s*1)$", "", clean).strip()
+    clean = re.sub(r"(?:\s+001|\(1\)|\.\s*1)$", "", clean).strip()
     return clean
 
 def strip_any_number_prefix(s: str) -> str:
@@ -94,15 +94,15 @@ def strip_any_number_prefix(s: str) -> str:
       "World10 - Bar"   → "Bar"  
       "Prefix 3) Baz"   → "Baz"
     """
-    return re.sub(r"^.*?\d[^\w\s]*\s*", "", s)
+    return re.sub(r"^.*?\d+[^\w\s]*\s*", "", s)
 
 def parse_extras_info(chapter_count):
     """
-    From a string like "1184 chapters  8 extras" or 
-    "950 chapters  1 side story", return (total:int, raw_kw:str).
+    From a string like "1184 chapters + 8 extras" or 
+    "950 chapters + 1 side story", return (total:int, raw_kw:str).
     If no extras/side‑stories, returns (0, None).
     """
-    m = re.search(r"(\d)\s*(extras?|side stories?)", chapter_count, re.IGNORECASE)
+    m = re.search(r"(\d+)\s*(extras?|side stories?)", chapter_count, re.IGNORECASE)
     if not m:
         return 0, None
     total = int(m.group(1))
@@ -111,12 +111,12 @@ def parse_extras_info(chapter_count):
 
 def find_released_extras(paid_feed, raw_kw):
     """
-    Scan <chaptername>, <nameextend>, <volume> for raw_kw  any number,
+    Scan <chaptername>, <nameextend>, <volume> for raw_kw + any number,
     return the set of numbers seen (as ints).
     """
     if not raw_kw:
         return set()
-    pattern = re.compile(rf"(?i)\b{raw_kw}s?\b.*?(\d)")
+    pattern = re.compile(rf"(?i)\b{raw_kw}s?\b.*?(\d+)")
     seen = set()
     for e in paid_feed.entries:
         for field in ("chaptername","nameextend","volume"):
@@ -127,13 +127,13 @@ def find_released_extras(paid_feed, raw_kw):
     return seen
 
 def next_arc_number(history):
-    """Returns last announced arc number  1, or 1 if none."""
+    """Returns last announced arc number + 1, or 1 if none."""
     last = history.get("last_announced", "")
     n = extract_arc_number(last)
     if n:
-        print(f"🔢 Last announced arc is {n}, so next will be {n1}")
-        return n  1
-    # fallback: scan unlockedlocked
+        print(f"🔢 Last announced arc is {n}, so next will be {n+1}")
+        return n + 1
+    # fallback: scan unlocked+locked
     nums = []
     for section in ("unlocked","locked"):
         for title in history[section]:
@@ -141,8 +141,8 @@ def next_arc_number(history):
             if m:
                 nums.append(m)
     m = max(nums) if nums else 0
-    print(f"🔢 No valid last_announced; max seen in history is {m}, so next will be {m1}")
-    return m  1
+    print(f"🔢 No valid last_announced; max seen in history is {m}, so next will be {m+1}")
+    return m + 1
 
 # === PROCESS NOVEL FUNCTION ===
 
@@ -163,7 +163,7 @@ def process_novel(novel):
         released = find_released_extras(paid_feed, raw_kw)
         # If we've never announced extras before and we see at least one in the feed:
         if released and history.get("last_extra_announced", 0) == 0:
-            disp_kw = raw_kw.title()  ("s" if total_extras != 1 else "")
+            disp_kw = raw_kw.title() + ("s" if total_extras != 1 else "")
             # Single‐shot message—you can customize this however you like
             msg = (
                 f"{novel['role_mention']} | <@&1329502951764525187>\n"
@@ -181,7 +181,7 @@ def process_novel(novel):
             history["last_extra_announced"] = 1
             save_history(history, novel["history_file"])
             commit_history_update(novel["history_file"])
-     # --- End Extras Logic ---
+    # --- End Extras Logic ---
 
     # helper to detect new‐arc markers
     def is_new_marker(raw):
@@ -230,7 +230,7 @@ def process_novel(novel):
                 break
 
     # 4. lock paid arcs (new ones)
-    seen_bases = [re.sub(r"^【Arc\s*\d】", "", f) for f in history["unlocked"]history["locked"]]
+    seen_bases = [re.sub(r"^【Arc\s*\d+】", "", f) for f in history["unlocked"] + history["locked"]]
     for base in paid_new:
         if base not in seen_bases:
             n = next_arc_number(history)
