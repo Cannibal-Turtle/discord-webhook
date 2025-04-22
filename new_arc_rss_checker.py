@@ -156,49 +156,60 @@ def process_novel(novel):
     # 2. load history immediately after fetching feeds
     history = load_history(novel["history_file"])
 
-    # --- Extras/Side‑Stories Announcement Logic ---
-    total_extras, raw_kw = parse_extras_info(novel["chapter_count"])
-    if total_extras:
-        released     = find_released_extras(paid_feed, raw_kw)
-        max_released = max(released) if released else 0
-        last_extra   = history.get("last_extra_announced", 0)
+    # --- Extras + Side‑Stories Announcement Logic ---
+    # 1) pull totals straight from config
+    m_ex = re.search(r"(\d+)\s*extras?", novel["chapter_count"], re.IGNORECASE)
+    total_extras = int(m_ex.group(1)) if m_ex else 0
+    m_ss = re.search(r"(\d+)\s*side stories?", novel["chapter_count"], re.IGNORECASE)
+    total_ss = int(m_ss.group(1)) if m_ss else 0
 
-        if max_released > last_extra:
-            disp_kw = raw_kw.lower()
+    # only proceed if there are any extras or side stories configured
+    if total_extras or total_ss:
+        # 2) see what’s actually dropped in the feed
+        dropped_extras = find_released_extras(paid_feed, "extra")
+        dropped_ss     = find_released_extras(paid_feed, "side story")
+        max_ex = max(dropped_extras) if dropped_extras else 0
+        max_ss = max(dropped_ss)     if dropped_ss     else 0
 
-            # choose wording:
-            if max_released == 1 and total_extras > 1:
-                cm = "The first of those extras just dropped"
-            elif max_released < total_extras:
-                cm = "New extras just dropped"
-            else:
-                cm = "All of the extras just dropped"
+        last = history.get("last_extra_announced", 0)
+        # fire as soon as *either* type appears beyond what we’ve announced
+        if max(max_ex, max_ss) > last:
+            # 3) build your header label
+            parts = []
+            if total_extras:
+                parts.append("EXTRA"  if total_extras == 1 else "EXTRAS")
+            if total_ss:
+                parts.append("SIDE STORY" if total_ss == 1 else "SIDE STORIES")
+            disp_label = " + ".join(parts)  # e.g. "EXTRAS + SIDE STORIES"
 
-            # always show the total extras:
+            # 4) remaining line uses the *totals* from config
             base_line = f"***[《{novel['novel_title']}》]({novel['novel_link']})***"
             remaining_line = (
-                f"{base_line} is almost at the very end — just {total_extras} {disp_kw} "
-                "left before we wrap up this journey for good."
+                f"{base_line} is almost at the very end — just "
+                f"{total_extras} extras and {total_ss} side stories left before we wrap up this journey for good."
             )
 
-            # assemble & send
+            # 5) drop message (always “New …” until it’s truly final)
+            cm = f"New {disp_label.lower()} just dropped"
+
             msg = (
                 f"{novel['role_mention']} | <@&1329502951764525187>\n"
-                f"## :lotus:･ﾟ✧ NEW {disp_kw.upper()} JUST DROPPED ✧ﾟ･:lotus:\n"
+                f"## :lotus:･ﾟ✧ NEW {disp_label} JUST DROPPED ✧ﾟ･:lotus:\n"
                 f"{remaining_line}\n"
                 f"{cm} in {novel['host']}'s advance access today. "
                 "Thanks for sticking with this one ‘til the end. It means a lot. "
                 "Please show your final love and support by leaving comments on the site~ :heart_hands:"
             )
+
+            # 6) send + persist
             requests.post(
                 os.getenv("DISCORD_WEBHOOK"),
                 json={"content": msg, "flags": 4, "allowed_mentions": {"parse": ["roles"]}}
             )
-
-            history["last_extra_announced"] = max_released
+            history["last_extra_announced"] = max(max_ex, max_ss)
             save_history(history, novel["history_file"])
             commit_history_update(novel["history_file"])
-    # --- End Extras Logic ---
+    # --- End Extras + Side‑Stories Logic ---
 
     # helper to detect new‐arc markers
     def is_new_marker(raw):
