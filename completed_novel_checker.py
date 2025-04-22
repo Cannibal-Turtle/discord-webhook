@@ -20,8 +20,20 @@ from datetime import datetime
 from dateutil.relativedelta import relativedelta
 
 CONFIG_PATH = "config.json"
+STATE_PATH  = "state.json"
 WEBHOOK_ENV = "DISCORD_WEBHOOK"
 
+def load_state(path=STATE_PATH):
+    try:
+        with open(path, encoding="utf-8") as f:
+            return json.load(f)
+    except FileNotFoundError:
+        return {}
+
+def save_state(state, path=STATE_PATH):
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(state, f, indent=2, ensure_ascii=False)
+      
 def load_config(path=CONFIG_PATH):
     try:
         with open(path, encoding="utf-8") as f:
@@ -123,12 +135,7 @@ def build_free_completion(novel, chap_field, chap_link):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--feed",
-        choices=["paid", "free"],
-        required=True,
-        help="Which feed to check: 'paid' or 'free'"
-    )
+    parser.add_argument("--feed", choices=["paid","free"], required=True)
     args = parser.parse_args()
 
     webhook_url = os.getenv(WEBHOOK_ENV)
@@ -137,58 +144,58 @@ def main():
         sys.exit(1)
 
     config = load_config()
+    state  = load_state()
+
     for novel in config.get("novels", []):
+        novel_id  = novel.get("novel_id", novel.get("novel_title"))
         last_chap = novel.get("last_chapter")
         if not last_chap:
             continue
 
-        key = f"{args.feed}_feed"
-        url = novel.get(key)
+        feed_type = args.feed
+        feed_key  = f"{feed_type}_feed"
+        url       = novel.get(feed_key)
         if not url:
             continue
 
-        feed = feedparser.parse(url)
-        if feed.bozo:
-            print(f"WARNING: could not parse {key}: {feed.bozo_exception}", file=sys.stderr)
+        # skip if already sent
+        if state.get(novel_id, {}).get(feed_type):
+            print(f"→ skipping {novel_id} ({feed_type}) — already notified")
             continue
 
+        # parse RSS
+        feed = feedparser.parse(url)
+        if feed.bozo:
+            print(f"WARNING: could not parse {feed_key}: {feed.bozo_exception}", file=sys.stderr)
+            continue
+
+        # look for last_chapter
         for entry in feed.entries:
             chap_field = entry.get("chaptername") or entry.get("chapter", "")
             if last_chap in chap_field:
-                # normalize NBSP
-                chap_text = chap_field.replace("\u00A0", " ")
-                chap_link = entry.get("link", "")
-
-                print(f"→ [{key}] MATCH for “{novel.get('novel_title')}”: {chap_text}")
-
-                # determine chapter date
-                if entry.get("published_parsed"):
-                    chap_date = datetime(*entry.published_parsed[:6])
-                elif entry.get("updated_parsed"):
-                    chap_date = datetime(*entry.updated_parsed[:6])
-                else:
-                    chap_date = datetime.now()
-    
-                # compute duration
-                start_date = novel.get("start_date", "")
-                duration_str = get_duration(start_date, chap_date)
-    
                 # build message
-                if args.feed == "paid":
-                    msg = build_paid_completion(novel, chap_field, entry.get("link", ""), duration_str)
+                if feed_type == "paid":
+                    if entry.get("published_parsed"):
+                        chap_date = datetime(*entry.published_parsed[:6])
+                    elif entry.get("updated_parsed"):
+                        chap_date = datetime(*entry.updated_parsed[:6])
+                    else:
+                        chap_date = datetime.now()
+                    duration = get_duration(novel.get("start_date",""), chap_date)
+                    msg = build_paid_completion(novel, chap_field, entry.link, duration)
                 else:
-                    msg = build_free_completion(novel, chap_field, entry.get("link", ""))
-    
-                # send  log
-                try:
-                    send_discord_message(webhook_url, msg)
-                    print(f"✔️ Sent {args.feed}-completion announcement.")
-                except Exception as e:
-                    print(f"ERROR sending {args.feed}-completion message: {e}", file=sys.stderr)
-                    sys.exit(1)
-    
-                return
+                    msg = build_free_completion(novel, chap_field, entry.link)
 
+                # send and record
+                send_discord_message(webhook_url, msg)
+                print(f"✔️ Sent {feed_type}-completion announcement for {novel_id}")
+
+                state.setdefault(novel_id, {})[feed_type] = {
+                    "chapter": chap_field,
+                    "sent_at":  datetime.now().isoformat()
+                }
+                save_state(state)
+                break
 
 if __name__ == "__main__":
     main()
