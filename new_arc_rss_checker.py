@@ -163,24 +163,25 @@ def process_novel(novel):
         max_released = max(released) if released else 0
         last_extra   = history.get("last_extra_announced", 0)
 
-        # only announce when we see a new extra
         if max_released > last_extra:
-            disp_kw   = raw_kw.title() + ("s" if total_extras != 1 else "")
-            remaining = total_extras - max_released
-        
+            disp_kw = raw_kw.title() + ("s" if total_extras != 1 else "")
+
+            # choose wording:
             if max_released == 1 and total_extras > 1:
                 cm = "The first of those extras just dropped"
             elif max_released < total_extras:
                 cm = "New extras just dropped"
             else:
                 cm = "All of the extras just dropped"
-        
+
+            # always show the total extras:
             base_line = f"***[《{novel['novel_title']}》]({novel['novel_link']})***"
             remaining_line = (
-                f"{base_line} is almost at the very end — just {remaining} {disp_kw} "
+                f"{base_line} is almost at the very end — just {total_extras} {disp_kw} "
                 "left before we wrap up this journey for good."
-            ) if remaining > 0 else base_line
-        
+            )
+
+            # assemble & send
             msg = (
                 f"{novel['role_mention']} | <@&1329502951764525187>\n"
                 f"## :lotus:･ﾟ✧ NEW {disp_kw.upper()} JUST DROPPED ✧ﾟ･:lotus:\n"
@@ -189,14 +190,11 @@ def process_novel(novel):
                 "Thanks for sticking with this one ‘til the end. It means a lot. "
                 "Please show your final love and support by leaving comments on the site~ :heart_hands:"
             )
-    
             requests.post(
                 os.getenv("DISCORD_WEBHOOK"),
                 json={"content": msg, "flags": 4, "allowed_mentions": {"parse": ["roles"]}}
             )
-            print(f"✅ Sent EXTRAS announcement (up to {max_released})")
 
-            # mark and persist
             history["last_extra_announced"] = max_released
             save_history(history, novel["history_file"])
             commit_history_update(novel["history_file"])
