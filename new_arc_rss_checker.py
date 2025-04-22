@@ -4,6 +4,9 @@ import os
 import json
 import re
 
+CONFIG_PATH = "config.json"
+ONGOING_ROLE = "<@&1329502951764525187>"
+
 # === HELPER FUNCTIONS ===
 
 def load_history(history_file):
@@ -201,12 +204,12 @@ def process_novel(novel):
 
         # — assemble & send the Discord message —
         msg = (
-            f"{novel['role_mention']} | <@&1329502951764525187>\n"
+            f"{novel['role_mention']} | {ONGOING_ROLE}\n"
             f"## :lotus:･ﾟ✧ NEW {disp_label} JUST DROPPED ✧ﾟ･:lotus:\n"
             f"{remaining}\n"
             f"{cm} in {novel['host']}'s advance access today. "
-            "Thanks for sticking with this one ‘til the end. It means a lot. "
-            "Please show your final love and support by leaving comments on the site~ :heart_hands:"
+            f"Thanks for sticking with this one ‘til the end. It means a lot. "
+            f"Please show your final love and support by leaving comments on the site~ :heart_hands:"
         )
         requests.post(
             os.getenv("DISCORD_WEBHOOK"),
@@ -305,7 +308,7 @@ def process_novel(novel):
     locked_md = "\n".join(locked_lines)
 
     message = (
-        f"{novel['role_mention']} | <@&1329502951764525187>\n"
+        f"{novel['role_mention']} | {ONGOING_ROLE}\n"
         "## :loudspeaker: NEW ARC ALERT˚ · .˚ ༘:butterfly:⋆｡˚\n"
         f"***《World {world_number}》is Live for***\n"
         f"### [{novel['novel_title']}]({novel['novel_link']}) <:Hehe:1329429547229122580>\n"
@@ -340,8 +343,15 @@ def process_novel(novel):
         print(f"❌ Failed to send Discord notification (status {resp.status_code})")
         
 # === MAIN PROCESS ===
-with open("config.json", "r", encoding="utf-8") as cf:
-    config = json.load(cf)
+def load_config(path=CONFIG_PATH):
+    try:
+        with open(path, encoding="utf-8") as f:
+            return json.load(f)
+    except FileNotFoundError:
+        print(f"ERROR: cannot open {path}", file=sys.stderr)
+        sys.exit(1)
+        
+config = load_config()
 
 for novel in config.get("novels", []):
     process_novel(novel)
