@@ -11,11 +11,13 @@ def load_history(history_file):
     if os.path.exists(history_file):
         with open(history_file, "r", encoding="utf-8") as f:
             history = json.load(f)
+            history.setdefault("last_announced", "")
+            history.setdefault("last_extra_announced", 0)
         print(f"📂 Loaded history from {history_file}: {len(history['unlocked'])} unlocked, {len(history['locked'])} locked, last_announced={history['last_announced']}")
         return history
     else:
         print(f"📂 No history file found at {history_file}, starting fresh")
-        return {"unlocked": [], "locked": [], "last_announced": ""}
+        return {"unlocked": [], "locked": [], "last_announced": "", "last_extra_announced": 0}
 
 def save_history(history, history_file):
     """Saves the novel's arc history to JSON file with proper encoding."""
@@ -94,6 +96,36 @@ def strip_any_number_prefix(s: str) -> str:
     """
     return re.sub(r"^.*?\d+[^\w\s]*\s*", "", s)
 
+def parse_extras_info(chapter_count):
+    """
+    From a string like "1184 chapters + 8 extras" or 
+    "950 chapters + 1 side story", return (total:int, raw_kw:str).
+    If no extras/side‑stories, returns (0, None).
+    """
+    m = re.search(r"(\d+)\s*(extras?|side stories?)", chapter_count, re.IGNORECASE)
+    if not m:
+        return 0, None
+    total = int(m.group(1))
+    raw_kw = m.group(2).lower()  # e.g. "extras" or "side story"
+    return total, raw_kw
+
+def find_released_extras(paid_feed, raw_kw):
+    """
+    Scan <chaptername>, <nameextend>, <volume> for raw_kw + any number,
+    return the set of numbers seen (as ints).
+    """
+    if not raw_kw:
+        return set()
+    pattern = re.compile(rf"(?i)\b{raw_kw}s?\b.*?(\d+)")
+    seen = set()
+    for e in paid_feed.entries:
+        for field in ("chaptername","nameextend","volume"):
+            val = e.get(field,"") or ""
+            m = pattern.search(val)
+            if m:
+                seen.add(int(m.group(1)))
+    return seen
+
 def next_arc_number(history):
     """Returns last announced arc number + 1, or 1 if none."""
     last = history.get("last_announced", "")
@@ -120,6 +152,51 @@ def process_novel(novel):
     free_feed = feedparser.parse(novel["free_feed"])
     paid_feed = feedparser.parse(novel["paid_feed"])
     print(f"🌐 Fetched feeds: {len(free_feed.entries)} free entries, {len(paid_feed.entries)} paid entries")
+
+    # 2. load history immediately after fetching feeds
+    history = load_history(novel["history_file"])
+
+    # --- Extras/Side-Stories Announcement Logic ---
+    total_extras, raw_kw = parse_extras_info(novel["chapter_count"])
+    if total_extras:
+        released = find_released_extras(paid_feed, raw_kw)
+        max_released = max(released) if released else 0
+        last_extra = history.get("last_extra_announced", 0)
+
+        if max_released > last_extra:
+            # choose display keyword (singular/plural & title-cased)
+            disp_kw = raw_kw.title() + ("s" if total_extras != 1 else "")
+            # choose custom message
+            if last_extra == 0:
+                cm = f"The first of those {disp_kw} just dropped"
+            elif max_released < total_extras:
+                cm = f"{disp_kw} just dropped"
+            else:
+                cm = f"All of the {disp_kw} are now available!"
+
+            remaining = total_extras - max_released
+            header_kw = disp_kw.upper()
+            msg = (
+                f"{novel['role_mention']} | <@&1329502951764525187>\n"
+                f"## :lotus:･ﾟ✧ NEW {header_kw} JUST DROPPED ✧ﾟ･:lotus:\n"
+                f"***《{novel['novel_title']}》*** is almost at the very end — just "
+                f"{remaining} {disp_kw} left before we wrap up this journey for good.\n\n"
+                f"{cm} just dropped in {novel['host']}'s advance access today. "
+                "Thanks for sticking with this one ‘til the end. It means a lot. "
+                "Please show your final love and support by leaving comments on the site~ :heart_hands:"
+            )
+            # send Discord notification
+            requests.post(
+                os.getenv("DISCORD_WEBHOOK"),
+                json={"content": msg, "flags": 4, "allowed_mentions":{"parse":["roles"]}}
+            )
+            print(f"✅ Sent EXTRAS announcement up to {max_released}")
+
+            # update history & commit
+            history["last_extra_announced"] = max_released
+            save_history(history, novel["history_file"])
+            commit_history_update(novel["history_file"])
+    # --- End Extras Logic ---
 
     # helper to detect new‐arc markers
     def is_new_marker(raw):
@@ -156,9 +233,6 @@ def process_novel(novel):
     free_new = extract_new_bases(free_feed)
     paid_new = extract_new_bases(paid_feed)
     print(f"🔍 Detected {len(free_new)} new free arcs, {len(paid_new)} new paid arcs")
-
-    # 2. load history
-    history = load_history(novel["history_file"])
 
     # 3. unlock free arcs
     for base in free_new:
