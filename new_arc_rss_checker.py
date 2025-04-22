@@ -5,22 +5,33 @@ import json
 import re
 
 CONFIG_PATH = "config.json"
+STATE_PATH = "state.json"
 ONGOING_ROLE = "<@&1329502951764525187>"
 
 # === HELPER FUNCTIONS ===
 
+def load_state(path=STATE_PATH):
+    try:
+        with open(path, encoding="utf-8") as f:
+            return json.load(f)
+    except FileNotFoundError:
+        return {}
+
+def save_state(state, path=STATE_PATH):
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(state, f, indent=2, ensure_ascii=False)
+        
 def load_history(history_file):
     """Loads the novel's arc history from JSON file."""
     if os.path.exists(history_file):
         with open(history_file, "r", encoding="utf-8") as f:
             history = json.load(f)
             history.setdefault("last_announced", "")
-            history.setdefault("last_extra_announced", 0)
         print(f"📂 Loaded history from {history_file}: {len(history['unlocked'])} unlocked, {len(history['locked'])} locked, last_announced={history['last_announced']}")
         return history
     else:
         print(f"📂 No history file found at {history_file}, starting fresh")
-        return {"unlocked": [], "locked": [], "last_announced": "", "last_extra_announced": 0}
+        return {"unlocked": [], "locked": [], "last_announced": ""}
 
 def save_history(history, history_file):
     """Saves the novel's arc history to JSON file with proper encoding."""
@@ -154,7 +165,9 @@ def process_novel(novel):
     max_ss = max(dropped_ss)     if dropped_ss     else 0
 
     # 2) only announce when something new appears
-    last = history.get("last_extra_announced", 0)
+    state = load_state()
+    novel_id = novel.get("novel_id", novel.get("novel_title"))
+    last = state.get(novel_id, {}).get("last_extra_announced", 0)
     current = max(max_ex, max_ss)
     if current > last:
         # — extract totals from config —
@@ -216,9 +229,9 @@ def process_novel(novel):
             json={"content": msg, "flags": 4, "allowed_mentions": {"parse": ["roles"]}}
         )
 
-        history["last_extra_announced"] = current
-        save_history(history, novel["history_file"])
-        commit_history_update(novel["history_file"])
+        state.setdefault(novel_id, {})["last_extra_announced"] = current
+        save_state(state)
+        print(f"📘 Updated state.json: {novel_id} last_extra_announced → {current}")
     # --- End Extras Logic ---
 
     # helper to detect new‐arc markers
