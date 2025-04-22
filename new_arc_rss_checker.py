@@ -166,36 +166,33 @@ def process_novel(novel):
         # only announce when we see a new extra
         if max_released > last_extra:
             disp_kw   = raw_kw.title() + ("s" if total_extras != 1 else "")
-            lower_kw  = disp_kw.lower()
             remaining = total_extras - max_released
-
-            # pick your custom message, using lower_kw instead of disp_kw
-            if max_released == 1:
-                cm = f"The first of those {lower_kw} just dropped"
-            elif remaining > 0:
-                cm = f"{lower_kw} just dropped"
+        
+            if max_released == 1 and total_extras > 1:
+                cm = "The first of those extras just dropped"
+            elif max_released < total_extras:
+                cm = "New extras just dropped"
             else:
-                cm = f"All of the {lower_kw} just dropped"
-
-            # build the “remaining” line (omit if final)
+                cm = "All of the extras just dropped"
+        
+            base_line = f"***[《{novel['novel_title']}》]({novel['novel_link']})***"
             remaining_line = (
-                f"***[《{novel['novel_title']}》]({novel['novel_link']})*** "
-                f"is almost at the very end — just {remaining} {disp_kw} left before we wrap up this journey for good."
-            ) if remaining > 0 else ""
-
+                f"{base_line} is almost at the very end — just {remaining} {disp_kw} "
+                "left before we wrap up this journey for good."
+            ) if remaining > 0 else base_line
+        
             msg = (
                 f"{novel['role_mention']} | <@&1329502951764525187>\n"
                 f"## :lotus:･ﾟ✧ NEW {disp_kw.upper()} JUST DROPPED ✧ﾟ･:lotus:\n"
-                + (remaining_line + "\n" if remaining_line else "") +
+                f"{remaining_line}\n"
                 f"{cm} in {novel['host']}'s advance access today. "
                 "Thanks for sticking with this one ‘til the end. It means a lot. "
                 "Please show your final love and support by leaving comments on the site~ :heart_hands:"
             )
-
-            # send the Discord notification
+    
             requests.post(
                 os.getenv("DISCORD_WEBHOOK"),
-                json={"content": msg, "flags": 4, "allowed_mentions":{"parse":["roles"]}}
+                json={"content": msg, "flags": 4, "allowed_mentions": {"parse": ["roles"]}}
             )
             print(f"✅ Sent EXTRAS announcement (up to {max_released})")
 
