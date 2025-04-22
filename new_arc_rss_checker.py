@@ -156,29 +156,51 @@ def process_novel(novel):
     # 2. load history immediately after fetching feeds
     history = load_history(novel["history_file"])
 
-    # --- Extras/Side-Stories Announcement Logic ---
-    # Only announce once, the first time we see any extra/side story
+    # --- Extras/Side‑Stories Announcement Logic ---
     total_extras, raw_kw = parse_extras_info(novel["chapter_count"])
     if total_extras:
-        released = find_released_extras(paid_feed, raw_kw)
-        # If we've never announced extras before and we see at least one in the feed:
-        if released and history.get("last_extra_announced", 0) == 0:
-            disp_kw = raw_kw.title() + ("s" if total_extras != 1 else "")
-            # Single‐shot message—you can customize this however you like
+        released     = find_released_extras(paid_feed, raw_kw)
+        max_released = max(released) if released else 0
+        last_extra   = history.get("last_extra_announced", 0)
+
+        # only announce when we see a new extra
+        if max_released > last_extra:
+            disp_kw   = raw_kw.title() + ("s" if total_extras != 1 else "")
+            lower_kw  = disp_kw.lower()
+            remaining = total_extras - max_released
+
+            # pick your custom message, using lower_kw instead of disp_kw
+            if max_released == 1:
+                cm = f"The first of those {lower_kw} just dropped"
+            elif remaining > 0:
+                cm = f"{lower_kw} just dropped"
+            else:
+                cm = f"All of the {lower_kw} just dropped"
+
+            # build the “remaining” line (omit if final)
+            remaining_line = (
+                f"***[《{novel['novel_title']}》]({novel['novel_link']})*** "
+                f"is almost at the very end — just {remaining} {disp_kw} left before we wrap up this journey for good."
+            ) if remaining > 0 else ""
+
             msg = (
                 f"{novel['role_mention']} | <@&1329502951764525187>\n"
                 f"## :lotus:･ﾟ✧ NEW {disp_kw.upper()} JUST DROPPED ✧ﾟ･:lotus:\n"
-                f"***《{novel['novel_title']}》*** has released its first {disp_kw} in advance!  \n"
-                "Thanks for sticking with this journey—please show your support by leaving comments on the site~ :heart_hands:"
+                + (remaining_line + "\n" if remaining_line else "") +
+                f"{cm} in {novel['host']}'s advance access today. "
+                "Thanks for sticking with this one ‘til the end. It means a lot. "
+                "Please show your final love and support by leaving comments on the site~ :heart_hands:"
             )
+
+            # send the Discord notification
             requests.post(
                 os.getenv("DISCORD_WEBHOOK"),
                 json={"content": msg, "flags": 4, "allowed_mentions":{"parse":["roles"]}}
             )
-            print("✅ Sent one‐time EXTRAS announcement")
+            print(f"✅ Sent EXTRAS announcement (up to {max_released})")
 
-            # Mark that we've done this once—never run again
-            history["last_extra_announced"] = 1
+            # mark and persist
+            history["last_extra_announced"] = max_released
             save_history(history, novel["history_file"])
             commit_history_update(novel["history_file"])
     # --- End Extras Logic ---
