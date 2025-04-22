@@ -22,6 +22,7 @@ from dateutil.relativedelta import relativedelta
 CONFIG_PATH = "config.json"
 STATE_PATH  = "state.json"
 WEBHOOK_ENV = "DISCORD_WEBHOOK"
+COMPLETE_ROLE = "<@&1329391480435114005>"
 
 def load_state(path=STATE_PATH):
     try:
@@ -95,11 +96,11 @@ def get_duration(start_date_str: str, end_date: datetime) -> str:
 
 def build_paid_completion(novel, chap_field, chap_link, duration: str):
     role      = novel.get("role_mention", "").strip()
-    comp_role = novel.get("complete_role_mention", "").strip()
     title     = novel.get("novel_title", "")
     link      = novel.get("novel_link", "")
     host      = novel.get("host", "")
     count     = novel.get("chapter_count", "the entire series")
+    comp_role = COMPLETE_ROLE
 
     # normalize NBSP
     chap_text = chap_field.replace("\u00A0", " ")
@@ -114,11 +115,11 @@ def build_paid_completion(novel, chap_field, chap_link, duration: str):
 
 def build_free_completion(novel, chap_field, chap_link):
     role      = novel.get("role_mention", "").strip()
-    comp_role = novel.get("complete_role_mention", "").strip()
     title     = novel.get("novel_title", "")
     link      = novel.get("novel_link", "")
     host      = novel.get("host", "")
     count     = novel.get("chapter_count", "the entire series")
+    comp_role = COMPLETE_ROLE
 
     # normalize NBSP
     chap_text = chap_field.replace("\u00A0", " ")
