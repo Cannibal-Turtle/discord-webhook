@@ -33,7 +33,9 @@ jobs:
           python-version: '3.x'
 
       - name: Install dependencies
-        run: pip install feedparser requests
+        run: |
+          pip install feedparser requests
+          pip install --upgrade git+https://github.com/Cannibal-Turtle/rss-feed.git@main
 
       - name: Run Arc Checker
         env:
@@ -63,7 +65,9 @@ jobs:
           python-version: '3.x'
 
       - name: Install dependencies
-        run: pip install feedparser requests python-dateutil
+        run: |
+          pip install feedparser requests python-dateutil
+          pip install --upgrade git+https://github.com/Cannibal-Turtle/rss-feed.git@main
 
       - name: Run Paid Completion Checker
         env:
@@ -104,7 +108,9 @@ jobs:
           python-version: '3.x'
 
       - name: Install dependencies
-        run: pip install feedparser requests python-dateutil
+        run: |
+          pip install feedparser requests python-dateutil
+          pip install --upgrade git+https://github.com/Cannibal-Turtle/rss-feed.git@main
 
       - name: Run Free Completion Checker
         env:
