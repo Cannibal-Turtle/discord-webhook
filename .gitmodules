@@ -1,0 +1,3 @@
+[submodule "novel_config"]
+	path = novel_config
+	url = https://github.com/Cannibal-Turtle/rss-feed.git
