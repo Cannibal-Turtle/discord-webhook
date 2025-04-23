@@ -123,6 +123,7 @@ Only if you choose not to install the mapping package.
   ]
 }
 ```
+
 2. Script changes in both `new_arc_rss_checker.py` and `completed_novel_checker.py`:
 - Remove the mapping-package import:
    ```diff
@@ -139,8 +140,7 @@ Only if you choose not to install the mapping package.
    state  = load_state()
    for novel in config["novels"]:
        process_novel(novel, state)
-   save_state(state)
-```
+   save_state(state)```
 
 > Each novel must have a **unique `history_file`** to store its arc history.
 
