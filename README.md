@@ -62,6 +62,11 @@ To allow the script to update the **novel history JSON files** and push changes 
 ## 📂 User Setup Guide
 
 ### 📋 4. Configuration to Add a New Novel to Track
+
+If you’d rather always pull the latest novel mappings from the `rss-feed` repo, install it directly:
+```bash
+pip install --upgrade git+https://github.com/user-name/repo-name.git@main
+
 To add a new novel, update `config.json` with the following fields:
 
 ```json
