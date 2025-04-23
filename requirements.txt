@@ -1,0 +1,10 @@
+discord.py>=2.3.0
+fastapi
+uvicorn
+feedparser
+requests
+python-dateutil
+beautifulsoup4
+aiohttp
+PyRSS2Gen
+git+https://github.com/Cannibal-Turtle/rss-feed.git@main
