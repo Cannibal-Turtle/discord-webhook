@@ -18,8 +18,8 @@ import feedparser
 import requests
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
+from novel_mappings import HOSTING_SITE_DATA
 
-CONFIG_PATH = "config.json"
 STATE_PATH  = "state.json"
 WEBHOOK_ENV = "DISCORD_WEBHOOK"
 COMPLETE_ROLE = "<@&1329391480435114005>"
@@ -34,14 +34,6 @@ def load_state(path=STATE_PATH):
 def save_state(state, path=STATE_PATH):
     with open(path, "w", encoding="utf-8") as f:
         json.dump(state, f, indent=2, ensure_ascii=False)
-      
-def load_config(path=CONFIG_PATH):
-    try:
-        with open(path, encoding="utf-8") as f:
-            return json.load(f)
-    except FileNotFoundError:
-        print(f"ERROR: cannot open {path}", file=sys.stderr)
-        sys.exit(1)
 
 def send_discord_message(webhook_url: str, content: str):
     # Include allowed_mentions so webhooks color role pings correctly
@@ -133,6 +125,31 @@ def build_free_completion(novel, chap_field, chap_link):
         f"Head over to {host} to dive straight in~♡*"
     )
 
+def load_novels():
+    """Pull novels directly from HOSTING_SITE_DATA."""
+    novels = []
+    for host, host_data in HOSTING_SITE_DATA.items():
+        for title, details in host_data.get("novels", {}).items():
+            last = details.get("last_chapter")
+            # skip if no completion marker
+            if not last:
+                continue
+            free = details.get("free_feed")
+            paid = details.get("paid_feed")
+            if not (free or paid):
+                continue
+            novels.append({
+                "novel_title":   title,
+                "role_mention":  details.get("discord_role_id", ""),
+                "host":          host,
+                "novel_link":    details.get("novel_url", ""),
+                "chapter_count": details.get("chapter_count", ""),
+                "last_chapter":  last,
+                "start_date":    details.get("start_date", ""),
+                "free_feed":     free,
+                "paid_feed":     paid,
+            })
+    return novels
 
 def main():
     parser = argparse.ArgumentParser()
@@ -144,11 +161,11 @@ def main():
         print(f"ERROR: environment variable {WEBHOOK_ENV} is not set", file=sys.stderr)
         sys.exit(1)
 
-    config = load_config()
     state  = load_state()
+    novels = load_novels()
 
-    for novel in config.get("novels", []):
-        novel_id  = novel.get("novel_id", novel.get("novel_title"))
+    for novel in novels:
+        novel_id = novel["novel_title"]
         last_chap = novel.get("last_chapter")
         if not last_chap:
             continue
