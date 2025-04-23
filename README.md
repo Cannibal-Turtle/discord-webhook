@@ -189,8 +189,7 @@ The workflow listens for:
    python new_arc_checker.py
    ```
 1. **New Extra Checker**
-   ```bash
-   python new_extra_checker.py
+   ```new_extra_checker.py
    ```
 3. **Completion Checker**
    ```yaml
