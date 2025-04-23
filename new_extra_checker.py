@@ -43,11 +43,12 @@ def find_released_extras(paid_feed, raw_kw):
 
 def process_extras(novel):
     paid_feed = feedparser.parse(novel["paid_feed"])
+    entries   = paid_feed.entries
 
     # 0) NSFW check
     is_nsfw = (
         novel["novel_title"] in get_nsfw_novels()
-        or nsfw_detected(free_feed.entries + paid_feed.entries, novel["novel_title"])
+        or nsfw_detected(entries, novel["novel_title"])
     )
     print(f"🕵️ is_nsfw={is_nsfw} for {novel['novel_title']}")
     base_mention = novel["role_mention"] + (f" | {NSFW_ROLE_ID}" if is_nsfw else "")
@@ -101,7 +102,7 @@ def process_extras(novel):
                 cm = "New extras and side stories just dropped"
 
         # — build the “remaining” line —
-        base = f"***[《{base_mention}》]({novel['novel_link']})***"
+        base = f"***[《{novel['novel_title']}》]({novel['novel_link']})***"
         extra_label = "extra" if tot_ex == 1 else "extras"
         ss_label    = "side story" if tot_ss == 1 else "side stories"
         remaining = (
