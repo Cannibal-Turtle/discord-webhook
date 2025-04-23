@@ -185,12 +185,12 @@ The workflow listens for:
 
 **Jobs:**
 1. **New Arc Checker**
-   ```python
-   new_arc_checker.py
+   ```fix
+   python new_arc_checker.py
    ```
 1. **New Extra Checker**
-   ```python
-   new_extra_checker.py
+   ```fix
+   python new_extra_checker.py
    ```
 3. **Completion Checker**
    ```yaml
