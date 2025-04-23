@@ -99,7 +99,7 @@ def build_paid_completion(novel, chap_field, chap_link, duration: str):
     chap_text = chap_field.replace("\u00A0", " ")
     return (
         f"{role} | {comp_role}\n"
-        "## ꧁ᐟᐟ ⟢  Completion Announcement  :blueberries: ˚. ᵎᵎ˖ˎˊ-\n"
+        "## ꧁ᐟᐟ ⟢  Completion Announcement  :blueberries: ◌ྀ˚. ᵎᵎ˖ˎˊ-\n"
         "◈· ─ · ─ · ─ · ❁ · ─ ·𖥸· ─ · ❁ · ─ · ─ · ─ ·◈\n"
         f"***『[{title}]({link})』— officially completed!***\n\n"
         f"*The last chapter, [{chap_text}]({chap_link}), has now been released.\n"
