@@ -1,9 +1,10 @@
 # Discord Novel Arc & Completion Notifier
 
-Automatically monitors paid and free RSS feeds for your novels, tracks arc history, side stories/extras published, and fires two types of Discord announcements via webhook:
+Automatically monitors paid and free RSS feeds for your novels, tracks arc history, side stories/extras published, and fires three types of Discord announcements via webhook:
 
 1. **New Arc Alerts** (locked‑advance content)
-2. **Completion Announcements** when the final chapter appears (paid) and full series unlocks (free)
+2. **Side Stories/Extra Alerts** (locked‑advance content)
+3. **Completion Announcements** when the final chapter appears (paid) and full series unlocks (free)
 
 All notifications use a single Discord webhook URL stored in the `DISCORD_WEBHOOK` secret.
 
