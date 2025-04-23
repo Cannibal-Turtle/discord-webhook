@@ -95,7 +95,7 @@ py-modules = [
   "novel_mappings",
 ]
 ```
-With that in place, you do not need a local `config.json`—both `new_arc_rss_checker.py` and `completed_novel_checker.py` will import `HOSTING_SITE_DATA` directly.
+With that in place, you do not need a local `config.json`—both `new_arc_checker.py` and `completed_novel_checker.py` will import `HOSTING_SITE_DATA` directly.
 
 ### 📋 Option 2: Configuration to Add a New Novel to Track
 
@@ -124,7 +124,7 @@ Only if you choose not to install the mapping package.
 }
 ```
 
-2. Script changes in both `new_arc_rss_checker.py` and `completed_novel_checker.py`:
+2. Script changes in both `new_arc_checker.py` and `completed_novel_checker.py`:
 - Remove the mapping-package import:
    ```diff
    - from novel_mappings import HOSTING_SITE_DATA
@@ -185,9 +185,13 @@ The workflow listens for:
 **Jobs:**
 1. **New Arc Checker**
    ```bash
-   python new_arc_rss_checker.py
+   python new_arc_checker.py
    ```
-2. **Completion Checker**
+1. **New Extra Checker**
+   ```bash
+   python new_extra_checker.py
+   ```
+3. **Completion Checker**
    ```yaml
    - name: Paid Completion
      run: python completed_novel_checker.py --feed paid
