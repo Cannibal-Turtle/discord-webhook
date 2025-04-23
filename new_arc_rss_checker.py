@@ -3,24 +3,13 @@ import feedparser
 import os
 import json
 import re
-from novel_mappings import HOSTING_SITE_DATA
+from novel_mappings import HOSTING_SITE_DATA, get_nsfw_novels
 
-STATE_PATH = "state.json"
 ONGOING_ROLE = "<@&1329502951764525187>"
+NSFW_ROLE_ID = "<@&1343352825811439616>"
 
 # === HELPER FUNCTIONS ===
-
-def load_state(path=STATE_PATH):
-    try:
-        with open(path, encoding="utf-8") as f:
-            return json.load(f)
-    except FileNotFoundError:
-        return {}
-
-def save_state(state, path=STATE_PATH):
-    with open(path, "w", encoding="utf-8") as f:
-        json.dump(state, f, indent=2, ensure_ascii=False)
-        
+     
 def load_history(history_file):
     """Loads the novel's arc history from JSON file."""
     if os.path.exists(history_file):
@@ -110,23 +99,6 @@ def strip_any_number_prefix(s: str) -> str:
     """
     return re.sub(r"^.*?\d+[^\w\s]*\s*", "", s)
 
-def find_released_extras(paid_feed, raw_kw):
-    """
-    Scan <chaptername>, <nameextend>, <volume> for raw_kw + any number,
-    return the set of numbers seen (as ints).
-    """
-    if not raw_kw:
-        return set()
-    pattern = re.compile(rf"(?i)\b{raw_kw}s?\b.*?(\d+)")
-    seen = set()
-    for e in paid_feed.entries:
-        for field in ("chaptername","nameextend","volume"):
-            val = e.get(field,"") or ""
-            m = pattern.search(val)
-            if m:
-                seen.add(int(m.group(1)))
-    return seen
-
 def next_arc_number(history):
     """Returns last announced arc number + 1, or 1 if none."""
     last = history.get("last_announced", "")
@@ -147,94 +119,23 @@ def next_arc_number(history):
 
 # === PROCESS NOVEL FUNCTION ===
 
-def process_novel(novel, state):
+def process_arc(novel):
     print(f"\n=== Processing novel: {novel['novel_title']} ===")
     # 0. parse feeds
     free_feed = feedparser.parse(novel["free_feed"])
     paid_feed = feedparser.parse(novel["paid_feed"])
     print(f"🌐 Fetched feeds: {len(free_feed.entries)} free entries, {len(paid_feed.entries)} paid entries")
 
+    # 1) NSFW check
+    is_nsfw = (
+        novel["novel_title"] in get_nsfw_novels()
+        or nsfw_detected(free_feed.entries + paid_feed.entries, novel["novel_title"])
+    )
+    print(f"🕵️ is_nsfw={is_nsfw} for {novel['novel_title']}")
+    base_mention = novel["role_mention"] + (f" | {NSFW_ROLE_ID}" if is_nsfw else "")
+
     # 2. load history immediately after fetching feeds
     history = load_history(novel["history_file"])
-
-    # --- Extras / Side‑Stories Announcement Logic (uses last_chapter) ---
-    # 1) see what’s actually dropped in the feed
-    dropped_extras = find_released_extras(paid_feed, "extra")
-    dropped_ss     = find_released_extras(paid_feed, "side story")
-    max_ex = max(dropped_extras) if dropped_extras else 0
-    max_ss = max(dropped_ss)     if dropped_ss     else 0
-
-    # 2) only announce when something new appears
-    state = load_state()
-    novel_id = novel.get("novel_id", novel.get("novel_title"))
-    last = state.get(novel_id, {}).get("last_extra_announced", 0)
-    current = max(max_ex, max_ss)
-    if current > last:
-        # — extract totals from config —
-        m_ex   = re.search(r"(\d+)\s*extras?",       novel["chapter_count"], re.IGNORECASE)
-        m_ss   = re.search(r"(\d+)\s*(?:side story|side stories)", novel["chapter_count"], re.IGNORECASE)
-        tot_ex = int(m_ex.group(1)) if m_ex else 0
-        tot_ss = int(m_ss.group(1)) if m_ss else 0
-
-        # — build the header label —
-        parts = []
-        if tot_ex: parts.append("EXTRA" if tot_ex == 1 else "EXTRAS")
-        if tot_ss: parts.append("SIDE STORY" if tot_ss == 1 else "SIDE STORIES")
-        disp_label = " + ".join(parts)
-
-        # — decide which “dropped” message to use —
-        new_ex = max_ex > last
-        new_ss = max_ss > last
-    
-        if new_ex and not new_ss:
-            if max_ex == 1:
-                cm = "The first of those extras just dropped"
-            elif max_ex < tot_ex:
-                cm = "New extras just dropped"
-            else:
-                cm = "All extras just dropped"
-        elif new_ss and not new_ex:
-            if max_ss == 1:
-                cm = "The first of those side stories just dropped"
-            elif max_ss < tot_ss:
-                cm = "New side stories just dropped"
-            else:
-                cm = "All side stories just dropped"
-        else:  # both new_ex and new_ss
-            if max_ex == tot_ex and max_ss == tot_ss:
-                cm = "All extras and side stories just dropped"
-            else:
-                cm = "New extras and side stories just dropped"
-
-        # — build the “remaining” line —
-        base = f"***[《{novel['novel_title']}》]({novel['novel_link']})***"
-        extra_label = "extra" if tot_ex == 1 else "extras"
-        ss_label    = "side story" if tot_ss == 1 else "side stories"
-        remaining = (
-            f"{base} is almost at the very end — just "
-            f"{tot_ex} {extra_label} and {tot_ss} {ss_label} left before we wrap up this journey for good."
-        )
-
-        # — assemble & send the Discord message —
-        msg = (
-            f"{novel['role_mention']} | {ONGOING_ROLE}\n"
-            f"## :lotus:･ﾟ✧ NEW {disp_label} JUST DROPPED ✧ﾟ･:lotus:\n"
-            f"{remaining}\n"
-            f"{cm} in {novel['host']}'s advance access today. "
-            f"Thanks for sticking with this one ‘til the end. It means a lot. "
-            f"Please show your final love and support by leaving comments on the site~ :heart_hands:"
-        )
-        requests.post(
-            os.getenv("DISCORD_WEBHOOK"),
-            json={"content": msg, "flags": 4, "allowed_mentions": {"parse": ["roles"]}}
-        )
-
-        state.setdefault(novel_id, {
-            "last_extra_announced": 0
-        })["last_extra_announced"] = current
-        save_state(state)
-        print(f"📘 Updated state.json: {novel_id} last_extra_announced → {current}")
-    # --- End Extras Logic ---
 
     # Skip arc detection if no history file is configured/found
     history_file = novel.get("history_file")
@@ -329,7 +230,7 @@ def process_novel(novel, state):
     locked_md = "\n".join(locked_lines)
 
     message = (
-        f"{novel['role_mention']} | {ONGOING_ROLE}\n"
+        f"{base_mention} | {ONGOING_ROLE}\n"
         "## :loudspeaker: NEW ARC ALERT˚ · .˚ ༘:butterfly:⋆｡˚\n"
         f"***《World {world_number}》is Live for***\n"
         f"### [{novel['novel_title']}]({novel['novel_link']}) <:Hehe:1329429547229122580>\n"
@@ -364,32 +265,20 @@ def process_novel(novel, state):
         print(f"❌ Failed to send Discord notification (status {resp.status_code})")
         
 # === LOAD & RUN ===
-def load_novels():
-    """Builds the novel list straight from novel_mappings."""
-    novels = []
-    for host, host_data in HOSTING_SITE_DATA.items():
-        for title, details in host_data.get("novels", {}).items():
-            # skip if no free/paid feed configured
-            if not details.get("free_feed") or not details.get("paid_feed"):
-                continue
-            novels.append({
-                "novel_title":   title,
-                "role_mention":  details.get("discord_role_id", ""),
-                "host":          host,
-                "free_feed":     details["free_feed"],
-                "paid_feed":     details["paid_feed"],
-                "novel_link":    details.get("novel_url", ""),
-                "chapter_count": details.get("chapter_count", ""),
-                "last_chapter":  details.get("last_chapter", ""),
-                "start_date":    details.get("start_date", ""),
-                "custom_emoji":  details.get("custom_emoji", ""),
-                "discord_role_url": details.get("discord_role_url", ""),
-                "history_file":  details.get("history_file", "")
-            })
-    return novels
-
 if __name__ == "__main__":
-    state = load_state()
-    for novel in load_novels():
-        process_novel(novel, state)
-    save_state(state)
+    for host, host_data in HOSTING_SITE_DATA.items():
+        for title, d in host_data.get("novels", {}).items():
+            if not d.get("free_feed") or not d.get("paid_feed"):
+                continue
+            novel = {
+                "novel_title":     title,
+                "role_mention":    d.get("discord_role_id", ""),
+                "host":            host,
+                "free_feed":       d["free_feed"],
+                "paid_feed":       d["paid_feed"],
+                "novel_link":      d.get("novel_url", ""),
+                "custom_emoji":    d.get("custom_emoji", ""),
+                "discord_role_url":d.get("discord_role_url", ""),
+                "history_file":    d.get("history_file", "")
+            }
+            process_arc(novel)
