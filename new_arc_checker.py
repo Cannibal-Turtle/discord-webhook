@@ -134,14 +134,13 @@ def process_arc(novel):
     print(f"🕵️ is_nsfw={is_nsfw} for {novel['novel_title']}")
     base_mention = novel["role_mention"] + (f" | {NSFW_ROLE_ID}" if is_nsfw else "")
 
-    # 2. load history immediately after fetching feeds
-    history = load_history(novel["history_file"])
-
-    # Skip arc detection if no history file is configured/found
     history_file = novel.get("history_file")
-    if not history_file or not os.path.exists(history_file):
-        print(f"No history file for arcs ({history_file}), skipping arc detection for '{novel['novel_title']}'")
+    if not history_file:
+        print(f"No history_file configured for '{novel['novel_title']}', skipping arcs.")
         return
+
+    # 2. load history immediately after fetching feeds
+    history = load_history(history_file)
 
     # helper to detect new‐arc markers
     def is_new_marker(raw):
