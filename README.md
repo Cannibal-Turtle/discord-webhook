@@ -59,13 +59,14 @@ To allow the script to update the **novel history JSON files** and push changes 
 
 ---
 
-## 📂 User Setup Guide
+## 📂 User Setup Guide (Either One)
 
-### 📋 4. Configuration to Add a New Novel to Track
+### 📋 Install Mapping Package
 
-If you’d rather always pull the latest novel mappings from the `rss-feed` repo, install it directly:
-```bash
-pip install --upgrade git+https://github.com/user-name/repo-name.git@main
+If you’d rather always pull the latest novel mappings from another repo, in this case `rss-feed` repo, install it directly at `rss_to_discord.yml` :
+`pip install --upgrade git+https://github.com/user-name/repo-name.git@main`
+
+### 📋 Configuration to Add a New Novel to Track
 
 To add a new novel, update `config.json` with the following fields:
 
@@ -89,8 +90,15 @@ To add a new novel, update `config.json` with the following fields:
   ]
 }
 ```
+**Script changes for `config.json` mode**
 
-Each novel must have a **unique `history_file`** to store its arc history.
+**At the top** of both scripts (`new_arc_rss_checker.py` and `completed_novel_checker.py`), **remove**:
+   ```from novel_mappings import HOSTING_SITE_DATA```
+and add back:
+```CONFIG_PATH = "config.json"```
+Add the load_config() helper to replace `load_novel()` logic.
+
+> Each novel must have a **unique `history_file`** to store its arc history.
 
 ---
 ## 📑 Supported RSS Item Fields
