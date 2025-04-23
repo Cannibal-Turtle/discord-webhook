@@ -64,7 +64,33 @@ To allow the script to update the **novel history JSON files** and push changes 
 ### 📋 Install Mapping Package
 
 If you’d rather always pull the latest novel mappings from another repo, in this case `rss-feed` repo, install it directly at `rss_to_discord.yml` :
-`pip install --upgrade git+https://github.com/user-name/repo-name.git@main`
+```pip install --upgrade git+https://github.com/user-name/repo-name.git@main```
+Make sure the source repo has a toml file like `pyproject.toml` to tell pip there's a module `novel_mappings.py` here.
+
+```[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cannibal-turtle-rss-feed"
+version = "0.1.0"
+description = "Mapping data for feeds"
+authors = [ { name = "Cannibal Turtle" } ]
+readme = "README.md"
+requires-python = ">=3.7"
+license = { text = "MIT" }
+classifiers = [
+  "Programming Language :: Python :: 3",
+]
+
+[project.urls]
+Homepage = "https://github.com/Cannibal-Turtle/rss-feed"
+
+[tool.setuptools]
+# explicitly list each standalone .py you want installed
+py-modules = [
+  "novel_mappings",
+]```
 
 ### 📋 Configuration to Add a New Novel to Track
 
