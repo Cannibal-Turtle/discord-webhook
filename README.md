@@ -99,7 +99,9 @@ With that in place, you do not need a local `config.json`—both `new_arc_rss_ch
 
 ### 📋 Option 2: Configuration to Add a New Novel to Track
 
-To add a new novel, update `config.json` with the following fields:
+Only if you choose not to install the mapping package.
+
+1. Add or update config.json at the repo root:
 
 ```json
 {
@@ -121,10 +123,13 @@ To add a new novel, update `config.json` with the following fields:
   ]
 }
 ```
-**Script changes for `config.json` mode:**
-
+2. Script changes in both `new_arc_rss_checker.py` and `completed_novel_checker.py`:
+- Remove the mapping-package import:
+   ```diff
+   - from novel_mappings import HOSTING_SITE_DATA
+   ```
 **At the top** of both scripts (`new_arc_rss_checker.py` and `completed_novel_checker.py`), **remove**:
-   ```from novel_mappings import HOSTING_SITE_DATA```
+   ```difffrom novel_mappings import HOSTING_SITE_DATA```
 and add back:
 ```CONFIG_PATH = "config.json"```
 Add the load_config() helper to replace `load_novel()` logic.
