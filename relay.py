@@ -5,6 +5,13 @@ from fastapi import FastAPI, Request, HTTPException
 from discord import Intents
 from discord.ext import commands
 
+# debug print
+print("ENV VARS:", {
+    "BOT_TOKEN":       os.getenv("DISCORD_BOT_TOKEN"),
+    "CHANNEL_ID":      os.getenv("DISCORD_CHANNEL_ID"),
+    "WEBHOOK":         os.getenv("DISCORD_WEBHOOK"),
+})
+
 BOT_TOKEN   = os.getenv("DISCORD_BOT_TOKEN")
 CHANNEL_ID  = int(os.getenv("DISCORD_CHANNEL_ID", 0))
 
