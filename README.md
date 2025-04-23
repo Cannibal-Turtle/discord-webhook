@@ -67,7 +67,8 @@ If you’d rather always pull the latest novel mappings from another repo, in th
 ```pip install --upgrade git+https://github.com/user-name/repo-name.git@main```
 Make sure the source repo has a toml file like `pyproject.toml` to tell pip there's a module `novel_mappings.py` here.
 
-```[build-system]
+```toml
+[build-system]
 requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
@@ -90,7 +91,8 @@ Homepage = "https://github.com/Cannibal-Turtle/rss-feed"
 # explicitly list each standalone .py you want installed
 py-modules = [
   "novel_mappings",
-]```
+]
+```
 
 ### 📋 Configuration to Add a New Novel to Track
 
