@@ -1,17 +1,17 @@
 import os
-import threading
 import asyncio
 from fastapi import FastAPI, Request, HTTPException
 from discord import Intents
 from discord.ext import commands
 
-BOT_TOKEN   = os.getenv("DISCORD_BOT_TOKEN")
-CHANNEL_ID  = int(os.getenv("DISCORD_CHANNEL_ID", 0))
+BOT_TOKEN  = os.getenv("DISCORD_BOT_TOKEN")
+CHANNEL_ID = int(os.getenv("DISCORD_CHANNEL_ID", 0))
+PORT       = int(os.getenv("PORT", "8000"))
 
 if not BOT_TOKEN or not CHANNEL_ID:
     raise RuntimeError("Missing DISCORD_BOT_TOKEN or DISCORD_CHANNEL_ID")
 
-app = FastAPI()
+# --- Discord Bot Setup ---
 intents = Intents.default()
 bot = commands.Bot(command_prefix="!", intents=intents)
 _ready = asyncio.Event()
@@ -21,9 +21,12 @@ async def on_ready():
     print(f"✅ Logged in as {bot.user}")
     _ready.set()
 
+# --- FastAPI Setup ---
+app = FastAPI()
+
 @app.post("/webhook")
 async def relay_webhook(req: Request):
-    data = await req.json()
+    data    = await req.json()
     content = data.get("content")
     if content is None:
         raise HTTPException(400, "Missing content")
@@ -36,13 +39,12 @@ async def relay_webhook(req: Request):
     )
     return {"status": "ok"}
 
-def start_http_server():
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=int(os.getenv("PORT", "8000")))
+@app.on_event("startup")
+async def start_discord_bot():
+    # Launch the bot in the background
+    asyncio.create_task(bot.start(BOT_TOKEN))
 
 if __name__ == "__main__":
-    # 1) Fire up HTTP in the background
-    thread = threading.Thread(target=start_http_server, daemon=True)
-    thread.start()
-    # 2) Then block here running the Discord bot
-    bot.run(BOT_TOKEN)
+    import uvicorn
+    # This will now run in the main thread and print all logs
+    uvicorn.run(app, host="0.0.0.0", port=PORT, log_level="info")
