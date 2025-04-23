@@ -59,13 +59,15 @@ To allow the script to update the **novel history JSON files** and push changes 
 
 ---
 
-## 📂 User Setup Guide (Either One)
+## 📂 User Setup Guide (pick one)
 
-### 📋 Install Mapping Package
+### Option 1:📋 Install Mapping Package
 
-If you’d rather always pull the latest novel mappings from another repo, in this case `rss-feed` repo, install it directly at `rss_to_discord.yml` :
-```pip install --upgrade git+https://github.com/user-name/repo-name.git@main```
-Make sure the source repo has a toml file like `pyproject.toml` to tell pip there's a module `novel_mappings.py` here.
+If you’d rather always pull the latest `novel_mappings.py` from the rss-feed repo, add this to your CI’s install step:
+```
+pip install --upgrade git+https://github.com/Cannibal-Turtle/rss-feed.git@main
+```
+Your rss-feed repo needs a 'pyproject.toml` at its root, for example
 
 ```toml
 [build-system]
@@ -93,8 +95,9 @@ py-modules = [
   "novel_mappings",
 ]
 ```
+With that in place, you do not need a local `config.json`—both `new_arc_rss_checker.py` and `completed_novel_checker.py` will import `HOSTING_SITE_DATA` directly.
 
-### 📋 Configuration to Add a New Novel to Track
+### 📋 Option 2: Configuration to Add a New Novel to Track
 
 To add a new novel, update `config.json` with the following fields:
 
