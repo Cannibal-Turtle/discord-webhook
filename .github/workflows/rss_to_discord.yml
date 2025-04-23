@@ -40,7 +40,35 @@ jobs:
       - name: Run Arc Checker
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
-        run: python new_arc_rss_checker.py
+        run: python new_arc_checker.py
+
+  extra_checker:
+    runs-on: ubuntu-latest
+    if: >
+      github.event_name == 'schedule' ||
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'repository_dispatch' && github.event.client_payload.feed == 'paid')
+    concurrency:
+      group: rss-to-discord-extra
+      cancel-in-progress: true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      - name: Install dependencies
+        run: |
+          pip install feedparser requests
+          pip install --upgrade git+https://github.com/Cannibal-Turtle/rss-feed.git@main
+
+      - name: Run Extra Checker
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        run: python new_extra_checker.py
 
   paid_completion:
     runs-on: ubuntu-latest
