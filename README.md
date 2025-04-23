@@ -67,7 +67,7 @@ If you’d rather always pull the latest `novel_mappings.py` from the rss-feed r
 ```
 pip install --upgrade git+https://github.com/Cannibal-Turtle/rss-feed.git@main
 ```
-Your rss-feed repo needs a 'pyproject.toml` at its root, for example
+Your rss-feed repo needs a `pyproject.toml` at its root, for example
 
 ```toml
 [build-system]
