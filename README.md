@@ -141,6 +141,7 @@ Only if you choose not to install the mapping package.
        process_novel(novel, state)
    save_state(state)
 ```
+
 > Each novel must have a **unique `history_file`** to store its arc history.
 
 ---
