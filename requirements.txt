@@ -1,0 +1,7 @@
+feedparser
+requests
+python-dateutil
+PyRSS2Gen
+aiohttp
+beautifulsoup4
+git+https://github.com/Cannibal-Turtle/rss-feed.git@main
