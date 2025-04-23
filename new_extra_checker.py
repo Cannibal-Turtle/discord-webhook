@@ -62,6 +62,11 @@ def process_extras(novel):
     # 2) only announce when something new appears
     state = load_state()
     novel_id = novel.get("novel_id", novel.get("novel_title"))
+    meta      = state.setdefault(novel_id, {})
+
+    # 🔒 cap to one announcement ever
+    if meta.get("extra_announced"):
+        return
     last = state.get(novel_id, {}).get("last_extra_announced", 0)
     current = max(max_ex, max_ss)
     if current > last:
@@ -125,7 +130,8 @@ def process_extras(novel):
         )
 
         # update state
-        state.setdefault(novel_id, {})["last_extra_announced"] = current
+        meta["last_extra_announced"] = current
+        meta["extra_announced"]      = True   # never fire again
         save_state(state)
 
 if __name__ == "__main__":
