@@ -3,8 +3,8 @@ import feedparser
 import os
 import json
 import re
+from novel_mappings import HOSTING_SITE_DATA
 
-CONFIG_PATH = "config.json"
 STATE_PATH = "state.json"
 ONGOING_ROLE = "<@&1329502951764525187>"
 
@@ -236,6 +236,12 @@ def process_novel(novel, state):
         print(f"📘 Updated state.json: {novel_id} last_extra_announced → {current}")
     # --- End Extras Logic ---
 
+    # Skip arc detection if no history file is configured/found
+    history_file = novel.get("history_file")
+    if not history_file or not os.path.exists(history_file):
+        print(f"No history file for arcs ({history_file}), skipping arc detection for '{novel['novel_title']}'")
+        return
+
     # helper to detect new‐arc markers
     def is_new_marker(raw):
         # word-boundary 001, (1), or trailing .1
@@ -357,19 +363,33 @@ def process_novel(novel, state):
     else:
         print(f"❌ Failed to send Discord notification (status {resp.status_code})")
         
-# === MAIN PROCESS ===
-def load_config(path=CONFIG_PATH):
-    try:
-        with open(path, encoding="utf-8") as f:
-            return json.load(f)
-    except FileNotFoundError:
-        print(f"ERROR: cannot open {path}", file=sys.stderr)
-        sys.exit(1)
-        
-config = load_config()
-state = load_state()
+# === LOAD & RUN ===
+def load_novels():
+    """Builds the novel list straight from novel_mappings."""
+    novels = []
+    for host, host_data in HOSTING_SITE_DATA.items():
+        for title, details in host_data.get("novels", {}).items():
+            # skip if no free/paid feed configured
+            if not details.get("free_feed") or not details.get("paid_feed"):
+                continue
+            novels.append({
+                "novel_title":   title,
+                "role_mention":  details.get("discord_role_id", ""),
+                "host":          host,
+                "free_feed":     details["free_feed"],
+                "paid_feed":     details["paid_feed"],
+                "novel_link":    details.get("novel_url", ""),
+                "chapter_count": details.get("chapter_count", ""),
+                "last_chapter":  details.get("last_chapter", ""),
+                "start_date":    details.get("start_date", ""),
+                "custom_emoji":  details.get("custom_emoji", ""),
+                "discord_role_url": details.get("discord_role_url", ""),
+                "history_file":  details.get("history_file", "")
+            })
+    return novels
 
-for novel in config.get("novels", []):
-    process_novel(novel, state)
-    
-save_state(state)
+if __name__ == "__main__":
+    state = load_state()
+    for novel in load_novels():
+        process_novel(novel, state)
+    save_state(state)
