@@ -91,6 +91,7 @@ def build_paid_completion(novel, chap_field, chap_link, duration: str):
     title     = novel.get("novel_title", "")
     link      = novel.get("novel_link", "")
     host      = novel.get("host", "")
+    discord_url = novel.get("discord_role_url", "")
     count     = novel.get("chapter_count", "the entire series")
     comp_role = COMPLETE_ROLE
 
@@ -103,6 +104,8 @@ def build_paid_completion(novel, chap_field, chap_link, duration: str):
         f"***『[{title}]({link})』— officially completed!***\n\n"
         f"*The last chapter, [{chap_text}]({chap_link}), has now been released.\n"
         f"After {duration} of updates, {title} is now fully translated with {count}! Thank you for coming on this journey and for your continued support :pandalove: You can now visit {host} to binge all advance releases~♡*"
+        "✎﹏﹏﹏﹏﹏﹏﹏﹏\n"
+        f"-# Check out other translated projects at {discord_role_url} and react to get the latest updates~"
     )
   
 def build_free_completion(novel, chap_field, chap_link):
@@ -110,6 +113,7 @@ def build_free_completion(novel, chap_field, chap_link):
     title     = novel.get("novel_title", "")
     link      = novel.get("novel_link", "")
     host      = novel.get("host", "")
+    discord_url = novel.get("discord_role_url", "")
     count     = novel.get("chapter_count", "the entire series")
     comp_role = COMPLETE_ROLE
 
@@ -123,6 +127,31 @@ def build_free_completion(novel, chap_field, chap_link):
         f"*All {count} has been unlocked and ready for you to binge—completely free!  \n"
         f"Thank you all for your amazing support   :green_turtle_heart:  \n"
         f"Head over to {host} to dive straight in~♡*"
+        "✎﹏﹏﹏﹏﹏﹏﹏﹏\n"
+        f"-# Check out other translated projects at {discord_role_url} and react to get the latest updates~"
+    )
+
+def build_only_free_completion(novel, chap_field, chap_link, duration):
+    role        = novel.get("role_mention", "").strip()
+    comp_role   = COMPLETE_ROLE
+    title       = novel.get("novel_title", "")
+    link        = novel.get("novel_link", "")
+    host        = novel.get("host", "")
+    discord_url = novel.get("discord_role_url", "")
+    count       = novel.get("chapter_count", "the entire series")
+
+    # normalize NBSP
+    chap_text = chap_field.replace("\u00A0", " ")
+
+    return (
+        f"{role} | {comp_role}\n"
+        "## ↳˳;; ❝ Completion Announcement ᵕ̈ :kiwi: ೫˚∗༉‧₊˚\n"
+        "◈· ─ · ─ · ─ · ❁ · ─ ·𖥸· ─ · ❁ · ─ · ─ · ─ ·◈\n"
+        f"***『[{title}]({link})』— officially completed!***\n\n"
+        f"*The last chapter, [{chap_text}]({chap_link}), has now been released.\n"
+        f"After {duration} of updates, {title} is now fully translated with {count}! Thank you for coming on this journey and for your continued support :d_greena_luv_turtle: You can now visit {host} to binge on all the releases~♡*"
+        "✎﹏﹏﹏﹏﹏﹏﹏﹏\n"
+        f"-# Check out other translated projects at {discord_url} and react to get the latest updates~"
     )
 
 def load_novels():
@@ -148,6 +177,7 @@ def load_novels():
                 "start_date":    details.get("start_date", ""),
                 "free_feed":     free,
                 "paid_feed":     paid,
+                "discord_url":   details.get("discord_role_url", ""),
             })
     return novels
 
@@ -190,27 +220,71 @@ def main():
         # look for last_chapter
         for entry in feed.entries:
             chap_field = entry.get("chaptername") or entry.get("chapter", "")
-            if last_chap in chap_field:
-                # build message
-                if feed_type == "paid":
-                    if entry.get("published_parsed"):
-                        chap_date = datetime(*entry.published_parsed[:6])
-                    elif entry.get("updated_parsed"):
-                        chap_date = datetime(*entry.updated_parsed[:6])
-                    else:
-                        chap_date = datetime.now()
-                    duration = get_duration(novel.get("start_date",""), chap_date)
-                    msg = build_paid_completion(novel, chap_field, entry.link, duration)
+            if last_chap not in chap_field:
+                continue
+
+            # --- ONLY-FREE (no paid_feed) ---
+            if feed_type == "free" and not novel.get("paid_feed"):
+                if state.get(novel_id, {}).get("only_free"):
+                    print(f"→ skipping {novel_id} (only_free) — already notified")
+                    break
+
+                # compute duration…
+                if entry.get("published_parsed"):
+                    chap_date = datetime(*entry.published_parsed[:6])
+                elif entry.get("updated_parsed"):
+                    chap_date = datetime(*entry.updated_parsed[:6])
                 else:
-                    msg = build_free_completion(novel, chap_field, entry.link)
+                    chap_date = datetime.now()
+                duration = get_duration(novel.get("start_date",""), chap_date)
 
-                # send and record
+                msg = build_only_free_completion(novel, chap_field, entry.link, duration)
                 send_discord_message(webhook_url, msg)
-                print(f"✔️ Sent {feed_type}-completion announcement for {novel_id}")
-
-                state.setdefault(novel_id, {})[feed_type] = {
+                print(f"✔️ Sent only-free completion announcement for {novel_id}")
+                state.setdefault(novel_id, {})["only_free"] = {
                     "chapter": chap_field,
-                    "sent_at":  datetime.now().isoformat()
+                    "sent_at": datetime.now().isoformat()
+                }
+                save_state(state)
+                break
+
+            # --- PAID COMPLETE ---
+            elif feed_type == "paid":
+                if state.get(novel_id, {}).get("paid"):
+                    print(f"→ skipping {novel_id} (paid) — already notified")
+                    break
+
+                # compute duration…
+                if entry.get("published_parsed"):
+                    chap_date = datetime(*entry.published_parsed[:6])
+                elif entry.get("updated_parsed"):
+                    chap_date = datetime(*entry.updated_parsed[:6])
+                else:
+                    chap_date = datetime.now()
+                duration = get_duration(novel.get("start_date",""), chap_date)
+
+                msg = build_paid_completion(novel, chap_field, entry.link, duration)
+                send_discord_message(webhook_url, msg)
+                print(f"✔️ Sent paid-completion announcement for {novel_id}")
+                state.setdefault(novel_id, {})["paid"] = {
+                    "chapter": chap_field,
+                    "sent_at": datetime.now().isoformat()
+                }
+                save_state(state)
+                break
+
+            # --- STANDARD FREE (has paid_feed) ---
+            elif feed_type == "free":
+                if state.get(novel_id, {}).get("free"):
+                    print(f"→ skipping {novel_id} (free) — already notified")
+                    break
+
+                msg = build_free_completion(novel, chap_field, entry.link)
+                send_discord_message(webhook_url, msg)
+                print(f"✔️ Sent free-completion announcement for {novel_id}")
+                state.setdefault(novel_id, {})["free"] = {
+                    "chapter": chap_field,
+                    "sent_at": datetime.now().isoformat()
                 }
                 save_state(state)
                 break
