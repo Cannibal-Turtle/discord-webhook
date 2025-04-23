@@ -3,9 +3,11 @@ import json
 import re
 import requests
 import feedparser
+from novel_mappings import HOSTING_SITE_DATA, get_nsfw_novels
 
 STATE_PATH = "state.json"
 ONGOING_ROLE = "<@&1329502951764525187>"
+NSFW_ROLE_ID = "<@&1343352825811439616>"
 
 def load_state(path=STATE_PATH):
     try:
@@ -17,6 +19,14 @@ def load_state(path=STATE_PATH):
 def save_state(state, path=STATE_PATH):
     with open(path, "w", encoding="utf-8") as f:
         json.dump(state, f, indent=2, ensure_ascii=False)
+
+def nsfw_detected(feed_entries, novel_title):
+    """Checks if NSFW category exists for this novel."""
+    for entry in feed_entries:
+        if novel_title.lower() in entry.get("title", "").lower() and "nsfw" in entry.get("category","").lower():
+            print(f"⚠️ NSFW detected in entry: {entry.get('title')}")
+            return True
+    return False
 
 def find_released_extras(paid_feed, raw_kw):
     if not raw_kw:
@@ -33,6 +43,14 @@ def find_released_extras(paid_feed, raw_kw):
 
 def process_extras(novel):
     paid_feed = feedparser.parse(novel["paid_feed"])
+
+    # 0) NSFW check
+    is_nsfw = (
+        novel["novel_title"] in get_nsfw_novels()
+        or nsfw_detected(free_feed.entries + paid_feed.entries, novel["novel_title"])
+    )
+    print(f"🕵️ is_nsfw={is_nsfw} for {novel['novel_title']}")
+    base_mention = novel["role_mention"] + (f" | {NSFW_ROLE_ID}" if is_nsfw else "")
 
     # 1) see what’s actually dropped in the feed
     dropped_extras = find_released_extras(paid_feed, "extra")
@@ -83,7 +101,7 @@ def process_extras(novel):
                 cm = "New extras and side stories just dropped"
 
         # — build the “remaining” line —
-        base = f"***[《{novel['novel_title']}》]({novel['novel_link']})***"
+        base = f"***[《{base_mention}》]({novel['novel_link']})***"
         extra_label = "extra" if tot_ex == 1 else "extras"
         ss_label    = "side story" if tot_ss == 1 else "side stories"
         remaining = (
@@ -93,7 +111,7 @@ def process_extras(novel):
 
         # — assemble & send the Discord message —
         msg = (
-            f"{novel['role_mention']} | {ONGOING_ROLE}\n"
+            f"{base_mention} | {ONGOING_ROLE}\n"
             f"## :lotus:･ﾟ✧ NEW {disp_label} JUST DROPPED ✧ﾟ･:lotus:\n"
             f"{remaining}\n"
             f"{cm} in {novel['host']}'s advance access today. "
@@ -110,7 +128,6 @@ def process_extras(novel):
         save_state(state)
 
 if __name__ == "__main__":
-    from novel_mappings import HOSTING_SITE_DATA
     novels = []
     for host, host_data in HOSTING_SITE_DATA.items():
         for title, d in host_data.get("novels", {}).items():
