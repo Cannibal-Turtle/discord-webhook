@@ -128,12 +128,19 @@ Only if you choose not to install the mapping package.
    ```diff
    - from novel_mappings import HOSTING_SITE_DATA
    ```
-**At the top** of both scripts (`new_arc_rss_checker.py` and `completed_novel_checker.py`), **remove**:
-   ```difffrom novel_mappings import HOSTING_SITE_DATA```
-and add back:
-```CONFIG_PATH = "config.json"```
-Add the load_config() helper to replace `load_novel()` logic.
-
+- Re-add your CONFIG_PATH constant:
+   ```diff
+   + CONFIG_PATH = "config.json"
+   ```
+- Bring back `load_config()` helper (which reads config.json).
+- Swap the bottom if `__name__ == "__main__":` block to loop over:
+  ```python
+   config = load_config()
+   state  = load_state()
+   for novel in config["novels"]:
+       process_novel(novel, state)
+   save_state(state)
+```
 > Each novel must have a **unique `history_file`** to store its arc history.
 
 ---
