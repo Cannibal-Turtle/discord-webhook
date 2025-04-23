@@ -145,7 +145,7 @@ def build_only_free_completion(novel, chap_field, chap_link, duration):
 
     return (
         f"{role} | {comp_role}\n"
-        "## ⁺‧ ༻✦•┈๑☽₊˚ ཐི⋆Completion Announcement⋆ཋྀ ˚₊‧⁺ :kiwi: ∗༉‧₊˚\n"
+        "## ⁺‧ ༻•┈๑☽₊˚ ⌞Completion Announcement⋆ཋྀ ˚₊‧⁺ :kiwi: ∗༉‧₊˚\n"
         "◈· ─ · ─ · ─ · ❁ · ─ ·𖥸· ─ · ❁ · ─ · ─ · ─ ·◈\n"
         f"***『[{title}]({link})』— officially completed!***\n\n"
         f"*The last chapter, [{chap_text}]({chap_link}), has now been released.\n"
