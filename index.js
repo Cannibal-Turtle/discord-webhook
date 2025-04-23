@@ -10,8 +10,9 @@ const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 
 async function doAllChecks() {
   const ch = await client.channels.fetch(process.env.DISCORD_CHANNEL_ID);
-  await runFreeChecker(ch);
-  await runPaidChecker(ch);
+  await runExtraChecker(ch);
+  await runArcChecker(ch);
+  await runCompletionChecker(ch);
 }
 
 client.once("ready", () => {
