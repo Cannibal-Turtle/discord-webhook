@@ -118,7 +118,7 @@ To add a new novel, update `config.json` with the following fields:
   ]
 }
 ```
-**Script changes for `config.json` mode**
+**Script changes for `config.json` mode:**
 
 **At the top** of both scripts (`new_arc_rss_checker.py` and `completed_novel_checker.py`), **remove**:
    ```from novel_mappings import HOSTING_SITE_DATA```
