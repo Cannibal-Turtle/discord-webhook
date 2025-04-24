@@ -59,11 +59,19 @@ async def main():
             timestamp   = dateparser.parse(pubdate_raw).isoformat() if pubdate_raw else None
 
             # ─── Truncate the quoted comment so title <= 256 chars ──────────
-            full_title = f"❛❛{comment_txt}❜❜"
-            if len(full_title) > 256:
-                # leave room for the closing quotes
-                truncated = full_title[:254]  # 254 + "❜❜" = 256
-                full_title = truncated.rstrip("❜") + "❜❜"
+            start_marker = "❛❛"
+            end_marker   = "❜❜"
+            ellipsis     = "..."
+            # compute how many chars of comment_txt we can keep
+            # total max = 256, minus markers and ellipsis
+            content_max = 256 - len(start_marker) - len(end_marker) - len(ellipsis)
+            # if too long, truncate and add "..."
+            if len(comment_txt) > content_max:
+                truncated = comment_txt[:content_max].rstrip()
+                safe_comment = truncated + ellipsis
+            else:
+                safe_comment = comment_txt
+            full_title = f"{start_marker}{safe_comment}{end_marker}"
 
             # ─── Build the embed dict (no author icon_url) ────────────────
             embed = {
