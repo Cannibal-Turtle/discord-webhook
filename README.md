@@ -221,7 +221,7 @@ We’ve just added three standalone Python bots (migrated from MonitoRSS) that p
 |----------------------------|----------------------------------------------------|
 | `bot_free_chapters.py`     | Posts new **free** chapters (🔓) in oldest→newest order. |
 | `bot_paid_chapters.py`     | Posts new **advance/paid** chapters (🔒) in oldest→newest order. |
-| `bot_comments.py`          | Posts new comments with:
+| `bot_comments.py`          | Posts new comments with from hosting sites.
 
 ### 🔧 What You Need to Add
 
