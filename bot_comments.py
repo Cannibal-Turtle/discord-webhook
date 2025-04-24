@@ -29,11 +29,23 @@ def save_state(state):
         json.dump(state, f, indent=2, ensure_ascii=False)
 
 async def send_new_comments():
-    state  = load_state()
-    feed   = feedparser.parse(RSS_URL)
-    # feed.entries is newest→oldest by default; reverse for oldest→newest
+    state   = load_state()
+    feed    = feedparser.parse(RSS_URL)
+
+    # 1) Chronological order (oldest → newest)
     entries = list(reversed(feed.entries))
 
+    # 2) Compute only‐new slice once
+    guids   = [(e.get("guid") or e.get("id")) for e in entries]
+    last    = state.get("last_guid")
+    to_send = entries[guids.index(last)+1:] if last in guids else entries
+
+    # 3) Early exit if nothing new
+    if not to_send:
+        print("🛑 No new comments—skipping Discord login.")
+        return
+
+    # 4) Connect the bot only when there are messages to send
     intents = discord.Intents.default()
     bot     = discord.Client(intents=intents)
 
@@ -44,38 +56,24 @@ async def send_new_comments():
             print(f"❌ Cannot find channel {CHANNEL_ID}")
             await bot.close()
             return
-            
-        # 1) Chronological order (oldest → newest)
-        entries = list(reversed(feed.entries))
-        
-        # 2) Build GUID list and slice out only new entries
-        guids   = [(e.get("guid") or e.get("id")) for e in entries]
-        last    = state.get("last_guid")
-        if last in guids:
-            idx     = guids.index(last)
-            to_send = entries[idx+1:]
-        else:
-            to_send = entries
-        
-        # 3) Post each new comment in order
+
         new_last = last
         for entry in to_send:
             guid        = entry.get("guid") or entry.get("id")
             title       = entry.get("title","").strip()
             role_id     = entry.get("discord_role_id","").strip()
             content     = f"New comment for **{title}** || {role_id}"
-        
+
             author      = entry.get("author") or entry.get("dc_creator","")
             chapter     = entry.get("chapter","").strip()
             comment_txt = entry.get("description","").strip()
             reply_chain = entry.get("reply_chain","").strip()
             host        = entry.get("host","").strip()
             host_logo   = (entry.get("hostLogo") or entry.get("hostlogo") or {}).get("url","")
-        
-            # pull the real pubDate
+
             pubdate_raw = getattr(entry, "published", None)
             timestamp   = dateparser.parse(pubdate_raw) if pubdate_raw else None
-        
+
             embed = Embed(
                 title=f"❛❛{comment_txt}❜❜",
                 description=reply_chain or discord.Embed.Empty,
@@ -84,12 +82,12 @@ async def send_new_comments():
             )
             embed.set_author(name=f"comment by {author} 🕊️ {chapter}")
             embed.set_footer(text=host, icon_url=host_logo)
-        
+
             await channel.send(content=content, embed=embed)
             print(f"📨 Sent comment: {guid}")
             new_last = guid
-        
-        # 4) Commit the new checkpoint
+
+        # 5) Update state once at the end
         if new_last and new_last != state.get("last_guid"):
             state["last_guid"] = new_last
             save_state(state)
