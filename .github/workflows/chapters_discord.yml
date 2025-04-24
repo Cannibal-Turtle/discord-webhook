@@ -1,8 +1,5 @@
 name: Check RSS & Send Chapters
 
-# Fire on a daily cron _and_ whenever you do:
-#   gh api repos/:owner/:repo/dispatches -f event_type=trigger-discord-notify -f client_payload='{"feed":"free"}'
-#   gh api repos/:owner/:repo/dispatches -f event_type=trigger-discord-notify -f client_payload='{"feed":"paid"}'
 on:
   repository_dispatch:
     types: [trigger-discord-notify]
@@ -26,6 +23,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+        with:
+          persist-credentials: true
+          fetch-depth: 0
 
       - name: Setup Python
         uses: actions/setup-python@v4
@@ -42,6 +42,16 @@ jobs:
           DISCORD_FREE_CHAPTERS_CHANNEL: ${{ secrets.DISCORD_FREE_CHAPTERS_CHANNEL }}
         run: python bot_free_chapters.py
 
+      - name: Commit updated state file
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add state_free_chapters.json
+          git diff --quiet --staged || git commit -m "ci: update state"
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
   paid_chapters:
     if: >
       github.event_name == 'schedule' ||
@@ -50,6 +60,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+        with:
+          persist-credentials: true
+          fetch-depth: 0
 
       - name: Setup Python
         uses: actions/setup-python@v4
@@ -65,3 +78,13 @@ jobs:
           DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
           DISCORD_ADVANCE_CHAPTERS_CHANNEL: ${{ secrets.DISCORD_ADVANCE_CHAPTERS_CHANNEL }}
         run: python bot_paid_chapters.py
+
+      - name: Commit updated state file
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add state_paid_chapters.json
+          git diff --quiet --staged || git commit -m "ci: update state"
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
