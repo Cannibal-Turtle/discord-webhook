@@ -4,7 +4,7 @@ on:
   schedule:
     - cron: '0 * * * *'
   repository_dispatch:
-    types: [trigger-discord-notify]
+    types: [trigger-discord-comments]
   workflow_dispatch:
 
 permissions:
@@ -19,7 +19,7 @@ jobs:
     if: >
       github.event_name == 'schedule' ||
       github.event_name == 'workflow_dispatch' ||
-      (github.event_name == 'repository_dispatch' && github.event.client_payload.feed == 'comments')
+      github.event_name == 'repository_dispatch'
     runs-on: ubuntu-latest
 
     steps:
