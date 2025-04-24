@@ -13,7 +13,6 @@ import argparse
 import json
 import os
 import sys
-
 import feedparser
 import requests
 from datetime import datetime
@@ -22,6 +21,8 @@ from novel_mappings import HOSTING_SITE_DATA
 
 STATE_PATH  = "state.json"
 WEBHOOK_ENV = "DISCORD_WEBHOOK"
+BOT_TOKEN_ENV   = "DISCORD_BOT_TOKEN"
+CHANNEL_ID_ENV  = "DISCORD_CHANNEL_ID"
 COMPLETE_ROLE = "<@&1329391480435114005>"
 
 def load_state(path=STATE_PATH):
@@ -44,6 +45,22 @@ def send_discord_message(webhook_url: str, content: str):
     }
     resp = requests.post(webhook_url, json=payload)
     resp.raise_for_status()
+
+def send_bot_message(bot_token: str, channel_id: str, content: str):
+    """
+    Post the same `content` via your bot account to `channel_id`.
+    """
+    url = f"https://discord.com/api/v10/channels/{channel_id}/messages"
+    headers = {
+        "Authorization": f"Bot {bot_token}",
+        "Content-Type":  "application/json"
+    }
+    payload = {
+        "content": content,
+        "allowed_mentions": { "parse": ["roles"] }
+    }
+    r = requests.post(url, headers=headers, json=payload)
+    r.raise_for_status()
 
 def get_duration(start_date_str: str, end_date: datetime) -> str:
     """
@@ -191,6 +208,10 @@ def main():
         print(f"ERROR: environment variable {WEBHOOK_ENV} is not set", file=sys.stderr)
         sys.exit(1)
 
+    # load bot info (optional)
+    bot_token  = os.getenv(BOT_TOKEN_ENV)
+    channel_id = os.getenv(CHANNEL_ID_ENV)
+
     state  = load_state()
     novels = load_novels()
 
@@ -239,7 +260,11 @@ def main():
                 duration = get_duration(novel.get("start_date",""), chap_date)
 
                 msg = build_only_free_completion(novel, chap_field, entry.link, duration)
+                # send via webhook
                 send_discord_message(webhook_url, msg)
+                # also send via bot (if configured)
+                if bot_token and channel_id:
+                    send_bot_message(bot_token, channel_id, msg)
                 print(f"✔️ Sent only-free completion announcement for {novel_id}")
                 state.setdefault(novel_id, {})["only_free"] = {
                     "chapter": chap_field,
@@ -264,7 +289,11 @@ def main():
                 duration = get_duration(novel.get("start_date",""), chap_date)
 
                 msg = build_paid_completion(novel, chap_field, entry.link, duration)
+                # send via webhook
                 send_discord_message(webhook_url, msg)
+                # also send via bot (if configured)
+                if bot_token and channel_id:
+                    send_bot_message(bot_token, channel_id, msg)
                 print(f"✔️ Sent paid-completion announcement for {novel_id}")
                 state.setdefault(novel_id, {})["paid"] = {
                     "chapter": chap_field,
@@ -280,7 +309,11 @@ def main():
                     break
 
                 msg = build_free_completion(novel, chap_field, entry.link)
+                # send via webhook
                 send_discord_message(webhook_url, msg)
+                # also send via bot (if configured)
+                if bot_token and channel_id:
+                    send_bot_message(bot_token, channel_id, msg)
                 print(f"✔️ Sent free-completion announcement for {novel_id}")
                 state.setdefault(novel_id, {})["free"] = {
                     "chapter": chap_field,
