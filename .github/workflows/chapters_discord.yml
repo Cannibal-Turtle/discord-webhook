@@ -4,18 +4,19 @@ on:
   repository_dispatch:
     types: [trigger-discord-notify]
   schedule:
-    - cron: '0 15 * * *'
+    - cron: '0 15 * * *'      # daily at 15:00 UTC
   workflow_dispatch:
 
 permissions:
   contents: write
 
-concurrency:
-  group: chapters-dispatch
-  cancel-in-progress: true
-
 jobs:
   free_chapters:
+    # cancel any prior free_chapters job, but leave paid_chapters alone
+    concurrency:
+      group: rss-to-discord-free
+      cancel-in-progress: true
+
     if: >
       github.event_name == 'schedule' ||
       github.event_name == 'workflow_dispatch' ||
@@ -48,12 +49,18 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git pull --rebase origin main
           git add state_free_chapters.json
-          git diff --quiet --staged || git commit -m "ci: update state"
+          git diff --quiet --staged || git commit -m "ci: update free state"
           git push origin main
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+
   paid_chapters:
+    # cancel any prior paid_chapters job, but leave free_chapters alone
+    concurrency:
+      group: rss-to-discord-paid
+      cancel-in-progress: true
+
     if: >
       github.event_name == 'schedule' ||
       github.event_name == 'workflow_dispatch' ||
@@ -86,8 +93,7 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git pull --rebase origin main
           git add state_paid_chapters.json
-          git diff --quiet --staged || git commit -m "ci: update state"
+          git diff --quiet --staged || git commit -m "ci: update paid state"
           git push origin main
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
