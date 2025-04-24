@@ -83,7 +83,8 @@ async def send_new_entries():
             embed.set_author(name=f"{translator}⋆. 𐙚")
             if thumb_url:
                 embed.set_thumbnail(url=thumb_url)
-            embed.set_footer(text=host, icon_url=host_logo)
+            footer_text = f"{host} | {pubdate_raw}"
+            embed.set_footer(text=footer_text, icon_url=host_logo)
 
             # ── button ─────────────────────────────────────────────────────────
             view = View()
