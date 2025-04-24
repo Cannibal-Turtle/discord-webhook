@@ -3,15 +3,22 @@ name: Check RSS & Send Comments
 on:
   schedule:
     - cron: '0 * * * *'      # hourly
+  repository_dispatch:
+    types: [trigger-discord-notify]
   workflow_dispatch:
 
 permissions:
   contents: write
 
+concurrency:
+  group: comments-feed
+  cancel-in-progress: true
+  
 jobs:
   comments:
     if: >
       github.event_name == 'schedule' ||
+      github.event_name == 'workflow_dispatch' ||
       (github.event_name == 'repository_dispatch' && github.event.client_payload.feed == 'comments')
     runs-on: ubuntu-latest
     steps:
