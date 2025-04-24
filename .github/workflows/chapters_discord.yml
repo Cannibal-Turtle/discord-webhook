@@ -51,7 +51,6 @@ jobs:
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          # always pull first, but don't fail if there's a conflict
           git pull --rebase origin main || true
           git add state_rss.json
           if git diff --cached --quiet; then
@@ -101,7 +100,6 @@ jobs:
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          # always pull first, but don't fail if there's a conflict
           git pull --rebase origin main || true
           git add state_rss.json
           if git diff --cached --quiet; then
