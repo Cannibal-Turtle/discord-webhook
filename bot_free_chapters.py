@@ -43,6 +43,18 @@ async def send_new_entries():
     feed  = feedparser.parse(RSS_URL)
     entries = list(reversed(feed.entries))  # oldest → newest
 
+    # 1) Compute list of GUIDs & slice out only the new entries
+    guids   = [(e.get("guid") or e.get("id")) for e in entries]
+    if last in guids:
+        to_send = entries[guids.index(last)+1:]
+    else:
+        to_send = entries
+
+    # 2) Early exit if nothing new
+    if not to_send:
+        print("🛑 No new free chapters—skipping Discord login.")
+        return
+
     # discord.py setup
     intents = discord.Intents.default()
     bot = discord.Client(intents=intents)
