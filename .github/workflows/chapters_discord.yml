@@ -4,10 +4,11 @@ name: Check RSS & Send Chapters
 #   gh api repos/:owner/:repo/dispatches -f event_type=trigger-discord-notify -f client_payload='{"feed":"free"}'
 #   gh api repos/:owner/:repo/dispatches -f event_type=trigger-discord-notify -f client_payload='{"feed":"paid"}'
 on:
-  schedule:
-    - cron: '0 15 * * *'    # daily at 15:00 UTC (free & paid)
   repository_dispatch:
     types: [trigger-discord-notify]
+  schedule:
+    - cron: '0 15 * * *'
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -16,6 +17,7 @@ jobs:
   free_chapters:
     if: >
       github.event_name == 'schedule' ||
+      github.event_name == 'workflow_dispatch' ||
       (github.event_name == 'repository_dispatch' && github.event.client_payload.feed == 'free')
     runs-on: ubuntu-latest
     steps:
@@ -38,6 +40,7 @@ jobs:
   paid_chapters:
     if: >
       github.event_name == 'schedule' ||
+      github.event_name == 'workflow_dispatch' ||
       (github.event_name == 'repository_dispatch' && github.event.client_payload.feed == 'paid')
     runs-on: ubuntu-latest
     steps:
