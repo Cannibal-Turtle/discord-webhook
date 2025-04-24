@@ -73,6 +73,16 @@ def send_bot_message(bot_token: str, channel_id: str, content: str):
     r = requests.post(url, headers=headers, json=payload)
     r.raise_for_status()
 
+def safe_send_bot(bot_token: str, channel_id: str, content: str):
+    """
+    Try sending via bot, but catch HTTP errors so the rest of the script continues.
+    """
+    try:
+        send_bot_message(bot_token, channel_id, content)
+    except requests.HTTPError as e:
+        status = e.response.status_code if (e.response and e.response.status_code) else "?"
+        print(f"⚠️ Bot send failed with status {status}: {e}", file=sys.stderr)
+
 def get_duration(start_date_str: str, end_date: datetime) -> str:
     """
     Converts a start date to a human-readable duration compared to end date.
@@ -277,7 +287,7 @@ def main():
                     safe_send_webhook(webhook_url, msg)
                 # also send via bot (if configured)
                 if bot_token and channel_id:
-                    send_bot_message(bot_token, channel_id, msg)
+                    safe_send_bot(bot_token, channel_id, msg)
                 print(f"✔️ Sent only-free completion announcement for {novel_id}")
                 state.setdefault(novel_id, {})["only_free"] = {
                     "chapter": chap_field,
@@ -307,7 +317,7 @@ def main():
                     safe_send_webhook(webhook_url, msg)
                 # also send via bot (if configured)
                 if bot_token and channel_id:
-                    send_bot_message(bot_token, channel_id, msg)
+                    safe_send_bot(bot_token, channel_id, msg)
                 print(f"✔️ Sent paid-completion announcement for {novel_id}")
                 state.setdefault(novel_id, {})["paid"] = {
                     "chapter": chap_field,
@@ -328,7 +338,7 @@ def main():
                     safe_send_webhook(webhook_url, msg)
                 # also send via bot (if configured)
                 if bot_token and channel_id:
-                    send_bot_message(bot_token, channel_id, msg)
+                    safe_send_bot(bot_token, channel_id, msg)
                 print(f"✔️ Sent free-completion announcement for {novel_id}")
                 state.setdefault(novel_id, {})["free"] = {
                     "chapter": chap_field,
