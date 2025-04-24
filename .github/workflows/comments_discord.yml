@@ -2,7 +2,7 @@ name: Check RSS & Send Comments
 
 on:
   schedule:
-    - cron: '0 * * * *'      # hourly
+    - cron: '0 * * * *'
   repository_dispatch:
     types: [trigger-discord-notify]
   workflow_dispatch:
@@ -10,12 +10,12 @@ on:
 permissions:
   contents: write
 
-concurrency:
-  group: comments-feed
-  cancel-in-progress: true
-  
 jobs:
   comments:
+    concurrency:
+      group: rss-to-discord-comments
+      cancel-in-progress: true
+
     if: >
       github.event_name == 'schedule' ||
       github.event_name == 'workflow_dispatch' ||
@@ -24,6 +24,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
+        with:
+          persist-credentials: true
+          fetch-depth: 0
 
       - name: Setup Python
         uses: actions/setup-python@v4
@@ -39,3 +42,14 @@ jobs:
           DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
           DISCORD_COMMENTS_CHANNEL: ${{ secrets.DISCORD_COMMENTS_CHANNEL }}
         run: python bot_comments.py
+
+      - name: Commit updated state file
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add state_comments.json
+          git diff --quiet --staged || git commit -m "ci: update comments state"
+          git pull --rebase origin main
+          git push origin main
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
