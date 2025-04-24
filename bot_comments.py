@@ -17,9 +17,9 @@ def load_state():
     try:
         return json.load(open(STATE_FILE, encoding="utf-8"))
     except (FileNotFoundError, json.JSONDecodeError):
-        initial = {"last_guid": None}
-        json.dump(initial, open(STATE_FILE, "w", encoding="utf-8"), indent=2)
-        return initial
+        init = {"last_guid": None}
+        json.dump(init, open(STATE_FILE, "w", encoding="utf-8"), indent=2)
+        return init
 
 def save_state(state):
     json.dump(state, open(STATE_FILE, "w", encoding="utf-8"), indent=2)
@@ -43,6 +43,7 @@ async def main():
 
     async with aiohttp.ClientSession() as session:
         new_last = last
+
         for entry in to_send:
             guid        = entry.get("guid") or entry.get("id")
             title       = entry.get("title", "").strip()
@@ -57,14 +58,20 @@ async def main():
             pubdate_raw = getattr(entry, "published", None)
             timestamp   = dateparser.parse(pubdate_raw).isoformat() if pubdate_raw else None
 
-            # Build embed dict
+            # ─── Truncate the quoted comment so title <= 256 chars ──────────
+            full_title = f"❛❛{comment_txt}❜❜"
+            if len(full_title) > 256:
+                # leave room for the closing quotes
+                truncated = full_title[:254]  # 254 + "❜❜" = 256
+                full_title = truncated.rstrip("❜") + "❜❜"
+
+            # ─── Build the embed dict (no author icon_url) ────────────────
             embed = {
                 "author": {
-                    "name":     f"comment by {author} 🕊️ {chapter}",
-                    "url":      link,       # clickable author name
-                    "icon_url": host_logo
+                    "name": f"comment by {author} 🕊️ {chapter}",
+                    "url":  link
                 },
-                "title":     f"❛❛{comment_txt}❜❜",
+                "title":     full_title,
                 "timestamp": timestamp,
                 "color":     int("F0C7A4", 16),
                 "footer": {
@@ -72,7 +79,7 @@ async def main():
                     "icon_url": host_logo
                 }
             }
-            # only include description if present
+            # only include description if reply_chain exists
             if reply_chain:
                 embed["description"] = reply_chain
 
@@ -83,13 +90,13 @@ async def main():
 
             async with session.post(API_URL, headers=headers, json=payload) as resp:
                 text = await resp.text()
-                if resp.status in (200,204):
+                if resp.status in (200, 204):
                     print(f"✅ Sent comment {guid}")
                     new_last = guid
                 else:
                     print(f"❌ Error {resp.status} for {guid}: {text}")
 
-        # save state once at end
+        # ─── Save the new last_guid once ───────────────────────────────
         if new_last != last:
             state["last_guid"] = new_last
             save_state(state)
