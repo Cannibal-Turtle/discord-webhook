@@ -38,22 +38,28 @@ jobs:
           pip install discord.py feedparser python-dateutil
 
       - name: Run Free Chapters Bot
+        timeout-minutes: 5
         env:
           DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
           DISCORD_FREE_CHAPTERS_CHANNEL: ${{ secrets.DISCORD_FREE_CHAPTERS_CHANNEL }}
         run: python bot_free_chapters.py
 
       - name: Commit updated state file
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          # always pull first, but don't fail if there's a conflict
+          git pull --rebase origin main || true
           git add state_rss.json
-          git diff --quiet --staged || git commit -m "ci: update state"
-          git pull --rebase origin main
-          git push origin main
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
+          if git diff --cached --quiet; then
+            echo "No state changes to commit."
+          else
+            git commit -m "ci: update state_rss.json"
+            git push origin main
+          fi
 
   paid_chapters:
     # cancel any prior paid_chapters job, but leave free_chapters alone
@@ -82,18 +88,25 @@ jobs:
           pip install discord.py feedparser python-dateutil
 
       - name: Run Paid Chapters Bot
+        timeout-minutes: 5
         env:
           DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
           DISCORD_ADVANCE_CHAPTERS_CHANNEL: ${{ secrets.DISCORD_ADVANCE_CHAPTERS_CHANNEL }}
         run: python bot_paid_chapters.py
 
       - name: Commit updated state file
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          # always pull first, but don't fail if there's a conflict
+          git pull --rebase origin main || true
           git add state_rss.json
-          git diff --quiet --staged || git commit -m "ci: update state"
-          git pull --rebase origin main
-          git push origin main
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          if git diff --cached --quiet; then
+            echo "No state changes to commit."
+          else
+            git commit -m "ci: update state_rss.json"
+            git push origin main
+          fi
