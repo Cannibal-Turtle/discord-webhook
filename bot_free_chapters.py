@@ -12,7 +12,8 @@ from discord.ui import View, Button
 # ─── CONFIG ────────────────────────────────────────────────────────────────────
 TOKEN           = os.environ["DISCORD_BOT_TOKEN"]
 CHANNEL_ID      = int(os.environ["DISCORD_FREE_CHAPTERS_CHANNEL"])
-STATE_FILE      = "state_free_chapters.json"
+STATE_FILE      = "state_rss.json"
+FEED_KEY        = "free_last_guid"
 RSS_URL         = "https://cannibal-turtle.github.io/rss-feed/free_chapters_feed.xml"
 
 # a global “always-mention” role id you used in MonitoRSS
@@ -20,16 +21,14 @@ GLOBAL_MENTION = "<@&1342483851338846288>"
 # ────────────────────────────────────────────────────────────────────────────────
 
 def load_state():
-    """
-    Load the JSON state file, or reinitialize it if missing/corrupt.
-    Returns a dict with at least "last_guid".
-    """
     try:
-        with open(STATE_FILE, encoding="utf-8") as f:
-            return json.load(f)
+        return json.load(open(STATE_FILE, encoding="utf-8"))
     except (FileNotFoundError, json.JSONDecodeError):
-        # Either no file yet, or it’s malformed/empty → recreate it
-        initial = {"last_guid": None}
+        initial = {
+          "free_last_guid":    None,
+          "paid_last_guid":    None,
+          "comments_last_guid": None
+        }
         with open(STATE_FILE, "w", encoding="utf-8") as f:
             json.dump(initial, f, indent=2, ensure_ascii=False)
         return initial
@@ -40,6 +39,7 @@ def save_state(state):
 
 async def send_new_entries():
     state = load_state()
+    last  = state.get(FEED_KEY)
     feed  = feedparser.parse(RSS_URL)
     entries = list(reversed(feed.entries))  # oldest → newest
 
@@ -57,7 +57,7 @@ async def send_new_entries():
 
         # 1) Prepare chronological slice
         guids   = [(e.get("guid") or e.get("id")) for e in entries]
-        last    = state.get("last_guid")
+        last    = state.get(FEED_KEY)
         if last in guids:
             idx     = guids.index(last)
             to_send = entries[idx+1:]
@@ -65,7 +65,7 @@ async def send_new_entries():
             to_send = entries
 
         # 2) Send only those new entries
-        new_last = state.get("last_guid")
+        new_last = last
         for entry in to_send:
             guid = entry.get("guid") or entry.get("id")
 
@@ -106,10 +106,10 @@ async def send_new_entries():
             new_last = guid
 
         # 3) Save checkpoint & exit
-        if new_last and new_last != state.get("last_guid"):
-            state["last_guid"] = new_last
+        if new_last and new_last != state.get(FEED_KEY):
+            state[FEED_KEY] = new_last
             save_state(state)
-            print(f"💾 Updated state.last_guid → {new_last}")
+            print(f"💾 Updated {STATE_FILE} → {new_last}")
 
         await bot.close()
 
