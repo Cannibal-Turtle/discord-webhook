@@ -19,17 +19,24 @@ RSS_URL         = "https://cannibal-turtle.github.io/rss-feed/free_chapters_feed
 GLOBAL_MENTION = "<@&1342483851338846288>"
 # ────────────────────────────────────────────────────────────────────────────────
 
-
 def load_state():
-    if os.path.exists(STATE_FILE):
-        return json.load(open(STATE_FILE, encoding="utf-8"))
-    return {"last_guid": None}
-
+    """
+    Load the JSON state file, or reinitialize it if missing/corrupt.
+    Returns a dict with at least "last_guid".
+    """
+    try:
+        with open(STATE_FILE, encoding="utf-8") as f:
+            return json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        # Either no file yet, or it’s malformed/empty → recreate it
+        initial = {"last_guid": None}
+        with open(STATE_FILE, "w", encoding="utf-8") as f:
+            json.dump(initial, f, indent=2, ensure_ascii=False)
+        return initial
 
 def save_state(state):
     with open(STATE_FILE, "w", encoding="utf-8") as f:
         json.dump(state, f, indent=2, ensure_ascii=False)
-
 
 async def send_new_entries():
     state = load_state()
