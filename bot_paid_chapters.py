@@ -47,18 +47,26 @@ async def send_new_paid_entries():
             await bot.close()
             return
 
-        new_last = state.get("last_guid")
-        for entry in entries:
-            guid = entry.get("guid") or entry.get("id")
-            if state["last_guid"] is not None and guid == state["last_guid"]:
-                break
+        # 1) Prepare chronological slice (oldest → newest)
+        guids = [(e.get("guid") or e.get("id")) for e in entries]
+        last  = state.get("last_guid")
+        if last in guids:
+            idx     = guids.index(last)
+            to_send = entries[idx+1:]
+        else:
+            to_send = entries
 
-            # ── Content (with 🔒) ───────────────────────────────────────────
+        # 2) Send only the new entries, in order
+        new_last = last
+        for entry in to_send:
+            guid = entry.get("guid") or entry.get("id")
+
+            # ── Content (with 🔒) ───────────────────────────────────────
             role_id = entry.get("discord_role_id", "").strip()
             title   = entry.get("title", "").strip()
             content = f"{role_id} | {GLOBAL_MENTION}\n**{title}**  🔒"
 
-            # ── Embed ────────────────────────────────────────────────────────
+            # ── Embed ─────────────────────────────────────────────────
             chaptername = entry.get("chaptername", "").strip()
             nameextend  = entry.get("nameextend", "").strip()
             link        = entry.get("link", "").strip()
@@ -81,17 +89,19 @@ async def send_new_paid_entries():
                 embed.set_thumbnail(url=thumb_url)
             embed.set_footer(text=host, icon_url=host_logo)
 
-            # ── Button (coin label) ─────────────────────────────────────────
-            coin_label = entry.get("coin", "").strip()  # e.g. 🔥 5
+            # ── Button (coin label) ────────────────────────────────────
+            coin_label = entry.get("coin", "").strip()
             view = View()
             view.add_item(Button(label=coin_label or "Read here", url=link))
 
-            # ── Send & track ────────────────────────────────────────────────
+            # ── Send & track ─────────────────────────────────────────
             await channel.send(content=content, embed=embed, view=view)
             print(f"📨 Sent paid: {chaptername} / {guid}")
+
             new_last = guid
 
-        if new_last:
+        # 3) Save checkpoint & exit
+        if new_last and new_last != state.get("last_guid"):
             state["last_guid"] = new_last
             save_state(state)
             print(f"💾 Updated paid state.last_guid → {new_last}")
@@ -99,7 +109,6 @@ async def send_new_paid_entries():
         await bot.close()
 
     await bot.start(TOKEN)
-
 
 if __name__ == "__main__":
     asyncio.run(send_new_paid_entries())
