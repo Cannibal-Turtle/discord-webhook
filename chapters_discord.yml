@@ -1,0 +1,58 @@
+name: Check RSS & Send Chapters
+
+# Fire on a daily cron _and_ whenever you do:
+#   gh api repos/:owner/:repo/dispatches -f event_type=trigger-discord-notify -f client_payload='{"feed":"free"}'
+#   gh api repos/:owner/:repo/dispatches -f event_type=trigger-discord-notify -f client_payload='{"feed":"paid"}'
+on:
+  schedule:
+    - cron: '0 15 * * *'    # daily at 15:00 UTC (free & paid)
+  repository_dispatch:
+    types: [trigger-discord-notify]
+
+permissions:
+  contents: write
+
+jobs:
+  free_chapters:
+    if: >
+      github.event_name == 'schedule' ||
+      (github.event_name == 'repository_dispatch' && github.event.client_payload.feed == 'free')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with: python-version: '3.x'
+
+      - name: Install deps
+        run: |
+          pip install discord.py feedparser python-dateutil
+
+      - name: Run Free Chapters Bot
+        env:
+          DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+          DISCORD_FREE_CHAPTERS_CHANNEL: ${{ secrets.DISCORD_FREE_CHAPTERS_CHANNEL }}
+        run: python bot_free_chapters.py
+
+  paid_chapters:
+    if: >
+      github.event_name == 'schedule' ||
+      (github.event_name == 'repository_dispatch' && github.event.client_payload.feed == 'paid')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with: python-version: '3.x'
+
+      - name: Install deps
+        run: |
+          pip install discord.py feedparser python-dateutil
+
+      - name: Run Paid Chapters Bot
+        env:
+          DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+          DISCORD_ADVANCE_CHAPTERS_CHANNEL: ${{ secrets.DISCORD_ADVANCE_CHAPTERS_CHANNEL }}
+        run: python bot_paid_chapters.py
