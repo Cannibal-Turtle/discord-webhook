@@ -1,7 +1,4 @@
-import os
-import json
-import asyncio
-import feedparser
+import os, json, asyncio, feedparser
 from dateutil import parser as dateparser
 import aiohttp
 
@@ -16,13 +13,13 @@ API_URL     = f"https://discord.com/api/v10/channels/{CHANNEL_ID}/messages"
 def load_state():
     try:
         return json.load(open(STATE_FILE, encoding="utf-8"))
-    except:
+    except (FileNotFoundError, json.JSONDecodeError):
         init = {"last_guid": None}
         json.dump(init, open(STATE_FILE,"w",encoding="utf-8"), indent=2)
         return init
 
-def save_state(s):
-    json.dump(s, open(STATE_FILE,"w",encoding="utf-8"), indent=2)
+def save_state(state):
+    json.dump(state, open(STATE_FILE,"w",encoding="utf-8"), indent=2)
 
 async def main():
     state   = load_state()
@@ -30,9 +27,10 @@ async def main():
     entries = list(reversed(feed.entries))  # oldest→newest
     guids   = [(e.get("guid") or e.get("id")) for e in entries]
     last    = state["last_guid"]
-    to_send = entries[guids.index(last)+1:] if last in guids else entries
-    if not to_send:
-        print("No new comments.")
+    new_entries = entries[guids.index(last)+1:] if last in guids else entries
+
+    if not new_entries:
+        print("🛑 No new comments.")
         return
 
     headers = {
@@ -42,7 +40,7 @@ async def main():
 
     async with aiohttp.ClientSession() as sess:
         new_last = last
-        for entry in to_send:
+        for entry in new_entries:
             guid        = entry.get("guid") or entry.get("id")
             title       = entry.get("title","").strip()
             role_id     = entry.get("discord_role_id","").strip()
@@ -52,20 +50,35 @@ async def main():
             reply_chain = entry.get("reply_chain","").strip()
             host        = entry.get("host","").strip()
             host_logo   = (entry.get("hostLogo") or entry.get("hostlogo") or {}).get("url","")
+            link        = entry.get("link","").strip()
             pubdate_raw = getattr(entry,"published",None)
-            ts          = dateparser.parse(pubdate_raw).isoformat() if pubdate_raw else None
+            timestamp   = dateparser.parse(pubdate_raw).isoformat() if pubdate_raw else None
 
-            # short title, full comment in description:
-            t = f"Comment by {author} 🕊️ {chapter}"
-            if len(t)>256: t = t[:253]+"..."
+            # Build a short title (<=256 chars)
+            author_title = f"comment by {author} 🕊️ {chapter}"
+            if len(author_title) > 256:
+                author_title = author_title[:253] + "..."
+
+            # Full comment lives in description
+            desc = comment_txt
+            if reply_chain:
+                desc += "\n\n" + reply_chain
 
             embed = {
-                "title":       t,
-                "url":         entry.get("link",""),
-                "description": comment_txt + ("\n\n"+reply_chain if reply_chain else ""),
-                "timestamp":   ts,
+                "title": author_title,
+                "url":   link,        # makes the Author Name clickable
+                "author": {
+                    # note: Discord’s REST API ignores `author.icon_url` here,
+                    # so we’ll stick your host_logo in the footer instead
+                    "name": author_title
+                },
+                "description": desc,
+                "timestamp":   timestamp,
                 "color":       int("F0C7A4",16),
-                "footer":      {"text": host, "icon_url": host_logo}
+                "footer": {
+                    "text":     host,
+                    "icon_url": host_logo
+                }
             }
 
             payload = {
@@ -75,14 +88,16 @@ async def main():
 
             async with sess.post(API_URL, headers=headers, json=payload) as r:
                 if r.status in (200,204):
-                    print("Sent", guid)
+                    print(f"✅ Sent {guid}")
                     new_last = guid
                 else:
-                    print("Error", r.status, await r.text())
+                    print(f"❌ Failed {guid}: {r.status} {await r.text()}")
 
-        if new_last != last:
+        # Save the last GUID so we don’t repost next run
+        if new_last and new_last != last:
             state["last_guid"] = new_last
             save_state(state)
+            print(f"💾 Updated state to {new_last}")
 
 if __name__=="__main__":
     asyncio.run(main())
