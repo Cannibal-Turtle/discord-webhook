@@ -30,36 +30,42 @@ def save_state(state):
 
 async def send_new_comments():
     state   = load_state()
+    print("🔍 Loaded state:", state)
+
     feed    = feedparser.parse(RSS_URL)
-
-    # 1) Chronological order (oldest → newest)
     entries = list(reversed(feed.entries))
+    print(f"🔍 Parsed feed, {len(entries)} total entries")
 
-    # 2) Compute only‐new slice once
+    # 1) Compute only‐new slice
     guids   = [(e.get("guid") or e.get("id")) for e in entries]
     last    = state.get("last_guid")
     to_send = entries[guids.index(last)+1:] if last in guids else entries
+    print(f"🔍 {len(to_send)} new comments to send")
 
-    # 3) Early exit if nothing new
+    # 2) Early exit if nothing to send
     if not to_send:
         print("🛑 No new comments—skipping Discord login.")
         return
 
-    # 4) Connect the bot only when there are messages to send
+    print("🔌 Connecting to Discord…")
     intents = discord.Intents.default()
     bot     = discord.Client(intents=intents)
 
+    new_last = last  # define here so it’s in scope everywhere
+
     @bot.event
     async def on_ready():
+        nonlocal new_last
+        print("✅ on_ready fired")
         channel = bot.get_channel(CHANNEL_ID)
         if channel is None:
             print(f"❌ Cannot find channel {CHANNEL_ID}")
             await bot.close()
             return
 
-        new_last = last
         for entry in to_send:
-            guid        = entry.get("guid") or entry.get("id")
+            guid = entry.get("guid") or entry.get("id")
+            print(f"✉️ Sending comment {guid}")
             title       = entry.get("title","").strip()
             role_id     = entry.get("discord_role_id","").strip()
             content     = f"New comment for **{title}** || {role_id}"
@@ -84,18 +90,22 @@ async def send_new_comments():
             embed.set_footer(text=host, icon_url=host_logo)
 
             await channel.send(content=content, embed=embed)
-            print(f"📨 Sent comment: {guid}")
             new_last = guid
 
-        # 5) Update state once at the end
+        print("👋 Finished sending, closing client")
+        await bot.close()
+
+    try:
+        await bot.start(TOKEN)
+        print("🛑 bot.start() returned normally")
+    except Exception as e:
+        print("❗ Exception in bot.start():", e)
+    finally:
+        # 3) Save state regardless of success or failure
         if new_last and new_last != state.get("last_guid"):
             state["last_guid"] = new_last
             save_state(state)
             print(f"💾 Updated comments state.last_guid → {new_last}")
-
-        await bot.close()
-
-    await bot.start(TOKEN)
 
 if __name__ == "__main__":
     asyncio.run(send_new_comments())
