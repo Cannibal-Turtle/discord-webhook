@@ -7,6 +7,10 @@ on:
     types: [trigger-discord-comments]
   workflow_dispatch:
 
+concurrency:
+  group: rss‐to‐discord‐workflow
+  cancel-in-progress: false
+
 permissions:
   contents: write
 
