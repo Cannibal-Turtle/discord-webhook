@@ -47,9 +47,9 @@ jobs:
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git pull --rebase origin main
           git add state_free_chapters.json
-          git diff --quiet --staged || git commit -m "ci: update free state"
+          git diff --quiet --staged || git commit -m "ci: update state"
+          git pull --rebase origin main
           git push origin main
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -91,9 +91,9 @@ jobs:
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git pull --rebase origin main
           git add state_paid_chapters.json
-          git diff --quiet --staged || git commit -m "ci: update paid state"
+          git diff --quiet --staged || git commit -m "ci: update state"
+          git pull --rebase origin main
           git push origin main
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
