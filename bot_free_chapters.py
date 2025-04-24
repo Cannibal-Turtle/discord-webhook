@@ -95,7 +95,12 @@ async def send_new_entries():
             embed.set_author(name=f"{translator}⋆. 𐙚")
             if thumb_url:
                 embed.set_thumbnail(url=thumb_url)
-            embed.set_footer(text=host, icon_url=host_logo)
+
+            # ── FOOTER: host + static date “Wed, 23 Apr 2025” ─────────────
+            # Format timestamp to exactly Day, DD Mon YYYY
+            date_only = timestamp.strftime("%a, %d %b %Y") if timestamp else ""
+            footer_txt = f"{host} | {date_only}"
+            embed.set_footer(text=footer_txt, icon_url=host_logo)
 
             # button & send…
             view = View()
