@@ -16,12 +16,7 @@ jobs:
       group: rss-to-discord-comments
       cancel-in-progress: true
 
-    if: >
-      github.event_name == 'schedule' ||
-      github.event_name == 'workflow_dispatch' ||
-      github.event_name == 'repository_dispatch'
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v3
         with:
@@ -34,9 +29,8 @@ jobs:
           python-version: '3.x'
 
       - name: Install deps
-        run: |
-          pip install feedparser python-dateutil aiohttp
-      
+        run: pip install feedparser python-dateutil aiohttp
+
       - name: Run Comments Bot
         env:
           DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
