@@ -10,7 +10,7 @@ TOKEN       = os.environ["DISCORD_BOT_TOKEN"]
 CHANNEL_ID  = os.environ["DISCORD_COMMENTS_CHANNEL"]
 STATE_FILE  = "state_rss.json"
 FEED_KEY    = "comments_last_guid"
-RSS_URL     = "https://raw.githubusercontent.com/Cannibal-Turtle/rss-feed/main/comments.py"
+RSS_URL     = "https://raw.githubusercontent.com/Cannibal-Turtle/rss-feed/main/aggregated_comments_feed.xml"
 API_URL     = f"https://discord.com/api/v10/channels/{CHANNEL_ID}/messages"
 # ────────────────────────────────────────────────────────────────────────────────
 
