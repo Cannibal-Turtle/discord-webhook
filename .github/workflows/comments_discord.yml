@@ -1,0 +1,32 @@
+name: Check RSS & Send Comments
+
+on:
+  schedule:
+    - cron: '0 * * * *'      # hourly
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  comments:
+    if: >
+      github.event_name == 'schedule' ||
+      (github.event_name == 'repository_dispatch' && github.event.client_payload.feed == 'comments')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with: python-version: '3.x'
+
+      - name: Install deps
+        run: |
+          pip install discord.py feedparser python-dateutil
+
+      - name: Run Comments Bot
+        env:
+          DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+          DISCORD_COMMENTS_CHANNEL: ${{ secrets.DISCORD_COMMENTS_CHANNEL }}
+        run: python bot_comments.py
