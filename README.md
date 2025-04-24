@@ -256,11 +256,9 @@ These scripts are invoked by your rss-feed repository workflows, and can also be
       <strong>Free Chapters</strong><br/>
       <img src="https://github.com/user-attachments/assets/e0a6dfb2-2705-41b3-bd8e-a3bb8280ae1b" width="300" alt="Free Chapters screenshot"/>
     </td>
-  </tr>
-  <tr>
-    <td colspan="2" align="center">
+    <td align="center">
       <strong>Comments</strong><br/>
-      <img src="https://github.com/user-attachments/assets/85db67db-683f-4059-b969-05c2ca15b285" width="600" alt="Comments screenshot"/>
+      <img src="https://github.com/user-attachments/assets/85db67db-683f-4059-b969-05c2ca15b285" width="300" alt="Comments screenshot"/>
     </td>
   </tr>
 </table>
