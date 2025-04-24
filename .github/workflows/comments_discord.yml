@@ -35,7 +35,7 @@ jobs:
 
       - name: Install deps
         run: |
-          pip install discord.py feedparser python-dateutil
+          pip install feedparser python-dateutil aiohttp
       
       - name: Run Comments Bot
         env:
