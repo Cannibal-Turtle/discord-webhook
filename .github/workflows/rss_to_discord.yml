@@ -10,9 +10,6 @@ on:
 permissions:
   contents: write
 
-concurrency:
-  group: rss-to-discord-workflow
-
 jobs:
   arc_checker:
     runs-on: ubuntu-latest
