@@ -36,12 +36,13 @@ jobs:
       - name: Install deps
         run: |
           pip install discord.py feedparser python-dateutil
-
+      
       - name: Run Comments Bot
         env:
           DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
           DISCORD_COMMENTS_CHANNEL: ${{ secrets.DISCORD_COMMENTS_CHANNEL }}
-        run: python bot_comments.py
+          PYTHONUNBUFFERED: 1
+        run: python -u bot_comments.py
 
       - name: Commit updated state file
         run: |
