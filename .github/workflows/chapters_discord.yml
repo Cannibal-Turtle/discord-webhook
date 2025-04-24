@@ -4,19 +4,14 @@ on:
   repository_dispatch:
     types: [trigger-discord-notify]
   schedule:
-    - cron: '0 15 * * *'      # daily at 15:00 UTC
+    - cron: '0 15 * * *'
   workflow_dispatch:
-
-concurrency:
-  group: rss-to-discord-workflow
-  cancel-in-progress: false
 
 permissions:
   contents: write
 
 jobs:
   free_chapters:
-    # only cancel any prior FREE job, not the PAID one
     concurrency:
       group: rss-to-discord-free-chapters
       cancel-in-progress: false
@@ -25,39 +20,20 @@ jobs:
       github.event_name == 'schedule' ||
       github.event_name == 'workflow_dispatch' ||
       (github.event_name == 'repository_dispatch' && github.event.client_payload.feed == 'free')
-
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v3
-        with:
-          persist-credentials: true
-          fetch-depth: 0
+      # … your checkout, python-setup, install, run bot_free_chapters.py …
 
-      - name: Setup Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.x'
-
-      - name: Install deps
-        run: |
-          pip install discord.py feedparser python-dateutil
-
-      - name: Run Free Chapters Bot
-        timeout-minutes: 5
-        env:
-          DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
-          DISCORD_FREE_CHAPTERS_CHANNEL: ${{ secrets.DISCORD_FREE_CHAPTERS_CHANNEL }}
-        run: python bot_free_chapters.py
-
-      - name: Commit updated state file
+      - name: Sync & commit state
         shell: bash
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          # auto‐stash your local changes, rebase, then pop them back
-          git pull --rebase --autostash origin main
+          git fetch origin main
+          git reset --hard origin/main
           git add state_rss.json
           if git diff --cached --quiet; then
             echo "No state changes to commit."
@@ -75,38 +51,20 @@ jobs:
       github.event_name == 'schedule' ||
       github.event_name == 'workflow_dispatch' ||
       (github.event_name == 'repository_dispatch' && github.event.client_payload.feed == 'paid')
-
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v3
-        with:
-          persist-credentials: true
-          fetch-depth: 0
+      # … your checkout, python-setup, install, run bot_paid_chapters.py …
 
-      - name: Setup Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.x'
-
-      - name: Install deps
-        run: |
-          pip install discord.py feedparser python-dateutil
-
-      - name: Run Paid Chapters Bot
-        timeout-minutes: 5
-        env:
-          DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
-          DISCORD_ADVANCE_CHAPTERS_CHANNEL: ${{ secrets.DISCORD_ADVANCE_CHAPTERS_CHANNEL }}
-        run: python bot_paid_chapters.py
-
-      - name: Commit updated state file
+      - name: Sync & commit state
         shell: bash
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git pull --rebase --autostash origin main
+          git fetch origin main
+          git reset --hard origin/main
           git add state_rss.json
           if git diff --cached --quiet; then
             echo "No state changes to commit."
