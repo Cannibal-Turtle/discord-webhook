@@ -210,3 +210,34 @@ The workflow listens for:
 
 ---
 🚀 **Now, you're ready to automate new arc and novel completion announcements to Discord!**
+
+---
+
+## 🆕 UPDATE: New Bot Scripts (v2.1)
+
+We’ve just added three standalone Python bots (migrated from MonitoRSS) that post directly as your own Discord bot:
+
+| Script                     | Purpose                                            |
+|----------------------------|----------------------------------------------------|
+| `bot_free_chapters.py`     | Posts new **free** chapters (🔓) in oldest→newest order. |
+| `bot_paid_chapters.py`     | Posts new **advance/paid** chapters (🔒) in oldest→newest order. |
+| `bot_comments.py`          | Posts new comments with:
+
+### 🔧 What You Need to Add
+
+1. **Repository Secrets**  
+   In **Settings → Secrets and variables → Actions**, add:
+
+   | Name                              | Value                                            |
+   |-----------------------------------|--------------------------------------------------|
+   | `DISCORD_BOT_TOKEN`               | Bot’s token                    
+   | `DISCORD_FREE_CHAPTERS_CHANNEL`   | Channel ID for free-chapter posts                |
+   | `DISCORD_ADVANCE_CHAPTERS_CHANNEL`| Channel ID for paid-chapter posts                |
+   | `DISCORD_COMMENTS_CHANNEL`        | Channel ID for comment posts                     |
+
+2. **Dependencies**  
+   Ensure your CI/workflow install step includes:
+   ```bash
+   pip install discord.py feedparser python-dateutil aiohttp
+   ```
+
