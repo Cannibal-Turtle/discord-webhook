@@ -4,7 +4,7 @@ on:
   schedule:
     - cron: '0 * * * *'
   repository_dispatch:
-    types: [trigger-discord-comments]
+    types: [trigger-discord-sasd]
   workflow_dispatch:
 
 permissions:
