@@ -4,7 +4,7 @@ on:
   repository_dispatch:
     types: [trigger-discord-notify]
   schedule:
-    - cron: '0 15 * * *'      # daily at 15:00 UTC
+    - cron: '0 15 * * *'   # daily at 15:00 UTC
   workflow_dispatch:
 
 permissions:
@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   free_chapters:
-    # only cancel a prior FREE run, not the PAID one
+    # only cancel previous FREE runs (leave PAID alone)
     concurrency:
       group: rss-to-discord-free-chapters
       cancel-in-progress: false
@@ -23,7 +23,6 @@ jobs:
       (github.event_name == 'repository_dispatch' && github.event.client_payload.feed == 'free')
 
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -52,21 +51,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Fetch the remote copy of state_rss.json
-          git fetch origin main
-          git show origin/main:state_rss.json > state_remote.json
-
-          # Merge remote+local into a single JSON
-          python3 - << 'PYCODE'
-import json
-remote = json.load(open('state_remote.json', encoding='utf-8'))
-local  = json.load(open('state_rss.json',   encoding='utf-8'))
-merged = { **remote, **local }
-with open('state_rss.json', 'w', encoding='utf-8') as f:
-    json.dump(merged, f, indent=2, ensure_ascii=False)
-PYCODE
-
-          # Commit only if it changed
+          # auto‐stash any local edits, rebase onto latest main, then unstash
+          git pull origin main --rebase --autostash
           git add state_rss.json
           if git diff --cached --quiet; then
             echo "No state changes to commit."
@@ -78,7 +64,7 @@ PYCODE
           fi
 
   paid_chapters:
-    # only cancel a prior PAID run, not the FREE one
+    # only cancel previous PAID runs (leave FREE alone)
     concurrency:
       group: rss-to-discord-paid-chapters
       cancel-in-progress: false
@@ -89,7 +75,6 @@ PYCODE
       (github.event_name == 'repository_dispatch' && github.event.client_payload.feed == 'paid')
 
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -118,21 +103,7 @@ PYCODE
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Fetch the remote copy of state_rss.json
-          git fetch origin main
-          git show origin/main:state_rss.json > state_remote.json
-
-          # Merge remote+local into a single JSON
-          python3 - << 'PYCODE'
-import json
-remote = json.load(open('state_remote.json', encoding='utf-8'))
-local  = json.load(open('state_rss.json',   encoding='utf-8'))
-merged = { **remote, **local }
-with open('state_rss.json', 'w', encoding='utf-8') as f:
-    json.dump(merged, f, indent=2, ensure_ascii=False)
-PYCODE
-
-          # Commit only if it changed
+          git pull origin main --rebase --autostash
           git add state_rss.json
           if git diff --cached --quiet; then
             echo "No state changes to commit."
