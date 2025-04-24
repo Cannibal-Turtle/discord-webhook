@@ -14,7 +14,7 @@ jobs:
   free_chapters:
     # cancel any prior free_chapters job, but leave paid_chapters alone
     concurrency:
-      group: rss-to-discord-free
+      group: rss-to-discord-free-chapters
       cancel-in-progress: true
 
     if: >
@@ -58,7 +58,7 @@ jobs:
   paid_chapters:
     # cancel any prior paid_chapters job, but leave free_chapters alone
     concurrency:
-      group: rss-to-discord-paid
+      group: rss-to-discord-paid-chapters
       cancel-in-progress: true
 
     if: >
