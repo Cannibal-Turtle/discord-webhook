@@ -84,8 +84,9 @@ async def send_new_paid_entries():
             host        = entry.get("host","").strip()
             host_logo   = (entry.get("hostLogo") or {}).get("url") \
                           or (entry.get("hostlogo") or {}).get("url")
-            pubdate_raw = entry.get("pubDate") or entry.get("pubdate")
+            pubdate_raw = getattr(entry, "published", None)
             timestamp   = dateparser.parse(pubdate_raw) if pubdate_raw else None
+
 
             embed = Embed(
                 title=f"**{chaptername}**",
