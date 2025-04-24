@@ -40,6 +40,7 @@ jobs:
       - name: Run Arc Checker
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+          DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
         run: python new_arc_checker.py
 
   extra_checker:
@@ -68,6 +69,7 @@ jobs:
       - name: Run Extra Checker
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+          DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
         run: python new_extra_checker.py
 
   paid_completion:
@@ -100,6 +102,7 @@ jobs:
       - name: Run Paid Completion Checker
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+          DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
         run: python completed_novel_checker.py --feed paid
 
       - name: Commit updated state.json
@@ -143,6 +146,7 @@ jobs:
       - name: Run Free Completion Checker
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+          DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
         run: python completed_novel_checker.py --feed free
 
       - name: Commit updated state.json
