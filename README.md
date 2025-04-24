@@ -242,7 +242,7 @@ We’ve just added three standalone Python bots (migrated from MonitoRSS) that p
    ```
 ### 🔗 Triggering
 
-These scripts are invoked by your rss-feed repository workflows, and can also be scheduled by cron.
+These scripts are invoked by your `rss-feed` repository workflows, and can also be scheduled by cron.
 
 ### 📷 How It Looks
 
