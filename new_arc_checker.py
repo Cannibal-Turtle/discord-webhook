@@ -3,13 +3,47 @@ import feedparser
 import os
 import json
 import re
+import sys
 from novel_mappings import HOSTING_SITE_DATA, get_nsfw_novels
 
 ONGOING_ROLE = "<@&1329502951764525187>"
 NSFW_ROLE_ID = "<@&1343352825811439616>"
+WEBHOOK_ENV     = "DISCORD_WEBHOOK"
+BOT_TOKEN_ENV   = "DISCORD_BOT_TOKEN"
+CHANNEL_ID_ENV  = "DISCORD_CHANNEL_ID"
 
 # === HELPER FUNCTIONS ===
-     
+
+def send_bot_message(bot_token: str, channel_id: str, content: str):
+    url = f"https://discord.com/api/v10/channels/{channel_id}/messages"
+    headers = {
+        "Authorization": f"Bot {bot_token}",
+        "Content-Type":  "application/json"
+    }
+    payload = {
+        "content": content,
+        "allowed_mentions": {"parse": ["roles"]},
+        "flags": 4
+    }
+    r = requests.post(url, headers=headers, json=payload)
+    r.raise_for_status()
+
+def safe_send_webhook(webhook_url: str, content: str):
+    try:
+        requests.post(webhook_url, json={
+            "content": content,
+            "flags": 4,
+            "allowed_mentions": {"parse": ["roles"]}
+        }).raise_for_status()
+    except requests.RequestException as e:
+        print(f"⚠️ Webhook send failed: {e}", file=sys.stderr)
+
+def safe_send_bot(bot_token: str, channel_id: str, content: str):
+    try:
+        send_bot_message(bot_token, channel_id, content)
+    except requests.RequestException as e:
+        print(f"⚠️ Bot send failed: {e}", file=sys.stderr)
+
 def load_history(history_file):
     """Loads the novel's arc history from JSON file."""
     if os.path.exists(history_file):
@@ -250,18 +284,23 @@ def process_arc(novel):
         "allowed_mentions": {"parse": ["roles"]},
         "flags": 4
     }
-    resp = requests.post(
-        os.getenv("DISCORD_WEBHOOK"),
-        json={
-            "content": message,
-            "flags": 4,
-            "allowed_mentions": { "parse": ["roles"] }
-        }
-    )
-    if resp.status_code == 204:
-        print(f"✅ Sent Discord notification for: {new_full}")
+    webhook_url = os.getenv(WEBHOOK_ENV)
+    bot_token   = os.getenv(BOT_TOKEN_ENV)
+    channel_id  = os.getenv(CHANNEL_ID_ENV)
+
+    # send via webhook (if configured)
+    if webhook_url:
+        safe_send_webhook(webhook_url, message)
+        print(f"✅ Webhook notification sent for: {new_full}")
     else:
-        print(f"❌ Failed to send Discord notification (status {resp.status_code})")
+        print("⚠️ DISCORD_WEBHOOK not set, skipped webhook post")
+
+    # send via bot (if configured)
+    if bot_token and channel_id:
+        safe_send_bot(bot_token, channel_id, message)
+        print(f"✅ Bot notification sent for: {new_full}")
+    else:
+        print("⚠️ Bot token or channel ID missing, skipped bot post")
         
 # === LOAD & RUN ===
 if __name__ == "__main__":
