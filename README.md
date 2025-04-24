@@ -240,4 +240,17 @@ We’ve just added three standalone Python bots (migrated from MonitoRSS) that p
    ```bash
    pip install discord.py feedparser python-dateutil aiohttp
    ```
+### 🔗 Triggering
+
+These scripts are invoked by your rss-feed repository workflows, and can also be scheduled by cron.
+
+### 📷 How It Looks
+
+***Advance Chapters***
+![Screenshot 2025-04-24 180041](https://github.com/user-attachments/assets/8ec6e5c2-4125-496a-9681-2bf602f0e7ee)
+***Free Chapters***
+![Screenshot 2025-04-24 180014](https://github.com/user-attachments/assets/e0a6dfb2-2705-41b3-bd8e-a3bb8280ae1b)
+***Comments***
+![Screenshot 2025-04-24 175933](https://github.com/user-attachments/assets/85db67db-683f-4059-b969-05c2ca15b285)
+
 
