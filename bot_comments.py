@@ -8,7 +8,8 @@ import aiohttp
 # ─── CONFIG ────────────────────────────────────────────────────────────────────
 TOKEN       = os.environ["DISCORD_BOT_TOKEN"]
 CHANNEL_ID  = os.environ["DISCORD_COMMENTS_CHANNEL"]
-STATE_FILE  = "state_comments.json"
+STATE_FILE  = "state_rss.json"
+FEED_KEY    = "comments_last_guid"
 RSS_URL     = "https://cannibal-turtle.github.io/rss-feed/aggregated_comments_feed.xml"
 API_URL     = f"https://discord.com/api/v10/channels/{CHANNEL_ID}/messages"
 # ────────────────────────────────────────────────────────────────────────────────
@@ -17,19 +18,25 @@ def load_state():
     try:
         return json.load(open(STATE_FILE, encoding="utf-8"))
     except (FileNotFoundError, json.JSONDecodeError):
-        init = {"last_guid": None}
-        json.dump(init, open(STATE_FILE, "w", encoding="utf-8"), indent=2)
-        return init
+        initial = {
+          "free_last_guid":    None,
+          "paid_last_guid":    None,
+          "comments_last_guid": None
+        }
+        with open(STATE_FILE, "w", encoding="utf-8") as f:
+            json.dump(initial, f, indent=2, ensure_ascii=False)
+        return initial
 
 def save_state(state):
-    json.dump(state, open(STATE_FILE, "w", encoding="utf-8"), indent=2)
+    with open(STATE_FILE, "w", encoding="utf-8") as f:
+        json.dump(state, f, indent=2, ensure_ascii=False)
 
 async def main():
     state   = load_state()
     feed    = feedparser.parse(RSS_URL)
     entries = list(reversed(feed.entries))  # oldest → newest
     guids   = [(e.get("guid") or e.get("id")) for e in entries]
-    last    = state.get("last_guid")
+    last     = state.get(FEED_KEY)
     to_send = entries[guids.index(last)+1:] if last in guids else entries
 
     if not to_send:
@@ -105,10 +112,10 @@ async def main():
                     print(f"❌ Error {resp.status} for {guid}: {text}")
 
         # ─── Save the new last_guid once ───────────────────────────────
-        if new_last != last:
-            state["last_guid"] = new_last
+        if new_last and new_last != last:
+            state[FEED_KEY] = new_last
             save_state(state)
-            print(f"💾 Updated state_comments.json → {new_last}")
+            print(f"💾 Updated {STATE_FILE} → {new_last}")
 
 if __name__ == "__main__":
     asyncio.run(main())
