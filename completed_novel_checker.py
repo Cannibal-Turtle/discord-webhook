@@ -46,6 +46,16 @@ def send_discord_message(webhook_url: str, content: str):
     resp = requests.post(webhook_url, json=payload)
     resp.raise_for_status()
 
+def safe_send_webhook(webhook_url: str, content: str):
+    """
+    Try sending via webhook, but catch HTTP errors so the rest of the script continues.
+    """
+    try:
+        send_discord_message(webhook_url, content)
+    except requests.HTTPError as e:
+        status = e.response.status_code if (e.response and e.response.status_code) else "?"
+        print(f"⚠️ Webhook failed with status {status}: {e}", file=sys.stderr)
+
 def send_bot_message(bot_token: str, channel_id: str, content: str):
     """
     Post the same `content` via your bot account to `channel_id`.
@@ -57,7 +67,8 @@ def send_bot_message(bot_token: str, channel_id: str, content: str):
     }
     payload = {
         "content": content,
-        "allowed_mentions": { "parse": ["roles"] }
+        "allowed_mentions": { "parse": ["roles"] },
+        "flags": 4
     }
     r = requests.post(url, headers=headers, json=payload)
     r.raise_for_status()
@@ -205,12 +216,13 @@ def main():
 
     webhook_url = os.getenv(WEBHOOK_ENV)
     if not webhook_url:
-        print(f"ERROR: environment variable {WEBHOOK_ENV} is not set", file=sys.stderr)
-        sys.exit(1)
+        print(f"⚠️  {WEBHOOK_ENV} not set — skipping webhook posts", file=sys.stderr)
 
     # load bot info (optional)
     bot_token  = os.getenv(BOT_TOKEN_ENV)
     channel_id = os.getenv(CHANNEL_ID_ENV)
+    if not (bot_token and channel_id):
+        print(f"⚠️  Bot token or channel ID missing — skipping bot posts", file=sys.stderr)
 
     state  = load_state()
     novels = load_novels()
@@ -261,7 +273,8 @@ def main():
 
                 msg = build_only_free_completion(novel, chap_field, entry.link, duration)
                 # send via webhook
-                send_discord_message(webhook_url, msg)
+                if webhook_url:
+                    safe_send_webhook(webhook_url, msg)
                 # also send via bot (if configured)
                 if bot_token and channel_id:
                     send_bot_message(bot_token, channel_id, msg)
@@ -290,7 +303,8 @@ def main():
 
                 msg = build_paid_completion(novel, chap_field, entry.link, duration)
                 # send via webhook
-                send_discord_message(webhook_url, msg)
+                if webhook_url:
+                    safe_send_webhook(webhook_url, msg)
                 # also send via bot (if configured)
                 if bot_token and channel_id:
                     send_bot_message(bot_token, channel_id, msg)
@@ -310,7 +324,8 @@ def main():
 
                 msg = build_free_completion(novel, chap_field, entry.link)
                 # send via webhook
-                send_discord_message(webhook_url, msg)
+                if webhook_url:
+                    safe_send_webhook(webhook_url, msg)
                 # also send via bot (if configured)
                 if bot_token and channel_id:
                     send_bot_message(bot_token, channel_id, msg)
