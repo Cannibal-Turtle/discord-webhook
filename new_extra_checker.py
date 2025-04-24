@@ -99,10 +99,18 @@ def process_extras(novel):
     current = max(max_ex, max_ss)
     if current > last:
         # — extract totals from config —
-        m_ex   = re.search(r"(\d+)\s*extras?",       novel["chapter_count"], re.IGNORECASE)
+        m_ex   = re.search(r"(\d+)\s*extras?", novel["chapter_count"], re.IGNORECASE)
         m_ss   = re.search(r"(\d+)\s*(?:side story|side stories)", novel["chapter_count"], re.IGNORECASE)
         tot_ex = int(m_ex.group(1)) if m_ex else 0
         tot_ss = int(m_ss.group(1)) if m_ss else 0
+
+        # ── SKIP the “all extras/side stories just dropped” case ──
+        if max_ex == tot_ex and max_ss == tot_ss:
+            print("🔕 All extras and side stories dropped at once; suspending notification")
+            meta["last_extra_announced"] = current
+            meta["extra_announced"]      = True
+            save_state(state)
+            return
 
         # — build the header label —
         parts = []
