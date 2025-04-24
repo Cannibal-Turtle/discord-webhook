@@ -7,6 +7,10 @@ on:
     - cron: '0 15 * * *'      # daily at 15:00 UTC
   workflow_dispatch:
 
+concurrency:
+  group: rss-to-discord-workflow
+  cancel-in-progress: false
+
 permissions:
   contents: write
 
@@ -15,7 +19,7 @@ jobs:
     # only cancel any prior FREE job, not the PAID one
     concurrency:
       group: rss-to-discord-free-chapters
-      cancel-in-progress: true
+      cancel-in-progress: false
 
     if: >
       github.event_name == 'schedule' ||
@@ -63,10 +67,9 @@ jobs:
           fi
 
   paid_chapters:
-    # only cancel any prior PAID job, not the FREE one
     concurrency:
       group: rss-to-discord-paid-chapters
-      cancel-in-progress: true
+      cancel-in-progress: false
 
     if: >
       github.event_name == 'schedule' ||
