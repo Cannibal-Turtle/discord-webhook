@@ -1,5 +1,12 @@
 name: Check RSS & Send Chapters
 
+# ──────────────────────────────────────────────────────────────────────────────
+# Prevent any two jobs (free, paid, comments) from running at the same time
+# so they don’t race to pull→commit the same state_rss.json.
+concurrency:
+  group: rss-to-discord-chapters
+  cancel-in-progress: false
+
 on:
   repository_dispatch:
     types: [trigger-discord-notify]
@@ -8,27 +15,22 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: write  # needed so we can push back updated JSON
 
 jobs:
   free_chapters:
-    # only cancel previous FREE runs (leave PAID alone)
-    concurrency:
-      group: rss-to-discord-free-chapters
-      cancel-in-progress: false
-
     if: >
       github.event_name == 'schedule' ||
       github.event_name == 'workflow_dispatch' ||
       (github.event_name == 'repository_dispatch' && github.event.client_payload.feed == 'free')
-
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v3
         with:
           persist-credentials: true
-          fetch-depth: 0
+          fetch-depth: 0         # full git history, needed for rebasing
 
       - name: Setup Python
         uses: actions/setup-python@v4
@@ -40,6 +42,7 @@ jobs:
           pip install discord.py feedparser python-dateutil
 
       - name: Run Free Chapters Bot
+        # your script reads + writes state_rss.json
         timeout-minutes: 5
         env:
           DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
@@ -51,32 +54,28 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # auto‐stash any local edits, rebase onto latest main, then unstash
+          # pull any updates (should be none, since concurrency locked)
           git pull origin main --rebase --autostash
           git add state_rss.json
           if git diff --cached --quiet; then
             echo "No state changes to commit."
           else
+            # commit under bot identity
             git config user.name  "github-actions[bot]"
             git config user.email "github-actions[bot]@users.noreply.github.com"
-            git commit -m "ci: update state_rss.json"
+            git commit -m "ci: update state_rss.json (free)"
             git push origin main
           fi
 
   paid_chapters:
-    # only cancel previous PAID runs (leave FREE alone)
-    concurrency:
-      group: rss-to-discord-paid-chapters
-      cancel-in-progress: false
-
     if: >
       github.event_name == 'schedule' ||
       github.event_name == 'workflow_dispatch' ||
       (github.event_name == 'repository_dispatch' && github.event.client_payload.feed == 'paid')
-
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v3
         with:
           persist-credentials: true
@@ -110,6 +109,6 @@ jobs:
           else
             git config user.name  "github-actions[bot]"
             git config user.email "github-actions[bot]@users.noreply.github.com"
-            git commit -m "ci: update state_rss.json"
+            git commit -m "ci: update state_rss.json (paid)"
             git push origin main
           fi
