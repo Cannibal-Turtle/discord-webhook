@@ -21,6 +21,7 @@ jobs:
       github.event_name == 'schedule' ||
       github.event_name == 'workflow_dispatch' ||
       (github.event_name == 'repository_dispatch' && github.event.client_payload.feed == 'free')
+
     runs-on: ubuntu-latest
 
     steps:
@@ -51,9 +52,11 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          # Fetch the remote copy of state_rss.json
           git fetch origin main
           git show origin/main:state_rss.json > state_remote.json
 
+          # Merge remote+local into a single JSON
           python3 - << 'PYCODE'
 import json
 remote = json.load(open('state_remote.json', encoding='utf-8'))
@@ -63,6 +66,7 @@ with open('state_rss.json', 'w', encoding='utf-8') as f:
     json.dump(merged, f, indent=2, ensure_ascii=False)
 PYCODE
 
+          # Commit only if it changed
           git add state_rss.json
           if git diff --cached --quiet; then
             echo "No state changes to commit."
@@ -83,6 +87,7 @@ PYCODE
       github.event_name == 'schedule' ||
       github.event_name == 'workflow_dispatch' ||
       (github.event_name == 'repository_dispatch' && github.event.client_payload.feed == 'paid')
+
     runs-on: ubuntu-latest
 
     steps:
@@ -113,9 +118,11 @@ PYCODE
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          # Fetch the remote copy of state_rss.json
           git fetch origin main
           git show origin/main:state_rss.json > state_remote.json
 
+          # Merge remote+local into a single JSON
           python3 - << 'PYCODE'
 import json
 remote = json.load(open('state_remote.json', encoding='utf-8'))
@@ -125,6 +132,7 @@ with open('state_rss.json', 'w', encoding='utf-8') as f:
     json.dump(merged, f, indent=2, ensure_ascii=False)
 PYCODE
 
+          # Commit only if it changed
           git add state_rss.json
           if git diff --cached --quiet; then
             echo "No state changes to commit."
