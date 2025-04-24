@@ -8,7 +8,7 @@ import discord
 from discord import Embed
 
 # ─── CONFIG ────────────────────────────────────────────────────────────────────
-TOKEN       = os.environ["DISCORD_BOT_TOKEN"]
+TOKEN       = os.environ["DISCORD_BOT_TOKEN"]s
 CHANNEL_ID  = int(os.environ["DISCORD_COMMENTS_CHANNEL"])
 STATE_FILE  = "state_comments.json"
 RSS_URL     = "https://cannibal-turtle.github.io/rss-feed/aggregated_comments_feed.xml"
