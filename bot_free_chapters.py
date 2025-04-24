@@ -33,9 +33,8 @@ def save_state(state):
 
 async def send_new_entries():
     state = load_state()
-    feed = feedparser.parse(RSS_URL)
-    # entries come newest→oldest by default; reverse so we post oldest first
-    entries = list(reversed(feed.entries))
+    feed  = feedparser.parse(RSS_URL)
+    entries = list(reversed(feed.entries))  # oldest → newest
 
     # discord.py setup
     intents = discord.Intents.default()
@@ -49,27 +48,33 @@ async def send_new_entries():
             await bot.close()
             return
 
-        new_last = state.get("last_guid")
-        for entry in entries:
-            guid = entry.get("guid") or entry.get("id")
-            if state["last_guid"] is not None and guid == state["last_guid"]:
-                # we've caught up
-                break
+        # 1) Prepare chronological slice
+        guids   = [(e.get("guid") or e.get("id")) for e in entries]
+        last    = state.get("last_guid")
+        if last in guids:
+            idx     = guids.index(last)
+            to_send = entries[idx+1:]
+        else:
+            to_send = entries
 
-            # ── build content ─────────────────────────────────────────────────
-            # MonitoRSS did: {{rss:discord_role_id__#}} | {{discord::mentions}}\n**{{title}}** 🔓
-            role_id = entry.get("discord_role_id", "").strip()
-            title   = entry.get("title", "").strip()
+        # 2) Send only those new entries
+        new_last = state.get("last_guid")
+        for entry in to_send:
+            guid = entry.get("guid") or entry.get("id")
+
+            # build content…
+            role_id = entry.get("discord_role_id","").strip()
+            title   = entry.get("title","").strip()
             content = f"{role_id} | {GLOBAL_MENTION}\n**{title}**  🔓"
 
-            # ── build embed ────────────────────────────────────────────────────
-            chaptername = entry.get("chaptername", "").strip()
-            nameextend  = entry.get("nameextend", "").strip()
-            link        = entry.get("link", "").strip()
-            translator  = entry.get("translator", "").strip()
-            thumb_url   = entry.get("featuredImage", {}).get("url") or entry.get("featuredimage", {}).get("url")
-            host        = entry.get("host", "").strip()
-            host_logo   = entry.get("hostLogo", {}).get("url") or entry.get("hostlogo", {}).get("url")
+            # build embed…
+            chaptername = entry.get("chaptername","").strip()
+            nameextend  = entry.get("nameextend","").strip()
+            link        = entry.get("link","").strip()
+            translator  = entry.get("translator","").strip()
+            thumb_url   = (entry.get("featuredImage") or entry.get("featuredimage") or {}).get("url")
+            host        = entry.get("host","").strip()   # ← make sure host is pulled here
+            host_logo   = (entry.get("hostLogo") or entry.get("hostlogo") or {}).get("url")
             pubdate_raw = entry.get("pubDate") or entry.get("pubdate")
             timestamp   = dateparser.parse(pubdate_raw) if pubdate_raw else None
 
@@ -85,21 +90,16 @@ async def send_new_entries():
                 embed.set_thumbnail(url=thumb_url)
             embed.set_footer(text=host, icon_url=host_logo)
 
-            # ── button ─────────────────────────────────────────────────────────
+            # button & send…
             view = View()
-            view.add_item(
-                Button(label="Read here", url=link)
-            )
-
-            # ── actually send it ────────────────────────────────────────────────
+            view.add_item(Button(label="Read here", url=link))
             await channel.send(content=content, embed=embed, view=view)
             print(f"📨 Sent: {chaptername} / {guid}")
 
-            # track so we don’t repost
             new_last = guid
 
-        # save updated state & shut down
-        if new_last:
+        # 3) Save checkpoint & exit
+        if new_last and new_last != state.get("last_guid"):
             state["last_guid"] = new_last
             save_state(state)
             print(f"💾 Updated state.last_guid → {new_last}")
@@ -107,7 +107,6 @@ async def send_new_entries():
         await bot.close()
 
     await bot.start(TOKEN)
-
 
 if __name__ == "__main__":
     asyncio.run(send_new_entries())
