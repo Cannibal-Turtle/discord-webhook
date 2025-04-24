@@ -14,7 +14,7 @@ TOKEN           = os.environ["DISCORD_BOT_TOKEN"]
 CHANNEL_ID      = int(os.environ["DISCORD_FREE_CHAPTERS_CHANNEL"])
 STATE_FILE      = "state_rss.json"
 FEED_KEY        = "free_last_guid"
-RSS_URL         = "https://cannibal-turtle.github.io/rss-feed/free_chapters_feed.xml"
+RSS_URL         = "https://raw.githubusercontent.com/Cannibal-Turtle/rss-feed/main/free_chapters_feed.xml"
 
 # a global “always-mention” role id you used in MonitoRSS
 GLOBAL_MENTION = "<@&1342483851338846288>"
