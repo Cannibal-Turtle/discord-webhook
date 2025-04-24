@@ -15,9 +15,14 @@ RSS_URL     = "https://cannibal-turtle.github.io/rss-feed/aggregated_comments_fe
 # ────────────────────────────────────────────────────────────────────────────────
 
 def load_state():
-    if os.path.exists(STATE_FILE):
-        return json.load(open(STATE_FILE, encoding="utf-8"))
-    return {"last_guid": None}
+    try:
+        with open(STATE_FILE, encoding="utf-8") as f:
+            return json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        initial = {"last_guid": None}
+        with open(STATE_FILE, "w", encoding="utf-8") as f:
+            json.dump(initial, f, indent=2, ensure_ascii=False)
+        return initial
 
 def save_state(state):
     with open(STATE_FILE, "w", encoding="utf-8") as f:
@@ -39,28 +44,38 @@ async def send_new_comments():
             print(f"❌ Cannot find channel {CHANNEL_ID}")
             await bot.close()
             return
-
-        new_last = state.get("last_guid")
-        for entry in entries:
-            guid = entry.get("guid") or entry.get("id")
-            if state["last_guid"] is not None and guid == state["last_guid"]:
-                break  # no more new comments
-
-            # ── Content ────────────────────────────────────────────────────────
-            title       = entry.get("title", "").strip()
-            role_id     = entry.get("discord_role_id", "").strip()
+            
+        # 1) Chronological order (oldest → newest)
+        entries = list(reversed(feed.entries))
+        
+        # 2) Build GUID list and slice out only new entries
+        guids   = [(e.get("guid") or e.get("id")) for e in entries]
+        last    = state.get("last_guid")
+        if last in guids:
+            idx     = guids.index(last)
+            to_send = entries[idx+1:]
+        else:
+            to_send = entries
+        
+        # 3) Post each new comment in order
+        new_last = last
+        for entry in to_send:
+            guid        = entry.get("guid") or entry.get("id")
+            title       = entry.get("title","").strip()
+            role_id     = entry.get("discord_role_id","").strip()
             content     = f"New comment for **{title}** || {role_id}"
-
-            # ── Embed ──────────────────────────────────────────────────────────
-            author      = entry.get("author") or entry.get("dc_creator", "")
-            chapter     = entry.get("chapter", "").strip()
-            comment_txt = entry.get("description", "").strip()
-            reply_chain = entry.get("reply_chain", "").strip()  # placeholder fallback
-            host        = entry.get("host", "").strip()
-            host_logo   = (entry.get("hostLogo") or entry.get("hostlogo") or {}).get("url", "")
-            pubdate_raw = entry.get("pubDate") or entry.get("pubdate")
+        
+            author      = entry.get("author") or entry.get("dc_creator","")
+            chapter     = entry.get("chapter","").strip()
+            comment_txt = entry.get("description","").strip()
+            reply_chain = entry.get("reply_chain","").strip()
+            host        = entry.get("host","").strip()
+            host_logo   = (entry.get("hostLogo") or entry.get("hostlogo") or {}).get("url","")
+        
+            # pull the real pubDate
+            pubdate_raw = getattr(entry, "published", None)
             timestamp   = dateparser.parse(pubdate_raw) if pubdate_raw else None
-
+        
             embed = Embed(
                 title=f"❛❛{comment_txt}❜❜",
                 description=reply_chain or discord.Embed.Empty,
@@ -69,13 +84,13 @@ async def send_new_comments():
             )
             embed.set_author(name=f"comment by {author} 🕊️ {chapter}")
             embed.set_footer(text=host, icon_url=host_logo)
-
-            # ── Send & track ───────────────────────────────────────────────────
+        
             await channel.send(content=content, embed=embed)
             print(f"📨 Sent comment: {guid}")
             new_last = guid
-
-        if new_last:
+        
+        # 4) Commit the new checkpoint
+        if new_last and new_last != state.get("last_guid"):
             state["last_guid"] = new_last
             save_state(state)
             print(f"💾 Updated comments state.last_guid → {new_last}")
