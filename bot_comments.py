@@ -15,34 +15,24 @@ API_URL     = f"https://discord.com/api/v10/channels/{CHANNEL_ID}/messages"
 
 def load_state():
     try:
-        with open(STATE_FILE, encoding="utf-8") as f:
-            return json.load(f)
-    except (FileNotFoundError, json.JSONDecodeError):
-        initial = {"last_guid": None}
-        with open(STATE_FILE, "w", encoding="utf-8") as f:
-            json.dump(initial, f, indent=2, ensure_ascii=False)
-        return initial
+        return json.load(open(STATE_FILE, encoding="utf-8"))
+    except:
+        init = {"last_guid": None}
+        json.dump(init, open(STATE_FILE,"w",encoding="utf-8"), indent=2)
+        return init
 
-def save_state(state):
-    with open(STATE_FILE, "w", encoding="utf-8") as f:
-        json.dump(state, f, indent=2, ensure_ascii=False)
+def save_state(s):
+    json.dump(s, open(STATE_FILE,"w",encoding="utf-8"), indent=2)
 
-async def send_new_comments():
+async def main():
     state   = load_state()
-    print("🔍 Loaded state:", state)
-
     feed    = feedparser.parse(RSS_URL)
-    entries = list(reversed(feed.entries))
-    print(f"🔍 Parsed feed, {len(entries)} total entries")
-
-    # 1) Compute only‐new slice
+    entries = list(reversed(feed.entries))  # oldest→newest
     guids   = [(e.get("guid") or e.get("id")) for e in entries]
-    last    = state.get("last_guid")
+    last    = state["last_guid"]
     to_send = entries[guids.index(last)+1:] if last in guids else entries
-    print(f"🔍 {len(to_send)} new comments to send")
-
     if not to_send:
-        print("🛑 No new comments—exiting.")
+        print("No new comments.")
         return
 
     headers = {
@@ -50,50 +40,49 @@ async def send_new_comments():
         "Content-Type":  "application/json"
     }
 
-    async with aiohttp.ClientSession() as session:
+    async with aiohttp.ClientSession() as sess:
         new_last = last
         for entry in to_send:
             guid        = entry.get("guid") or entry.get("id")
-            print(f"✉️ Sending comment {guid}")
-
             title       = entry.get("title","").strip()
             role_id     = entry.get("discord_role_id","").strip()
-            content     = f"New comment for **{title}** || {role_id}"
-
             author      = entry.get("author") or entry.get("dc_creator","")
             chapter     = entry.get("chapter","").strip()
             comment_txt = entry.get("description","").strip()
             reply_chain = entry.get("reply_chain","").strip()
             host        = entry.get("host","").strip()
             host_logo   = (entry.get("hostLogo") or entry.get("hostlogo") or {}).get("url","")
+            pubdate_raw = getattr(entry,"published",None)
+            ts          = dateparser.parse(pubdate_raw).isoformat() if pubdate_raw else None
 
-            pubdate_raw = getattr(entry, "published", None)
-            timestamp   = dateparser.parse(pubdate_raw).isoformat() if pubdate_raw else None
+            # short title, full comment in description:
+            t = f"Comment by {author} 🕊️ {chapter}"
+            if len(t)>256: t = t[:253]+"..."
 
-            # Build the embed as a JSON-serializable dict:
             embed = {
-                "title":       f"❛❛{comment_txt}❜❜",
-                "description": reply_chain or "",
-                "timestamp":   timestamp,
-                "color":       int("F0C7A4", 16),
-                "author":      {"name": f"comment by {author} 🕊️ {chapter}"},
+                "title":       t,
+                "url":         entry.get("link",""),
+                "description": comment_txt + ("\n\n"+reply_chain if reply_chain else ""),
+                "timestamp":   ts,
+                "color":       int("F0C7A4",16),
                 "footer":      {"text": host, "icon_url": host_logo}
             }
 
-            payload = {"content": content, "embeds": [embed]}
-            resp = await session.post(API_URL, headers=headers, json=payload)
-            if resp.status in (200, 204):
-                print(f"✅ Sent {guid}")
-                new_last = guid
-            else:
-                text = await resp.text()
-                print(f"❗ Failed {guid}: {resp.status} {text}")
+            payload = {
+                "content": f"New comment for **{title}** || {role_id}",
+                "embeds":  [embed]
+            }
 
-    # 3) Save state
-    if new_last and new_last != state.get("last_guid"):
-        state["last_guid"] = new_last
-        save_state(state)
-        print(f"💾 Updated comments state.last_guid → {new_last}")
+            async with sess.post(API_URL, headers=headers, json=payload) as r:
+                if r.status in (200,204):
+                    print("Sent", guid)
+                    new_last = guid
+                else:
+                    print("Error", r.status, await r.text())
 
-if __name__ == "__main__":
-    asyncio.run(send_new_comments())
+        if new_last != last:
+            state["last_guid"] = new_last
+            save_state(state)
+
+if __name__=="__main__":
+    asyncio.run(main())
