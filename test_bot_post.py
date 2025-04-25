@@ -13,7 +13,7 @@ message = (
     "<@&1329391480435114005> | <@&1329391480435114005>\n"
     "## ꧁ᐟᐟ ◌ೄ⟢  Completion Announcement  :blueberries: ˚. ᵎᵎ˖ˎˊ-\n"
     "◈· ─ · ─ · ─ · ❁ · ─ ·𖥸· ─ · ❁ · ─ · ─ · ─ ·◈\n"
-    "***『[Test Novel](https://example.com)』— officially completed!*** <:turtle_super_hyper:1365223449827737630>\n\n"
+    "***『[Test Novel](https://example.com)』— officially completed!*** <a:turtle_super_hyper:1365223449827737630>\n\n"
     "*The last chapter, [Chapter 42](https://example.com/ch42), has now been released.*\n"
     "*After 2 months of updates, Test Novel is now fully translated with 42 chapters!*\n"
     "✎﹏﹏﹏﹏﹏﹏﹏﹏\n"
