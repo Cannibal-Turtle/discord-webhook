@@ -151,7 +151,7 @@ def process_extras(novel):
         ss_label    = "side story" if tot_ss == 1 else "side stories"
         remaining = (
             f"{base} is almost at the very end — just "
-            f"{tot_ex} {extra_label} and {tot_ss} {ss_label} left before we wrap up this journey for good <:turtle_cowboy2:1365266375274266695>."
+            f"{tot_ex} {extra_label} and {tot_ss} {ss_label} left before we wrap up this journey for good  <:turtle_cowboy2:1365266375274266695>"
         )
 
         # — assemble & send the Discord message —
@@ -161,7 +161,7 @@ def process_extras(novel):
             f"{remaining}\n"
             f"{cm} in {novel['host']}'s advance access today. "
             f"Thanks for sticking with this one ‘til the end. It means a lot. "
-            f"Please show your final love and support by leaving comments on the site~ <:turtlelovefamily:1365266991690285156>"
+            f"Please show your final love and support by leaving comments on the site~ <:turtlelovefamily:1365266991690285156> :heart_hands:"
         )
         # dual-send
         webhook_url = os.getenv(WEBHOOK_ENV)
