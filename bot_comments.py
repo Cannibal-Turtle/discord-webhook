@@ -99,7 +99,7 @@ async def main():
                 embed["description"] = reply_chain
 
             payload = {
-                "content": f"New comment for **{title}** || {role_id}",
+                "content": f"<:happy_turtle_ping:1365253831361036368> New comment for **{title}** || {role_id}",
                 "embeds":  [embed]
             }
 
