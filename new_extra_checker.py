@@ -70,10 +70,25 @@ def find_released_extras(paid_feed, raw_kw):
     return seen
 
 def process_extras(novel):
+    # 1) parse the paid feed up‐front
     paid_feed = feedparser.parse(novel["paid_feed"])
-    entries   = paid_feed.entries
+    last_chap = novel.get("last_chapter", "")
+    for e in paid_feed.entries:
+        chap = (e.get("chaptername") or "") + (e.get("nameextend") or "")
+        if last_chap and last_chap in chap:
+            print(f"→ skipping extras for {novel['novel_id']} — full series complete on feed")
+            return
 
-    # 0) NSFW check
+    # 2) now load state and guard against completion in state.json
+    state    = load_state()
+    novel_id = novel["novel_id"]
+    meta     = state.get(novel_id, {})
+    if meta.get("paid") or meta.get("free") or meta.get("only_free"):
+        print(f"→ skipping extras for {novel_id} — already completed (state.json)")
+        return
+
+    # 3) NSFW check
+    entries = paid_feed.entries
     is_nsfw = (
         novel["novel_title"] in get_nsfw_novels()
         or nsfw_detected(entries, novel["novel_title"])
@@ -81,17 +96,13 @@ def process_extras(novel):
     print(f"🕵️ is_nsfw={is_nsfw} for {novel['novel_title']}")
     base_mention = novel["role_mention"] + (f" | {NSFW_ROLE_ID}" if is_nsfw else "")
 
-    # 1) see what’s actually dropped in the feed
+    # 4) see what’s actually dropped in the feed
     dropped_extras = find_released_extras(paid_feed, "extra")
     dropped_ss     = find_released_extras(paid_feed, "side story")
     max_ex = max(dropped_extras) if dropped_extras else 0
     max_ss = max(dropped_ss)     if dropped_ss     else 0
 
-    # 2) only announce when something new appears
-    state = load_state()
-    novel_id = novel.get("novel_id", novel.get("novel_title"))
-    meta      = state.setdefault(novel_id, {})
-
+    # 5) only announce when something new appears
     # 🔒 cap to one announcement ever
     if meta.get("extra_announced"):
         return
@@ -103,14 +114,6 @@ def process_extras(novel):
         m_ss   = re.search(r"(\d+)\s*(?:side story|side stories)", novel["chapter_count"], re.IGNORECASE)
         tot_ex = int(m_ex.group(1)) if m_ex else 0
         tot_ss = int(m_ss.group(1)) if m_ss else 0
-
-        # ── SKIP the “all extras/side stories just dropped” case ──
-        if max_ex == tot_ex and max_ss == tot_ss:
-            print("🔕 All extras and side stories dropped at once; suspending notification")
-            meta["last_extra_announced"] = current
-            meta["extra_announced"]      = True
-            save_state(state)
-            return
 
         # — build the header label —
         parts = []
