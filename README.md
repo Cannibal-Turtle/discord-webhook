@@ -134,7 +134,7 @@ Only if you choose not to install the mapping package.
    ```diff
    + CONFIG_PATH = "config.json"
    ```
-- Bring back `load_config()` helper (which reads config.json).
+- Bring back `load_config()` helper (which reads `config.json`).
 - Swap the bottom if `__name__ == "__main__":` block to loop over:
   ```python
    config = load_config()
