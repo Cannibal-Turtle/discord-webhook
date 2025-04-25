@@ -6,8 +6,8 @@ from completed_novel_checker import build_paid_completion, safe_send_bot
 
 def main():
     # 1) retrieve your Bot credentials from env
-    bot_token  = os.getenv("BOT_TOKEN")
-    channel_id = os.getenv("CHANNEL_ID")
+    bot_token  = os.getenv("DISCORD_BOT_TOKEN")
+    channel_id = os.getenv("DISCORD_CHANNEL_ID")
     if not bot_token or not channel_id:
         print("⚠️ BOT_TOKEN and CHANNEL_ID must be set", file=sys.stderr)
         sys.exit(1)
