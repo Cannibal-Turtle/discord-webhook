@@ -23,5 +23,5 @@ jobs:
         env:
           # map your repository secrets into exactly the names your script expects:
           DISCORD_BOT_TOKEN:   ${{ secrets.DISCORD_BOT_TOKEN }}
-          DISCORD_CHANNEL_ID:  ${{ secrets.DISCORD_CHANNEL_ID }}
+          DISCORD_CHANNEL_ID:  ${{ secrets.DISCORD_FREE_CHAPTERS_CHANNEL }}
         run: python test_bot_post.py
