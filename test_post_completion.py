@@ -1,37 +1,36 @@
 #!/usr/bin/env python3
 import os
+import requests
 import sys
-from completed_novel_checker import build_paid_completion, safe_send_bot
 
+BOT_TOKEN  = os.getenv("DISCORD_BOT_TOKEN")
+CHANNEL_ID = os.getenv("DISCORD_CHANNEL_ID")
+if not BOT_TOKEN or not CHANNEL_ID:
+    sys.exit("ERROR: BOT_TOKEN and CHANNEL_ID must be set")
 
-def main():
-    # 1) retrieve your Bot credentials from env
-    bot_token  = os.getenv("DISCORD_BOT_TOKEN")
-    channel_id = os.getenv("DISCORD_CHANNEL_ID")
-    if not bot_token or not channel_id:
-        print("⚠️ BOT_TOKEN and CHANNEL_ID must be set", file=sys.stderr)
-        sys.exit(1)
+# build your fake completion message
+message = (
+    "<@&1329391480435114005> | <@&1329391480435114005>\n"
+    "## ꧁ᐟᐟ ◌ೄ⟢  Completion Announcement  :blueberries: ˚. ᵎᵎ˖ˎˊ-\n"
+    "◈· ─ · ─ · ─ · ❁ · ─ ·𖥸· ─ · ❁ · ─ · ─ · ─ ·◈\n"
+    "***『[Test Novel](https://example.com)』— officially completed!*** :turtle_super_hyper:\n\n"
+    "*The last chapter, [Chapter 42](https://example.com/ch42), has now been released.*\n"
+    "*After 2 months of updates, Test Novel is now fully translated with 42 chapters!*\n"
+    "✎﹏﹏﹏﹏﹏﹏﹏﹏\n"
+    "-# Check out other translated projects at https://discord.com/channels/... and react to get the latest updates~"
+)
 
-    # 2) construct a fake novel payload for testing
-    novel = {
-        "role_mention":    "<@&1329391480435114005>",
-        "novel_title":     "Test Novel",
-        "novel_link":      "https://example.com/novel",
-        "host":            "ExampleHost",
-        "discord_role_url":"https://discord.com/channels/...",
-        "chapter_count":   "42 chapters",
-    }
+url = f"https://discord.com/api/v10/channels/{CHANNEL_ID}/messages"
+headers = {
+    "Authorization": f"Bot {BOT_TOKEN}",
+    "Content-Type":  "application/json"
+}
+payload = {
+    "content": message,
+    "allowed_mentions": {"parse": ["roles"]},
+    "flags": 4
+}
 
-    # 3) build & send the paid-completion message
-    msg = build_paid_completion(
-        novel,
-        chap_field="Chapter 42",
-        chap_link="https://example.com/novel/chapter-42",
-        duration="a fortnight"
-    )
-
-    safe_send_bot(bot_token, channel_id, msg)
-
-
-if __name__ == "__main__":
-    main()
+resp = requests.post(url, headers=headers, json=payload)
+resp.raise_for_status()
+print("✅ Test completion sent successfully")
