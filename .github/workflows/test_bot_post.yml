@@ -17,7 +17,7 @@ jobs:
           python-version: '3.x'
 
       - name: Install requests
-        run: pip install requests
+        run: pip install requests discord.py python-dateutil
 
       - name: Run test_bot_post
         env:
