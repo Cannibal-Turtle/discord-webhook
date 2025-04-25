@@ -3,8 +3,8 @@ import os
 import requests
 import sys
 
-BOT_TOKEN  = os.getenv("DISCORD_BOT_TOKEN")
-CHANNEL_ID = os.getenv("DISCORD_CHANNEL_ID")
+DISCORD_BOT_TOKEN  = os.getenv("DISCORD_BOT_TOKEN")
+DISCORD_CHANNEL_ID = os.getenv("DISCORD_CHANNEL_ID")
 if not BOT_TOKEN or not CHANNEL_ID:
     sys.exit("ERROR: DISCORD_BOT_TOKEN and DISCORD_CHANNEL_ID must be set")
 
