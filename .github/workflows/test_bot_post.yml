@@ -4,11 +4,11 @@ on:
   workflow_dispatch:
 
 jobs:
-  send_test:
+  demo_comments:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v3
+
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
@@ -17,8 +17,8 @@ jobs:
       - name: Install deps
         run: pip install aiohttp python-dateutil
 
-      - name: Run Free Chapter Demo
+      - name: Send Demo Comment Alert
         env:
-          DISCORD_BOT_TOKEN:              ${{ secrets.DISCORD_BOT_TOKEN }}
-          DISCORD_FREE_CHAPTERS_CHANNEL:  ${{ secrets.DISCORD_COMMENTS_CHANNEL }}
+          DISCORD_BOT_TOKEN:            ${{ secrets.DISCORD_BOT_TOKEN }}
+          DISCORD_COMMENTS_CHANNEL:     ${{ secrets.DISCORD_COMMENTS_CHANNEL }}
         run: python test_bot_post.py
