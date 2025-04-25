@@ -64,7 +64,7 @@ To allow the script to update the **novel history JSON files** and push changes 
 
 ### Option 1:📋 Install Mapping Package
 
-If you’d rather always pull the latest `novel_mappings.py` from the rss-feed repo, add this to your CI’s install step:
+If you’d rather always pull the latest `novel_mappings.py` from the `rss-feed` repo, add this to your CI’s install step:
 ```
 pip install --upgrade git+https://github.com/Cannibal-Turtle/rss-feed.git@main
 ```
