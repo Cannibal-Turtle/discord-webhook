@@ -1,72 +1,72 @@
 #!/usr/bin/env python3
 import os
 import asyncio
-
-import discord
-from discord import Embed
-from discord.ui import View, Button
+import aiohttp
 from dateutil import parser as dateparser
 
 # ─── CONFIG ───────────────────────────────────────────
-TOKEN           = os.getenv("DISCORD_BOT_TOKEN")
-CHANNEL_ID      = int(os.getenv("DISCORD_FREE_CHAPTERS_CHANNEL"))
-GLOBAL_MENTION  = "<@&1342483851338846288>"
+TOKEN      = os.getenv("DISCORD_BOT_TOKEN")
+CHANNEL_ID = os.getenv("DISCORD_COMMENTS_CHANNEL")
+if not TOKEN or not CHANNEL_ID:
+    raise RuntimeError("DISCORD_BOT_TOKEN and DISCORD_COMMENTS_CHANNEL must be set")
+API_URL    = f"https://discord.com/api/v10/channels/{CHANNEL_ID}/messages"
 # ───────────────────────────────────────────────────────
 
-if not TOKEN or not CHANNEL_ID:
-    raise RuntimeError("DISCORD_BOT_TOKEN and DISCORD_FREE_CHAPTERS_CHANNEL must be set")
-
-async def demo_post():
-    intents = discord.Intents.default()
-    bot = discord.Client(intents=intents)
-
-    @bot.event
-    async def on_ready():
-        channel = bot.get_channel(CHANNEL_ID)
-        if channel is None:
-            print(f"❌ Cannot find channel {CHANNEL_ID}")
-            await bot.close()
-            return
-
-        # — build the text content —
-        role_id = "<@&1329391480435114005>"
-        content = (
-            f"{role_id} | {GLOBAL_MENTION} <a:TurtleDance:1365253970435510293>\n"
-            "**Test Chapter 1**  🔓"
+async def demo_comment_alert():
+    async with aiohttp.ClientSession() as session:
+        # ─── build the message content ─────────────────────
+        role_id     = "<@&1329391480435114005>"
+        message_txt = (
+            f"<:happy_turtle_ping:1365253831361036368> "
+            f"New comment for **Demo Novel** || {role_id}"
         )
 
-        # — build the embed —
-        chaptername = "Chapter 1"
-        nameextend  = "The very first step"
-        link        = "https://example.com/novel/ch1"
-        translator  = "DemoTranslator"
-        thumb_url   = "https://example.com/cover.jpg"
-        host        = "ExampleHost"
+        # ─── build an embed like your real script does ─────
+        author      = "DemoUser"
+        chapter     = "Chapter 5"
+        comment_txt = "This is a demo comment — it might get truncated if too long."
+        reply_chain = "In reply to: “I love this part!”"
+        host        = "DemoHost"
         host_logo   = "https://example.com/logo.png"
-        pubdate_raw = "2025-04-25T12:00:00+00:00"
-        timestamp   = dateparser.parse(pubdate_raw)
+        link        = "https://example.com/democomment"
+        # wrap comment in ❛❛…❜❜ and truncate at 200 chars for demo
+        safe = comment_txt
+        if len(safe) > 200:
+            safe = safe[:200].rstrip() + "..."
+        title = f"❛❛{safe}❜❜"
+        timestamp = dateparser.parse("2025-04-25T12:00:00+00:00").isoformat()
 
-        embed = Embed(
-            title=f"**{chaptername}**⋆. 𐙚 ˚",
-            url=link,
-            description=nameextend,
-            timestamp=timestamp,
-            color=int("FFF9BF", 16),
-        )
-        embed.set_author(name=f"{translator}˙ᵕ˙")
-        embed.set_thumbnail(url=thumb_url)
-        embed.set_footer(text=host, icon_url=host_logo)
+        embed = {
+            "author": {
+                "name": f"comment by {author} 🕊️ {chapter}",
+                "url":  link
+            },
+            "title":     title,
+            "description": reply_chain,
+            "timestamp": timestamp,
+            "color":     int("F0C7A4", 16),
+            "footer": {
+                "text":     host,
+                "icon_url": host_logo
+            }
+        }
 
-        # — attach a “Read here” button —
-        view = View()
-        view.add_item(Button(label="Read here", url=link))
+        payload = {
+            "content": message_txt,
+            "embeds":  [embed]
+        }
 
-        # — send it!
-        await channel.send(content=content, embed=embed, view=view)
-        print("📨 Demo free-chapter alert sent")
-        await bot.close()
-
-    await bot.start(TOKEN)
+        # ─── send it ────────────────────────────────────────
+        headers = {
+            "Authorization": f"Bot {TOKEN}",
+            "Content-Type":  "application/json"
+        }
+        async with session.post(API_URL, headers=headers, json=payload) as resp:
+            if resp.status in (200, 204):
+                print("✅ Demo comment alert sent")
+            else:
+                text = await resp.text()
+                print(f"❌ Failed ({resp.status}): {text}")
 
 if __name__ == "__main__":
-    asyncio.run(demo_post())
+    asyncio.run(demo_comment_alert())
