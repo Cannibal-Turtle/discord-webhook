@@ -16,6 +16,9 @@ jobs:
         with:
           python-version: '3.x'
 
+      - name: Install dependencies
+        run: pip install requests
+
       - name: Run test_bot_post
         env:
           BOT_TOKEN:   ${{ secrets.DISCORD_BOT_TOKEN }}
