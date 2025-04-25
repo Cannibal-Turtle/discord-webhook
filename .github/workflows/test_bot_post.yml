@@ -16,11 +16,12 @@ jobs:
         with:
           python-version: '3.x'
 
-      - name: Install dependencies
+      - name: Install requests
         run: pip install requests
 
       - name: Run test_bot_post
         env:
-          BOT_TOKEN:   ${{ secrets.DISCORD_BOT_TOKEN }}
-          CHANNEL_ID:  ${{ secrets.DISCORD_CHANNEL_ID }}
+          # map your repository secrets into exactly the names your script expects:
+          DISCORD_BOT_TOKEN:   ${{ secrets.DISCORD_BOT_TOKEN }}
+          DISCORD_CHANNEL_ID:  ${{ secrets.DISCORD_CHANNEL_ID }}
         run: python test_bot_post.py
