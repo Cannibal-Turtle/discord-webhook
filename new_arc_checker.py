@@ -266,7 +266,7 @@ def process_arc(novel):
         f"{base_mention} | {ONGOING_ROLE}\n"
         "## <a:Turtle_Police:1365223650466205738> NEW ARC ALERT˚ · .˚ ༘:butterfly:⋆｡˚\n"
         f"***《World {world_number}》is Live for***\n"
-        f"### [{novel['novel_title']}]({novel['novel_link']}) <:Hehe:1329429547229122580>\n"
+        f"### [{novel['novel_title']}]({novel['novel_link']}) <:Turtle_Sip:1365253936637935646>\n"
         "❀° ┄───────────────────────╮\n"
         "**`Unlocked 🔓`**\n"
         f"||{unlocked_md}||\n\n"
