@@ -8,20 +8,17 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
+      - uses: actions/checkout@v3
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.x'
 
-      - name: Install requests
-        run: pip install requests discord.py python-dateutil
+      - name: Install deps
+        run: pip install discord.py python-dateutil
 
-      - name: Run test_bot_post
+      - name: Run Free Chapter Demo
         env:
-          # map your repository secrets into exactly the names your script expects:
-          DISCORD_BOT_TOKEN:   ${{ secrets.DISCORD_BOT_TOKEN }}
-          DISCORD_CHANNEL_ID:  ${{ secrets.DISCORD_FREE_CHAPTERS_CHANNEL }}
+          DISCORD_BOT_TOKEN:              ${{ secrets.DISCORD_BOT_TOKEN }}
+          DISCORD_FREE_CHAPTERS_CHANNEL:  ${{ secrets.DISCORD_FREE_CHAPTERS_CHANNEL }}
         run: python test_bot_post.py
