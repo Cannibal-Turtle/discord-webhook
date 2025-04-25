@@ -89,13 +89,13 @@ async def send_new_paid_entries():
 
 
             embed = Embed(
-                title=f"**{chaptername}**",
+                title=f"**{chaptername}⋆. 𐙚 ˚**",
                 url=link,
                 description=nameextend or discord.Embed.Empty,
                 timestamp=timestamp,
                 color=int("A87676", 16),
             )
-            embed.set_author(name=f"{translator}⋆. 𐙚")
+            embed.set_author(name=f"{translator}˙ᵕ˙")
             if thumb_url:
                 embed.set_thumbnail(url=thumb_url)
             embed.set_footer(text=host, icon_url=host_logo)
