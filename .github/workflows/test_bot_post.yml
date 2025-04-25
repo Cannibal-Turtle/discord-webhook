@@ -15,10 +15,10 @@ jobs:
           python-version: '3.x'
 
       - name: Install deps
-        run: pip install discord.py python-dateutil
+        run: pip install aiohttp python-dateutil
 
       - name: Run Free Chapter Demo
         env:
           DISCORD_BOT_TOKEN:              ${{ secrets.DISCORD_BOT_TOKEN }}
-          DISCORD_FREE_CHAPTERS_CHANNEL:  ${{ secrets.DISCORD_FREE_CHAPTERS_CHANNEL }}
+          DISCORD_FREE_CHAPTERS_CHANNEL:  ${{ secrets.DISCORD_COMMENTS_CHANNEL }}
         run: python test_bot_post.py
