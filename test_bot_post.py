@@ -5,7 +5,7 @@ import sys
 
 DISCORD_BOT_TOKEN  = os.getenv("DISCORD_BOT_TOKEN")
 DISCORD_CHANNEL_ID = os.getenv("DISCORD_CHANNEL_ID")
-if not BOT_TOKEN or not CHANNEL_ID:
+if not DISCORD_BOT_TOKEN or not DISCORD_CHANNEL_ID:
     sys.exit("ERROR: DISCORD_BOT_TOKEN and DISCORD_CHANNEL_ID must be set")
 
 # build your fake completion message
