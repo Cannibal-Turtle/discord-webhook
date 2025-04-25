@@ -273,7 +273,7 @@ def process_arc(novel):
         "**`Locked 🔐`**\n"
         f"||{locked_md}||\n"
         "╰───────────────────────┄ °❀\n"
-        f"> *Advance access is ready for you on {novel['host']}! :rose:*\n"
+        f"> *Advance access is ready for you on {novel['host']}! :bubble_tea:*\n"
         "✎﹏﹏﹏﹏﹏﹏﹏﹏\n"
         f"-# React to the {novel['custom_emoji']} @ {novel['discord_role_url']} to get notified on updates and announcements~"
     )
