@@ -141,7 +141,7 @@ def build_paid_completion(novel, chap_field, chap_link, duration: str):
         "◈· ─ · ─ · ─ · ❁ · ─ ·𖥸· ─ · ❁ · ─ · ─ · ─ ·◈\n"
         f"***『[{title}]({link})』— officially completed!***\n\n"
         f"*The last chapter, [{chap_text}]({chap_link}), has now been released. <a:turtle_super_hyper:1365223449827737630>\n"
-        f"After {duration} of updates, {title} is now fully translated with {count}! Thank you for coming on this journey and for your continued support :pandalove: You can now visit {host} to binge all advance releases~♡*"
+        f"After {duration} of updates, {title} is now fully translated with {count}! Thank you for coming on this journey and for your continued support <:turtle_plead:1365223487274352670> You can now visit {host} to binge all advance releases~♡*"
         "✎﹏﹏﹏﹏﹏﹏﹏﹏\n"
         f"-# Check out other translated projects at {discord_role_url} and react to get the latest updates~"
     )
@@ -163,7 +163,7 @@ def build_free_completion(novel, chap_field, chap_link):
         "◈· ─ · ─ · ─ · ❁ · ─ ·𖥸· ─ · ❁ · ─ · ─ · ─ ·◈\n"
         f"***『[{title}]({link})』— complete access granted!***\n\n"
         f"*All {count} has been unlocked and ready for you to binge—completely free!\n"
-        f"Thank you all for your amazing support   :green_turtle_heart:\n"
+        f"Thank you all for your amazing support   <:green_turtle_heart:1365264636064305203>\n"
         f"Head over to {host} to dive straight in~♡*"
         "✎﹏﹏﹏﹏﹏﹏﹏﹏\n"
         f"-# Check out other translated projects at {discord_role_url} and react to get the latest updates~"
@@ -187,7 +187,7 @@ def build_only_free_completion(novel, chap_field, chap_link, duration):
         "◈· ─ · ─ · ─ · ❁ · ─ ·𖥸· ─ · ❁ · ─ · ─ · ─ ·◈\n"
         f"***『[{title}]({link})』— officially completed!***\n\n"
         f"*The last chapter, [{chap_text}]({chap_link}), has now been released. <a:turtle_super_hyper:1365223449827737630>\n"
-        f"After {duration} of updates, {title} is now fully translated with {count}! Thank you for coming on this journey and for your continued support :d_greena_luv_turtle: You can now visit {host} to binge on all the releases~♡*"
+        f"After {duration} of updates, {title} is now fully translated with {count}! Thank you for coming on this journey and for your continued support <:d_greena_luv_turtle:365263712549736448> You can now visit {host} to binge on all the releases~♡*"
         "✎﹏﹏﹏﹏﹏﹏﹏﹏\n"
         f"-# Check out other translated projects at {discord_url} and react to get the latest updates~"
     )
