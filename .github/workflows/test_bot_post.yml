@@ -1,24 +1,26 @@
-name: Test Bot Completion Post
+name: Test Extras Alert
 
 on:
   workflow_dispatch:
 
 jobs:
-  demo_comments:
+  send_test_extras:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v3
 
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.x'
 
-      - name: Install deps
-        run: pip install aiohttp python-dateutil
+      - name: Install requests
+        run: pip install requests
 
-      - name: Send Demo Comment Alert
+      - name: Send Test Extras Alert
         env:
-          DISCORD_BOT_TOKEN:            ${{ secrets.DISCORD_BOT_TOKEN }}
-          DISCORD_COMMENTS_CHANNEL:     ${{ secrets.DISCORD_COMMENTS_CHANNEL }}
+          DISCORD_BOT_TOKEN:   ${{ secrets.DISCORD_BOT_TOKEN }}
+          DISCORD_CHANNEL_ID:  ${{ secrets.DISCORD_CHANNEL_ID }}
         run: python test_bot_post.py
