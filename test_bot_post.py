@@ -1,72 +1,49 @@
 #!/usr/bin/env python3
 import os
-import asyncio
-import aiohttp
-from dateutil import parser as dateparser
+import requests
+import sys
 
 # ─── CONFIG ───────────────────────────────────────────
-TOKEN      = os.getenv("DISCORD_BOT_TOKEN")
-CHANNEL_ID = os.getenv("DISCORD_COMMENTS_CHANNEL")
-if not TOKEN or not CHANNEL_ID:
-    raise RuntimeError("DISCORD_BOT_TOKEN and DISCORD_COMMENTS_CHANNEL must be set")
-API_URL    = f"https://discord.com/api/v10/channels/{CHANNEL_ID}/messages"
-# ───────────────────────────────────────────────────────
+DISCORD_BOT_TOKEN  = os.getenv("DISCORD_BOT_TOKEN")
+DISCORD_CHANNEL_ID = os.getenv("DISCORD_CHANNEL_ID")
+if not DISCORD_BOT_TOKEN or not DISCORD_CHANNEL_ID:
+    sys.exit("ERROR: DISCORD_BOT_TOKEN and DISCORD_CHANNEL_ID must be set")
 
-async def demo_comment_alert():
-    async with aiohttp.ClientSession() as session:
-        # ─── build the message content ─────────────────────
-        role_id     = "<@&1329391480435114005>"
-        message_txt = (
-            f"<:happy_turtle_ping:1365253831361036368> "
-            f"New comment for **Demo Novel** || {role_id}"
-        )
+# ─── DUMMY VALUES ─────────────────────────────────────
+base_mention = "<@&1329391480435114005>"
+ONGOING_ROLE = "<@&1329502951764525187>"
+disp_label   = "EXTRAS + SIDE STORIES"
+remaining    = (
+    "***[《Test Novel》](https://example.com/novel)*** is almost at the very end — "
+    "just 2 extras and 1 side story left before we wrap up this journey for good "
+    "<:turtle_cowboy2:1365266375274266695>."
+)
+cm           = "New extras and side stories just dropped"
+host         = "ExampleHost"
 
-        # ─── build an embed like your real script does ─────
-        author      = "DemoUser"
-        chapter     = "Chapter 5"
-        comment_txt = "This is a demo comment — it might get truncated if too long."
-        reply_chain = "In reply to: “I love this part!”"
-        host        = "DemoHost"
-        host_logo   = "https://example.com/logo.png"
-        link        = "https://example.com/democomment"
-        # wrap comment in ❛❛…❜❜ and truncate at 200 chars for demo
-        safe = comment_txt
-        if len(safe) > 200:
-            safe = safe[:200].rstrip() + "..."
-        title = f"❛❛{safe}❜❜"
-        timestamp = dateparser.parse("2025-04-25T12:00:00+00:00").isoformat()
+# ─── BUILD MESSAGE ────────────────────────────────────
+msg = (
+    f"{base_mention} | {ONGOING_ROLE}\n"
+    f"## :lotus:･ﾟ✧ NEW {disp_label} JUST DROPPED ✧ﾟ･:lotus:\n"
+    f"{remaining}\n"
+    f"{cm} in {host}'s advance access today. "
+    "Thanks for sticking with this one ‘til the end. It means a lot. "
+    "Please show your final love and support by leaving comments on the site~ "
+    "<:turtlelovefamily:1365266991690285156>"
+)
 
-        embed = {
-            "author": {
-                "name": f"comment by {author} 🕊️ {chapter}",
-                "url":  link
-            },
-            "title":     title,
-            "description": reply_chain,
-            "timestamp": timestamp,
-            "color":     int("F0C7A4", 16),
-            "footer": {
-                "text":     host,
-                "icon_url": host_logo
-            }
-        }
+# ─── SEND VIA BOT ────────────────────────────────────
+url = f"https://discord.com/api/v10/channels/{DISCORD_CHANNEL_ID}/messages"
+headers = {
+    "Authorization": f"Bot {DISCORD_BOT_TOKEN}",
+    "Content-Type":  "application/json"
+}
+payload = {
+    "content": msg,
+    "allowed_mentions": { "parse": ["roles"] },
+    "flags": 4
+}
 
-        payload = {
-            "content": message_txt,
-            "embeds":  [embed]
-        }
-
-        # ─── send it ────────────────────────────────────────
-        headers = {
-            "Authorization": f"Bot {TOKEN}",
-            "Content-Type":  "application/json"
-        }
-        async with session.post(API_URL, headers=headers, json=payload) as resp:
-            if resp.status in (200, 204):
-                print("✅ Demo comment alert sent")
-            else:
-                text = await resp.text()
-                print(f"❌ Failed ({resp.status}): {text}")
-
-if __name__ == "__main__":
-    asyncio.run(demo_comment_alert())
+resp = requests.post(url, headers=headers, json=payload)
+resp.raise_for_status()
+print("✅ Test extras alert sent successfully")
