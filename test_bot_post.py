@@ -6,7 +6,7 @@ import sys
 BOT_TOKEN  = os.getenv("DISCORD_BOT_TOKEN")
 CHANNEL_ID = os.getenv("DISCORD_CHANNEL_ID")
 if not BOT_TOKEN or not CHANNEL_ID:
-    sys.exit("ERROR: BOT_TOKEN and CHANNEL_ID must be set")
+    sys.exit("ERROR: DISCORD_BOT_TOKEN and DISCORD_CHANNEL_ID must be set")
 
 # build your fake completion message
 message = (
@@ -20,9 +20,9 @@ message = (
     "-# Check out other translated projects at https://discord.com/channels/... and react to get the latest updates~"
 )
 
-url = f"https://discord.com/api/v10/channels/{CHANNEL_ID}/messages"
+url = f"https://discord.com/api/v10/channels/{DISCORD_CHANNEL_ID}/messages"
 headers = {
-    "Authorization": f"Bot {BOT_TOKEN}",
+    "Authorization": f"Bot {DISCORD_BOT_TOKEN}",
     "Content-Type":  "application/json"
 }
 payload = {
