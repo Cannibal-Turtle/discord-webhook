@@ -1,0 +1,27 @@
+name: Test Bot Completion Announcement
+
+# allows you to trigger it from the Actions tab
+on:
+  workflow_dispatch:
+
+jobs:
+  test_completion:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      - name: Install dependencies
+        run: |
+          pip install requests feedparser python-dateutil
+
+      - name: Run test post
+        env:
+          BOT_TOKEN:   ${{ secrets.DISCORD_BOT_TOKEN }}
+          CHANNEL_ID:  ${{ secrets.DISCORD_CHANNEL_ID }}
+        run: python test_post_completion.py
