@@ -274,7 +274,7 @@ def process_arc(novel):
     decorative_footer = (
         "\n╰───────────────────────┄ °❀\n"
         f"> *Advance access is ready for you on {novel['host']}! <a:holo_diamond:1365566087277711430>*\n"
-        + "<a:pinkdiamond_border:1365575603734183936>" * 6
+        + "<:pinkdiamond_border:1365575603734183936>" * 6
     )
     react_line = (
         f"\n-# React to the {novel['custom_emoji']} @ {novel['discord_role_url']} "
