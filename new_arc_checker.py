@@ -264,50 +264,96 @@ def process_arc(novel):
     # ───────────────────────────────────────────────────────────────────────────────
 
     # ─── EMBEDS ────────────────────────────────────────────────────────────────────
-    # 1) Unlocked list embed
+    # 1) Unlocked list embed (no title; color only)
     embed_unlocked = {
-        "title": "<a:Hearts:1365575463296045156> Unlocked 🔓",
-        "description": unlocked_md or "None"
+        "description": unlocked_md or "None",
+        "color": 0xFFF9BF
     }
 
-    # 2) Locked list embed (with footer & react)
-    decorative_footer = (
-        "\n╰───────────────────────┄ °❀\n"
-        f"> *Advance access is ready for you on {novel['host']}! <a:holo_diamond:1365566087277711430>*\n"
-        + "<:pinkdiamond_border:1365575603734183936>" * 6
-    )
-    react_line = (
-        f"\n-# React to the {novel['custom_emoji']} @ {novel['discord_role_url']} "
-        "to get notified on updates and announcements <a:LoveLetter:1365575475841339435>"
-    )
-
+    # 2) Locked list embed (list only; no title/footer/react)
     embed_locked = {
-        "title": "<a:Hearts:1365575463296045156> Locked 🔐",
-        "description": (locked_md or "None") + decorative_footer + react_line
+        "description": locked_md or "None",
+        "color": 0xA87676
     }
     # ───────────────────────────────────────────────────────────────────────────────
 
-    # ─── SEND ONE MESSAGE WITH TWO EMBEDS ──────────────────────────────────────────
-    payload = {
-        "content": content,
-        "embeds": [embed_unlocked, embed_locked],
-        "allowed_mentions": {"parse": ["roles"]}
-    }
+    # ─── 1/3: POST BANNER ONLY ─────────────────────────────────────────────────────
     try:
-        resp = requests.post(
+        requests.post(
             f"https://discord.com/api/v10/channels/{CHANNEL_ID}/messages",
             headers={
                 "Authorization": f"Bot {BOT_TOKEN}",
                 "Content-Type":  "application/json"
             },
-            json=payload
-        )
-        if not resp.ok:
-            print(f"⚠️ Bot error {resp.status_code}: {resp.text}")
-        resp.raise_for_status()
-        print(f"✅ Bot embeds sent for: {new_full}")
+            json={
+                "content": content,
+                "allowed_mentions": {"parse": ["roles"]}
+            }
+        ).raise_for_status()
+        print(f"✅ Header sent for: {new_full}")
     except requests.RequestException as e:
-        print(f"⚠️ Bot send failed: {e}", file=sys.stderr)
+        print(f"⚠️ Header send failed: {e}", file=sys.stderr)
+
+    # ─── 2/3: UNLOCKED HEADING + EMBED ────────────────────────────────────────────
+    try:
+        requests.post(
+            f"https://discord.com/api/v10/channels/{CHANNEL_ID}/messages",
+            headers={
+                "Authorization": f"Bot {BOT_TOKEN}",
+                "Content-Type":  "application/json"
+            },
+            json={
+                "content": "<a:Hearts:1365575463296045156> Unlocked 🔓",
+                "embeds": [embed_unlocked],
+                "allowed_mentions": {"parse": ["roles"]}
+            }
+        ).raise_for_status()
+        print(f"✅ Unlocked embed sent for: {new_full}")
+    except requests.RequestException as e:
+        print(f"⚠️ Unlocked send failed: {e}", file=sys.stderr)
+
+    # ─── 3/3: LOCKED HEADING + EMBED ──────────────────────────────────────────────
+    try:
+        requests.post(
+            f"https://discord.com/api/v10/channels/{CHANNEL_ID}/messages",
+            headers={
+                "Authorization": f"Bot {BOT_TOKEN}",
+                "Content-Type":  "application/json"
+            },
+            json={
+                "content": "<a:Hearts:1365575463296045156> Locked 🔐",
+                "embeds": [embed_locked],
+                "allowed_mentions": {"parse": ["roles"]}
+            }
+        ).raise_for_status()
+        print(f"✅ Locked embed sent for: {new_full}")
+    except requests.RequestException as e:
+        print(f"⚠️ Locked send failed: {e}", file=sys.stderr)
+    # ───────────────────────────────────────────────────────────────────────────────
+
+    # ─── 4/4: FOOTER + REACT LINE AS PLAIN TEXT ───────────────────────────────────
+    footer_and_react = (
+        "╰───────────────────────┄ °❀\n"
+        f"> *Advance access is ready for you on {novel['host']}! <a:holo_diamond:1365566087277711430>*\n"
+        + "<:pinkdiamond_border:1365575603734183936>" * 6
+        + f"\n-# React to the {novel['custom_emoji']} @ {novel['discord_role_url']} "
+          "to get notified on updates and announcements <a:LoveLetter:1365575475841339435>"
+    )
+    try:
+        requests.post(
+            f"https://discord.com/api/v10/channels/{CHANNEL_ID}/messages",
+            headers={
+                "Authorization": f"Bot {BOT_TOKEN}",
+                "Content-Type":  "application/json"
+            },
+            json={
+                "content": footer_and_react,
+                "allowed_mentions": {"parse": ["roles"]}
+            }
+        ).raise_for_status()
+        print(f"✅ Footer/react sent for: {new_full}")
+    except requests.RequestException as e:
+        print(f"⚠️ Footer/react send failed: {e}", file=sys.stderr)
     # ───────────────────────────────────────────────────────────────────────────────
 
 # === LOAD & RUN ===
