@@ -269,7 +269,7 @@ def process_arc(novel):
         "╰───────────────────────┄ °❀\n"
         f"Advance access is ready for you on {novel['host']}! <a:holo_diamond:...>\n"
         + "<:pinkdiamond_border:...>" * 6 + "\n"
-        f"-# React to the {novel['custom_emoji']} @ {novel['discord_role_url']} ... <a:LoveLetter:...>"
+        f"-# React to the {novel['custom_emoji']} @ {novel['discord_role_url']} to get notified on updates and announcements <a:LoveLetter:1365575475841339435>"
     )
 
     announcement = [
