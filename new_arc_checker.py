@@ -23,7 +23,8 @@ def send_bot_message(bot_token: str, channel_id: str, content: str):
     }
     payload = {
         "content": content,
-        "allowed_mentions": {"parse": ["roles"]}
+        "allowed_mentions": {"parse": ["roles"]},
+        "flags": 4
     }
     resp = requests.post(url, headers=headers, json=payload)
     if not resp.ok:
@@ -266,13 +267,13 @@ def process_arc(novel):
     # ─── EMBEDS ────────────────────────────────────────────────────────────────────
     # 1) Unlocked list embed (no title; color only)
     embed_unlocked = {
-        "description": unlocked_md or "None",
+        "description": f"||{unlocked_md}||" if unlocked_md else "None",
         "color": 0xFFF9BF
     }
 
     # 2) Locked list embed (list only; no title/footer/react)
     embed_locked = {
-        "description": locked_md or "None",
+        "description": f"||{locked_md}||" if locked_md else "None",
         "color": 0xA87676
     }
     # ───────────────────────────────────────────────────────────────────────────────
@@ -287,7 +288,8 @@ def process_arc(novel):
             },
             json={
                 "content": content,
-                "allowed_mentions": {"parse": ["roles"]}
+                "allowed_mentions": {"parse": ["roles"]},
+                "flags": 4
             }
         ).raise_for_status()
         print(f"✅ Header sent for: {new_full}")
@@ -305,7 +307,8 @@ def process_arc(novel):
             json={
                 "content": "<a:Hearts:1365575463296045156> Unlocked 🔓",
                 "embeds": [embed_unlocked],
-                "allowed_mentions": {"parse": ["roles"]}
+                "allowed_mentions": {"parse": ["roles"]},
+                "flags": 4
             }
         ).raise_for_status()
         print(f"✅ Unlocked embed sent for: {new_full}")
@@ -323,7 +326,8 @@ def process_arc(novel):
             json={
                 "content": "<a:Hearts:1365575463296045156> Locked 🔐",
                 "embeds": [embed_locked],
-                "allowed_mentions": {"parse": ["roles"]}
+                "allowed_mentions": {"parse": ["roles"]},
+                "flags": 4
             }
         ).raise_for_status()
         print(f"✅ Locked embed sent for: {new_full}")
@@ -348,7 +352,8 @@ def process_arc(novel):
             },
             json={
                 "content": footer_and_react,
-                "allowed_mentions": {"parse": ["roles"]}
+                "allowed_mentions": {"parse": ["roles"]},
+                "flags": 4
             }
         ).raise_for_status()
         print(f"✅ Footer/react sent for: {new_full}")
