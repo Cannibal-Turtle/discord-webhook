@@ -6,11 +6,12 @@ import re
 import sys
 from novel_mappings import HOSTING_SITE_DATA, get_nsfw_novels
 
-ONGOING_ROLE = "<@&1329502951764525187>"
-NSFW_ROLE_ID = "<@&1343352825811439616>"
-WEBHOOK_ENV     = "DISCORD_WEBHOOK"
-BOT_TOKEN_ENV   = "DISCORD_BOT_TOKEN"
-CHANNEL_ID_ENV  = "DISCORD_CHANNEL_ID"
+# ─── CONFIG ────────────────────────────────────────────────────────────────────
+BOT_TOKEN      = os.environ["DISCORD_BOT_TOKEN"]
+CHANNEL_ID     = os.environ["DISCORD_CHANNEL_ID"]
+ONGOING_ROLE   = "<@&1329502951764525187>"
+NSFW_ROLE_ID   = "<@&1343352825811439616>"
+# ────────────────────────────────────────────────────────────────────────────────
 
 # === HELPER FUNCTIONS ===
 
@@ -22,29 +23,13 @@ def send_bot_message(bot_token: str, channel_id: str, content: str):
     }
     payload = {
         "content": content,
-        "allowed_mentions": {"parse": ["roles"]},
-        "flags": 4
+        "allowed_mentions": {"parse": ["roles"]}
     }
-    r = requests.post(url, headers=headers, json=payload)
-    r.raise_for_status()
-
-def safe_send_webhook(webhook_url: str, content: str):
-    payload = {
-        "content": content,
-        "allowed_mentions": {"parse": ["roles"]},
-        # “flags” goes here if you still want it, but see below
-    }
-    print(f"[DEBUG] webhook payload length: {len(json.dumps(payload))}")
-    resp = requests.post(webhook_url, json=payload)
+    resp = requests.post(url, headers=headers, json=payload)
     if not resp.ok:
-        print(f"⚠️ webhook {resp.status_code} → {resp.text}")
+        # print the Discord error payload so you know exactly why it’s 400
+        print(f"⚠️ Bot error {resp.status_code}: {resp.text}")
     resp.raise_for_status()
-
-def safe_send_bot(bot_token: str, channel_id: str, content: str):
-    try:
-        send_bot_message(bot_token, channel_id, content)
-    except requests.RequestException as e:
-        print(f"⚠️ Bot send failed: {e}", file=sys.stderr)
 
 def load_history(history_file):
     """Loads the novel's arc history from JSON file."""
@@ -264,46 +249,67 @@ def process_arc(novel):
         locked_lines[-1] = f"<a:prettyarrowR:1365577496757534772>{locked_lines[-1]}"
     locked_md = "\n".join(locked_lines)
 
-    message = (
+    # ─── BUILD HEADER CONTENT ─────────────────────────────────────────────────────
+    content = (
         f"{base_mention} | {ONGOING_ROLE} <a:Crown:1365575414550106154>\n"
-        "## <a:announcement:1365566215975731274> NEW ARC ALERT <a:SparklesPink:1365568637938962492><a:Butterfly:1365572264774471700><a:SparklesPink:1365568637938962492>\n"
-        f"***<:babypinkarrowleft:1365566594503147550>World {world_number}<:babypinkarrowright:1365566635838275595>is Live for***\n"
-        f"### [{novel['novel_title']}]({novel['novel_link']}) <a:Turtle_Police:1365223650466205738>\n"
-        "❀° ┄───────────────────────╮\n"
-        "<a:heart:1365566735377498183>**`Unlocked 🔓`**\n"
-        f"||{unlocked_md}||\n\n"
-        "<a:heart:1365566735377498183>**`Locked 🔐`**\n"
-        f"||{locked_md}||\n"
-        "╰───────────────────────┄ °❀\n"
+        "## <a:announcement:1365566215975731274> NEW ARC ALERT "
+        "<a:pinksparkles:1365566023201198161><a:Butterfly:1365572264774471700>"
+        "<a:pinksparkles:1365566023201198161>\n"
+        f"***<:babypinkarrowleft:1365566594503147550>"
+        f"World {world_number}<:babypinkarrowright:1365566635838275595>is Live for***\n"
+        f"### [{novel['novel_title']}]({novel['novel_link']}) "
+        "<a:Turtle_Police:1365223650466205738>\n"
+        "❀° ┄───────────────────────╮"
+    )
+    # ───────────────────────────────────────────────────────────────────────────────
+
+    # ─── EMBEDS ────────────────────────────────────────────────────────────────────
+    # 1) Unlocked list embed
+    embed_unlocked = {
+        "title": "🔓 Unlocked",
+        "description": unlocked_md or "None"
+    }
+
+    # 2) Locked list embed (with footer & react)
+    decorative_footer = (
+        "\n╰───────────────────────┄ °❀\n"
         f"> *Advance access is ready for you on {novel['host']}! <a:holo_diamond:1365566087277711430>*\n"
-        "<a:Blue_Divider:1365575581772546048><a:Blue_Divider:1365575581772546048>\n"
-        f"-# React to the {novel['custom_emoji']} @ {novel['discord_role_url']} to get notified on updates and announcements <a:LoveLetter:1365575475841339435>"
+        + "<a:pinkdiamond_border:1365575603734183936>" * 6
+    )
+    react_line = (
+        f"\n-# React to the {novel['custom_emoji']} @ {novel['discord_role_url']} "
+        "to get notified on updates and announcements <a:LoveLetter:1365575475841339435>"
     )
 
-    # === SEND DISCORD NOTIFICATION ===
-    payload = {
-        "content": message,
-        "allowed_mentions": {"parse": ["roles"]},
-        "flags": 4
+    embed_locked = {
+        "title": "🔐 Locked",
+        "description": (locked_md or "None") + decorative_footer + react_line
     }
-    webhook_url = os.getenv(WEBHOOK_ENV)
-    bot_token   = os.getenv(BOT_TOKEN_ENV)
-    channel_id  = os.getenv(CHANNEL_ID_ENV)
+    # ───────────────────────────────────────────────────────────────────────────────
 
-    # send via webhook (if configured)
-    if webhook_url:
-        safe_send_webhook(webhook_url, message)
-        print(f"✅ Webhook notification sent for: {new_full}")
-    else:
-        print("⚠️ DISCORD_WEBHOOK not set, skipped webhook post")
+    # ─── SEND ONE MESSAGE WITH TWO EMBEDS ──────────────────────────────────────────
+    payload = {
+        "content": content,
+        "embeds": [embed_unlocked, embed_locked],
+        "allowed_mentions": {"parse": ["roles"]}
+    }
+    try:
+        resp = requests.post(
+            f"https://discord.com/api/v10/channels/{CHANNEL_ID}/messages",
+            headers={
+                "Authorization": f"Bot {BOT_TOKEN}",
+                "Content-Type":  "application/json"
+            },
+            json=payload
+        )
+        if not resp.ok:
+            print(f"⚠️ Bot error {resp.status_code}: {resp.text}")
+        resp.raise_for_status()
+        print(f"✅ Bot embeds sent for: {new_full}")
+    except requests.RequestException as e:
+        print(f"⚠️ Bot send failed: {e}", file=sys.stderr)
+    # ───────────────────────────────────────────────────────────────────────────────
 
-    # send via bot (if configured)
-    if bot_token and channel_id:
-        safe_send_bot(bot_token, channel_id, message)
-        print(f"✅ Bot notification sent for: {new_full}")
-    else:
-        print("⚠️ Bot token or channel ID missing, skipped bot post")
-        
 # === LOAD & RUN ===
 if __name__ == "__main__":
     for host, host_data in HOSTING_SITE_DATA.items():
