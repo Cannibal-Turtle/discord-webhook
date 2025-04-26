@@ -152,7 +152,7 @@ def process_extras(novel):
         # — assemble & send the Discord message —
         msg = (
             f"{base_mention} | {ONGOING_ROLE}\n"
-            f"## :lotus:･ﾟ✧ NEW {disp_label} JUST DROPPED ✧ﾟ･:lotus:\n"
+            f"## :lotus:<a:greensparklingstars:1365569873845157918>NEW {disp_label} JUST DROPPED<a:greensparklingstars:1365569873845157918>:lotus:\n"
             f"{remaining}\n"
             f"{cm} in {novel['host']}'s advance access today. "
             f"Thanks for sticking with this one ‘til the end. It means a lot. "
