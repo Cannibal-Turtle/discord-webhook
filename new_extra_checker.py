@@ -6,12 +6,13 @@ import feedparser
 import sys
 from novel_mappings import HOSTING_SITE_DATA, get_nsfw_novels
 
+# ─── CONFIG ────────────────────────────────────────────────────────────────────
 STATE_PATH = "state.json"
 ONGOING_ROLE = "<@&1329502951764525187>"
 NSFW_ROLE_ID = "<@&1343352825811439616>"
-WEBHOOK_ENV    = "DISCORD_WEBHOOK"
 BOT_TOKEN_ENV  = "DISCORD_BOT_TOKEN"
 CHANNEL_ID_ENV = "DISCORD_CHANNEL_ID"
+# ────────────────────────────────────────────────────────────────────────────────
 
 def send_bot_message(bot_token: str, channel_id: str, content: str):
     url = f"https://discord.com/api/v10/channels/{channel_id}/messages"
@@ -23,19 +24,13 @@ def send_bot_message(bot_token: str, channel_id: str, content: str):
     r = requests.post(url, headers=headers, json=payload)
     r.raise_for_status()
 
-def safe_send_webhook(webhook_url: str, content: str):
-    try:
-        requests.post(webhook_url, json={
-            "content": content, "flags":4, "allowed_mentions":{"parse":["roles"]}
-        }).raise_for_status()
-    except requests.RequestException as e:
-        print(f"⚠️ Webhook send failed: {e}", file=sys.stderr)
-
 def safe_send_bot(bot_token: str, channel_id: str, content: str):
     try:
         send_bot_message(bot_token, channel_id, content)
-    except requests.RequestException as e:
-        print(f"⚠️ Bot send failed: {e}", file=sys.stderr)
+        print("✅ Message sent via bot")
+    except Exception as e:
+        print(f"⚠️ Failed to send via bot: {e}", file=sys.stderr)
+}
 
 def load_state(path=STATE_PATH):
     try:
@@ -163,17 +158,9 @@ def process_extras(novel):
             f"Thanks for sticking with this one ‘til the end. It means a lot. "
             f"Please show your final love and support by leaving comments on the site~ <:turtlelovefamily:1365266991690285156> :heart_hands:"
         )
-        # dual-send
-        webhook_url = os.getenv(WEBHOOK_ENV)
         bot_token   = os.getenv(BOT_TOKEN_ENV)
         channel_id  = os.getenv(CHANNEL_ID_ENV)
-
-        if webhook_url:
-            safe_send_webhook(webhook_url, msg)
-            print(f"✅ Webhook sent extras notification for {novel['novel_title']}")
-        else:
-            print("⚠️ DISCORD_WEBHOOK not set; skipped webhook post")
-
+        
         if bot_token and channel_id:
             safe_send_bot(bot_token, channel_id, msg)
             print(f"✅ Bot sent extras notification for {novel['novel_title']}")
