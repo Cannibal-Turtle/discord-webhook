@@ -29,14 +29,16 @@ def send_bot_message(bot_token: str, channel_id: str, content: str):
     r.raise_for_status()
 
 def safe_send_webhook(webhook_url: str, content: str):
-    try:
-        requests.post(webhook_url, json={
-            "content": content,
-            "flags": 4,
-            "allowed_mentions": {"parse": ["roles"]}
-        }).raise_for_status()
-    except requests.RequestException as e:
-        print(f"⚠️ Webhook send failed: {e}", file=sys.stderr)
+    payload = {
+        "content": content,
+        "allowed_mentions": {"parse": ["roles"]},
+        # “flags” goes here if you still want it, but see below
+    }
+    print(f"[DEBUG] webhook payload length: {len(json.dumps(payload))}")
+    resp = requests.post(webhook_url, json=payload)
+    if not resp.ok:
+        print(f"⚠️ webhook {resp.status_code} → {resp.text}")
+    resp.raise_for_status()
 
 def safe_send_bot(bot_token: str, channel_id: str, content: str):
     try:
