@@ -275,18 +275,22 @@ def process_arc(novel):
         "title":       "<a:Hearts:1365575463296045156> `Locked 🔐`",
         "description": f"||{locked_md}||" if locked_md else "None",
         "color":       0xA87676,
-        "footer": {
-            "text": (
-                "╰───────────────────────┄ °❀\n"
-                f"Advance access is ready for you on {novel['host']}! <a:holo_diamond:1365566087277711430>\n"
-                + "<:pinkdiamond_border:1365575603734183936>" * 6 + "\n"
-                f"-# React to the {novel['custom_emoji']} @ {novel['discord_role_url']} to get notified on updates and announcements <a:LoveLetter:1365575475841339435>"
-            )
-        }
+        # footer removed so it will render in the message body instead
     }
 
+    # build the footer text
+    footer_text = (
+        "\n╰───────────────────────┄ °❀\n"
+        f"Advance access is ready for you on {novel['host']}! <a:holo_diamond:1365566087277711430>\n"
+        + "<:pinkdiamond_border:1365575603734183936>" * 6 + "\n"
+        f"-# React to the {novel['custom_emoji']} @ {novel['discord_role_url']} to get notified on updates and announcements <a:LoveLetter:1365575475841339435>"
+    )
+
+    # append footer to the main content
+    full_content = content + footer_text
+
     payload = {
-        "content": content,
+        "content": full_content,
         "embeds": [embed_unlocked, embed_locked],
         "allowed_mentions": {"parse": ["roles"]}
     }
