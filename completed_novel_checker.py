@@ -19,11 +19,12 @@ from datetime import datetime
 from dateutil.relativedelta import relativedelta
 from novel_mappings import HOSTING_SITE_DATA
 
+# ─── CONFIG ────────────────────────────────────────────────────────────────────
 STATE_PATH  = "state.json"
-WEBHOOK_ENV = "DISCORD_WEBHOOK"
 BOT_TOKEN_ENV   = "DISCORD_BOT_TOKEN"
 CHANNEL_ID_ENV  = "DISCORD_CHANNEL_ID"
 COMPLETE_ROLE = "<@&1329391480435114005>"
+# ────────────────────────────────────────────────────────────────────────────────
 
 def load_state(path=STATE_PATH):
     try:
@@ -35,26 +36,6 @@ def load_state(path=STATE_PATH):
 def save_state(state, path=STATE_PATH):
     with open(path, "w", encoding="utf-8") as f:
         json.dump(state, f, indent=2, ensure_ascii=False)
-
-def send_discord_message(webhook_url: str, content: str):
-    # Include allowed_mentions so webhooks color role pings correctly
-    payload = {
-        "content": content,
-        "allowed_mentions": { "parse": ["roles"] },
-        "flags": 4
-    }
-    resp = requests.post(webhook_url, json=payload)
-    resp.raise_for_status()
-
-def safe_send_webhook(webhook_url: str, content: str):
-    """
-    Try sending via webhook, but catch HTTP errors so the rest of the script continues.
-    """
-    try:
-        send_discord_message(webhook_url, content)
-    except requests.HTTPError as e:
-        status = e.response.status_code if (e.response and e.response.status_code) else "?"
-        print(f"⚠️ Webhook failed with status {status}: {e}", file=sys.stderr)
 
 def send_bot_message(bot_token: str, channel_id: str, content: str):
     """
@@ -143,7 +124,7 @@ def build_paid_completion(novel, chap_field, chap_link, duration: str):
         f"*The last chapter, [{chap_text}]({chap_link}), has now been released. <a:turtle_super_hyper:1365223449827737630>\n"
         f"After {duration} of updates, {title} is now fully translated with {count}! Thank you for coming on this journey and for your continued support <:turtle_plead:1365223487274352670> You can now visit {host} to binge all advance releases~♡*"
         "✎﹏﹏﹏﹏﹏﹏﹏﹏\n"
-        f"-# Check out other translated projects at {discord_role_url} and react to get the latest updates~"
+        f"-# Check out other translated projects at {discord_url} and react to get the latest updates~"
     )
   
 def build_free_completion(novel, chap_field, chap_link):
@@ -166,7 +147,7 @@ def build_free_completion(novel, chap_field, chap_link):
         f"Thank you all for your amazing support   <:green_turtle_heart:1365264636064305203>\n"
         f"Head over to {host} to dive straight in~♡*"
         "✎﹏﹏﹏﹏﹏﹏﹏﹏\n"
-        f"-# Check out other translated projects at {discord_role_url} and react to get the latest updates~"
+        f"-# Check out other translated projects at {discord_url} and react to get the latest updates~"
     )
 
 def build_only_free_completion(novel, chap_field, chap_link, duration):
@@ -215,7 +196,7 @@ def load_novels():
                 "start_date":    details.get("start_date", ""),
                 "free_feed":     free,
                 "paid_feed":     paid,
-                "discord_url":   details.get("discord_role_url", ""),
+                "discord_role_url": details.get("discord_role_url", ""),
             })
     return novels
 
@@ -224,15 +205,10 @@ def main():
     parser.add_argument("--feed", choices=["paid","free"], required=True)
     args = parser.parse_args()
 
-    webhook_url = os.getenv(WEBHOOK_ENV)
-    if not webhook_url:
-        print(f"⚠️  {WEBHOOK_ENV} not set — skipping webhook posts", file=sys.stderr)
-
-    # load bot info (optional)
     bot_token  = os.getenv(BOT_TOKEN_ENV)
     channel_id = os.getenv(CHANNEL_ID_ENV)
     if not (bot_token and channel_id):
-        print(f"⚠️  Bot token or channel ID missing — skipping bot posts", file=sys.stderr)
+        sys.exit("❌ Missing DISCORD_BOT_TOKEN or DISCORD_CHANNEL_ID")
 
     state  = load_state()
     novels = load_novels()
@@ -282,13 +258,11 @@ def main():
                 duration = get_duration(novel.get("start_date",""), chap_date)
 
                 msg = build_only_free_completion(novel, chap_field, entry.link, duration)
-                # send via webhook
-                if webhook_url:
-                    safe_send_webhook(webhook_url, msg)
-                # also send via bot (if configured)
                 if bot_token and channel_id:
                     safe_send_bot(bot_token, channel_id, msg)
-                print(f"✔️ Sent only-free completion announcement for {novel_id}")
+                    print(f"✔️ Sent only-free completion announcement for {novel_id}")
+                else:
+                    print("⚠️ Bot token or channel ID missing; skipped bot post", file=sys.stderr)
                 state.setdefault(novel_id, {})["only_free"] = {
                     "chapter": chap_field,
                     "sent_at": datetime.now().isoformat()
@@ -312,13 +286,11 @@ def main():
                 duration = get_duration(novel.get("start_date",""), chap_date)
 
                 msg = build_paid_completion(novel, chap_field, entry.link, duration)
-                # send via webhook
-                if webhook_url:
-                    safe_send_webhook(webhook_url, msg)
-                # also send via bot (if configured)
                 if bot_token and channel_id:
                     safe_send_bot(bot_token, channel_id, msg)
-                print(f"✔️ Sent paid-completion announcement for {novel_id}")
+                    print(f"✔️ Sent paid-completion announcement for {novel_id}")
+                else:
+                    print("⚠️ Bot token or channel ID missing; skipped bot post", file=sys.stderr)
                 state.setdefault(novel_id, {})["paid"] = {
                     "chapter": chap_field,
                     "sent_at": datetime.now().isoformat()
@@ -333,13 +305,11 @@ def main():
                     break
 
                 msg = build_free_completion(novel, chap_field, entry.link)
-                # send via webhook
-                if webhook_url:
-                    safe_send_webhook(webhook_url, msg)
-                # also send via bot (if configured)
                 if bot_token and channel_id:
                     safe_send_bot(bot_token, channel_id, msg)
-                print(f"✔️ Sent free-completion announcement for {novel_id}")
+                    print(f"✔️ Sent free-completion announcement for {novel_id}")
+                else:
+                    print("⚠️ Bot token or channel ID missing; skipped bot post", file=sys.stderr)
                 state.setdefault(novel_id, {})["free"] = {
                     "chapter": chap_field,
                     "sent_at": datetime.now().isoformat()
