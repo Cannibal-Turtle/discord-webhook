@@ -89,7 +89,7 @@ async def send_new_paid_entries():
 
 
             embed = Embed(
-                title=f"**{chaptername}**<a:moonandstars:1365569468629123184>",
+                title=f"<a:moonandstars:1365569468629123184>**{chaptername}**",
                 url=link,
                 description=nameextend or discord.Embed.Empty,
                 timestamp=timestamp,
