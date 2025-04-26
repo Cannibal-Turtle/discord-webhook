@@ -264,35 +264,28 @@ def process_arc(novel):
     )
     # ───────────────────────────────────────────────────────────────────────────────
 
-    # ─── EMBEDS & SEND ───────────────────────────────────────────────────────────
-    embed_unlocked = {
-        "title":       "<a:Hearts:1365575463296045156> `Unlocked 🔓`",
-        "description": f"||{unlocked_md}||" if unlocked_md else "None",
-        "color":       0xFFF9BF
-    }
-
-    embed_locked = {
-        "title":       "<a:Hearts:1365575463296045156> `Locked 🔐`",
-        "description": f"||{locked_md}||" if locked_md else "None",
-        "color":       0xA87676,
-        # footer removed so it will render in the message body instead
-    }
-
-    # build the footer text
+    # ─── PLAIN‐TEXT SEND ──────────────────────────────────────────────────────────
     footer_text = (
-        "\n╰───────────────────────┄ °❀\n"
-        f"Advance access is ready for you on {novel['host']}! <a:holo_diamond:1365566087277711430>\n"
-        + "<:pinkdiamond_border:1365575603734183936>" * 6 + "\n"
-        f"-# React to the {novel['custom_emoji']} @ {novel['discord_role_url']} to get notified on updates and announcements <a:LoveLetter:1365575475841339435>"
+        "╰───────────────────────┄ °❀\n"
+        f"Advance access is ready for you on {novel['host']}! <a:holo_diamond:...>\n"
+        + "<:pinkdiamond_border:...>" * 6 + "\n"
+        f"-# React to the {novel['custom_emoji']} @ {novel['discord_role_url']} ... <a:LoveLetter:...>"
     )
 
-    # append footer to the main content
-    full_content = content + footer_text
-    
-    print(full_content)
+    announcement = [
+        content,                          # your existing header block
+        "",
+        "**`Unlocked 🔓`**",
+        f"||{unlocked_md}||" if unlocked_md else "None",
+        "",
+        "**`Locked 🔐`**",
+        f"||{locked_md}||" if locked_md else "None",
+        "",
+        footer_text
+    ]
+
     payload = {
-        "content": full_content,
-        "embeds": [embed_unlocked, embed_locked],
+        "content": "\n".join(announcement),
         "allowed_mentions": {"parse": ["roles"]}
     }
 
