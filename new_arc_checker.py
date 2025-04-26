@@ -259,7 +259,7 @@ def process_arc(novel):
     locked_lines = [format_stored_title(t) for t in history["locked"]]
     locked_lines = deduplicate(locked_lines)
     if locked_lines:
-        locked_lines[-1] = f"☛{locked_lines[-1]}"
+        locked_lines[-1] = f"<a:prettyarrowR:1365577496757534772>{locked_lines[-1]}"
     locked_md = "\n".join(locked_lines)
 
     message = (
