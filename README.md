@@ -16,7 +16,7 @@ All notifications use a single Discord webhook URL stored in the `DISCORD_WEBHOO
 
 | Name              | Value                                  |
 |-------------------|----------------------------------------|
-| `DISCORD_WEBHOOK` | Your Discord webhook URL               |
+| `DISCORD_BOT_TOKEN` | Your Discord bot token/Webhook if you choose               |
 | `GH_PAT`          | Personal Access Token for history push |
 
 ### 🔑 1. Add the Discord Webhook URL to Secrets
