@@ -98,7 +98,7 @@ async def send_new_entries():
             timestamp   = dateparser.parse(pubdate_raw) if pubdate_raw else None
 
             embed = Embed(
-                title=f"**{chaptername}**⋆. 𐙚 ˚",
+                title=f"**{chaptername}**<a:MoonSparkles:1365568607119085578>",
                 url=link,
                 description=nameextend or discord.Embed.Empty,
                 timestamp=timestamp,
