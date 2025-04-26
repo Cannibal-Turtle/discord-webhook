@@ -305,10 +305,9 @@ def process_arc(novel):
                 "Content-Type":  "application/json"
             },
             json={
-                "content": "<a:Hearts:1365575463296045156> Unlocked 🔓",
+                "content": "<a:Hearts:1365575463296045156> `Unlocked 🔓`",
                 "embeds": [embed_unlocked],
-                "allowed_mentions": {"parse": ["roles"]},
-                "flags": 4
+                "allowed_mentions": {"parse": ["roles"]}
             }
         ).raise_for_status()
         print(f"✅ Unlocked embed sent for: {new_full}")
@@ -324,10 +323,9 @@ def process_arc(novel):
                 "Content-Type":  "application/json"
             },
             json={
-                "content": "<a:Hearts:1365575463296045156> Locked 🔐",
+                "content": "<a:Hearts:1365575463296045156> `Locked 🔐`",
                 "embeds": [embed_locked],
                 "allowed_mentions": {"parse": ["roles"]},
-                "flags": 4
             }
         ).raise_for_status()
         print(f"✅ Locked embed sent for: {new_full}")
