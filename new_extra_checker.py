@@ -141,7 +141,7 @@ def process_extras(novel):
                 cm = "New extras and side stories just dropped"
 
         # — build the “remaining” line —
-        base = f"***[《{novel['novel_title']}》]({novel['novel_link']})***"
+        base = f"<:babypinkarrowleft:1365566594503147550>***[{novel['novel_title']}]({novel['novel_link']})***<:babypinkarrowright:1365566635838275595>"
         extra_label = "extra" if tot_ex == 1 else "extras"
         ss_label    = "side story" if tot_ss == 1 else "side stories"
         remaining = (
