@@ -264,18 +264,18 @@ def process_arc(novel):
 
     message = (
         f"{base_mention} | {ONGOING_ROLE}\n"
-        "## <a:Turtle_Police:1365223650466205738> NEW ARC ALERT˚ · .˚ ༘:butterfly:⋆｡˚\n"
-        f"***《World {world_number}》is Live for***\n"
+        "## <a:Turtle_Police:1365223650466205738> NEW ARC ALERT <a:SparklesPink:1365568637938962492><a:Butterfly:1365572264774471700><a:SparklesPink:1365568637938962492>\n"
+        f"***<:babypinkarrowleft:1365566594503147550>World {world_number}<:babypinkarrowright:1365566635838275595>is Live for***\n"
         f"### [{novel['novel_title']}]({novel['novel_link']}) <:Turtle_Sip:1365253936637935646>\n"
         "❀° ┄───────────────────────╮\n"
-        "**`Unlocked 🔓`**\n"
+        "<a:heart:1365566735377498183>**`Unlocked 🔓`**\n"
         f"||{unlocked_md}||\n\n"
-        "**`Locked 🔐`**\n"
+        "<a:heart:1365566735377498183>**`Locked 🔐`**\n"
         f"||{locked_md}||\n"
         "╰───────────────────────┄ °❀\n"
-        f"> *Advance access is ready for you on {novel['host']}! :bubble_tea:*\n"
-        "✎﹏﹏﹏﹏﹏﹏﹏﹏\n"
-        f"-# React to the {novel['custom_emoji']} @ {novel['discord_role_url']} to get notified on updates and announcements~"
+        f"> *Advance access is ready for you on {novel['host']}! <a:holo_diamond:1365566087277711430>*\n"
+        "<a:Blue_Divider:1365575581772546048><a:Blue_Divider:1365575581772546048>\n"
+        f"-# React to the {novel['custom_emoji']} @ {novel['discord_role_url']} to get notified on updates and announcements <a:LoveLetter:1365575475841339435>"
     )
 
     # === SEND DISCORD NOTIFICATION ===
