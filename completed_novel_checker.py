@@ -114,7 +114,7 @@ def build_paid_completion(novel, chap_field, chap_link, duration: str):
     count     = novel.get("chapter_count", "the entire series")
     comp_role = COMPLETE_ROLE
     DIV = "<a:purple_divider1:1365652778957144165>"
-    divider_line = DIV * 45
+    divider_line = DIV * 12
   
     # normalize NBSP
     chap_text = chap_field.replace("\u00A0", " ")
@@ -125,7 +125,7 @@ def build_paid_completion(novel, chap_field, chap_link, duration: str):
         f"***<a:kikilts_bracket:1365693072138174525>[{title}]({link})<a:lalalts_bracket:1365693058905014313>— officially completed!*** <a:Bow:1365575505171976246><a:whitesparklingstars2:1365569806966853664>\n\n"
         f"*The last chapter, [{chap_text}]({chap_link}), has now been released. <a:turtle_super_hyper:1365223449827737630>\n"
         f"After {duration} of updates, {title} is now fully translated with {count}! Thank you for coming on this journey and for your continued support <:turtle_plead:1365223487274352670> You can now visit {host} to binge all advance releases~*<a:Heart:1365575427724283944>"
-        "✎﹏﹏﹏﹏﹏﹏﹏﹏\n"
+        f"<a:Paws:1365676154865979453>{'<:FF_Divider_Pink:1365575626194681936>' * 6}\n"
         f"-# Check out other translated projects at {discord_url} and react to get the latest updates <a:LoveLetter:1365575475841339435>"
     )
   
@@ -138,7 +138,7 @@ def build_free_completion(novel, chap_field, chap_link):
     count     = novel.get("chapter_count", "the entire series")
     comp_role = COMPLETE_ROLE
     DIV = "<a:purple_divider1:1365652778957144165>"
-    divider_line = DIV * 45
+    divider_line = DIV * 12
 
     # normalize NBSP
     chap_text = chap_field.replace("\u00A0", " ")
@@ -150,7 +150,7 @@ def build_free_completion(novel, chap_field, chap_link):
         f"*All {count} has been unlocked and ready for you to binge—completely free!\n"
         f"Thank you all for your amazing support   <:green_turtle_heart:1365264636064305203>\n"
         f"Head over to {host} to dive straight in~*<a:Heart:1365575427724283944>"
-        "✎﹏﹏﹏﹏﹏﹏﹏﹏\n"
+        f"<a:Paws:1365676154865979453>{'<:FF_Divider_Pink:1365575626194681936>' * 6}\n"
         f"-# Check out other translated projects at {discord_url} and react to get the latest updates <a:LoveLetter:1365575475841339435>"
     )
 
@@ -163,7 +163,7 @@ def build_only_free_completion(novel, chap_field, chap_link, duration):
     discord_url = novel.get("discord_role_url", "")
     count       = novel.get("chapter_count", "the entire series")
     DIV = "<a:purple_divider1:1365652778957144165>"
-    divider_line = DIV * 45
+    divider_line = DIV * 12
 
     # normalize NBSP
     chap_text = chap_field.replace("\u00A0", " ")
@@ -175,7 +175,7 @@ def build_only_free_completion(novel, chap_field, chap_link, duration):
         f"***<a:kikilts_bracket:1365693072138174525>[{title}]({link})<a:lalalts_bracket:1365693058905014313>— officially completed!*** <a:Bow:1365575505171976246><a:whitesparklingstars2:1365569806966853664>\n\n"
         f"*The last chapter, [{chap_text}]({chap_link}), has now been released. <a:turtle_super_hyper:1365223449827737630>\n"
         f"After {duration} of updates, {title} is now fully translated with {count}! Thank you for coming on this journey and for your continued support <:d_greena_luv_turtle:365263712549736448> You can now visit {host} to binge on all the releases~*<a:Heart:1365575427724283944>"
-        "✎﹏﹏﹏﹏﹏﹏﹏﹏\n"
+        f"<a:Paws:1365676154865979453>{'<:FF_Divider_Pink:1365575626194681936>' * 6}\n"
         f"-# Check out other translated projects at {discord_url} and react to get the latest updates <a:LoveLetter:1365575475841339435>"
     )
 
