@@ -119,7 +119,7 @@ def build_paid_completion(novel, chap_field, chap_link, duration: str):
     # normalize NBSP
     chap_text = chap_field.replace("\u00A0", " ")
     return (
-        f"{role} | {comp_role}\n"
+        f"{role} | {comp_role} <a:HappyCloud:1365575487333859398>\n"
         "## ꧁ᐟᐟ ◌ೄ⟢  Completion Announcement  :blueberries: ˚. ᵎᵎ˖ˎˊ-\n"
         f"{divider_line}\n"
         f"***『[{title}]({link})』— officially completed!*** <a:Bow:1365575505171976246><a:whitesparklingstars2:1365569806966853664>\n\n"
@@ -143,7 +143,7 @@ def build_free_completion(novel, chap_field, chap_link):
     # normalize NBSP
     chap_text = chap_field.replace("\u00A0", " ")
     return (
-        f"{role} | {comp_role}\n"
+        f"{role} | {comp_role} <a:HappyCloud:1365575487333859398>\n"
         "## 𐔌  Announcing: Complete Series Unlocked ,, :cherries: — 𝝑𝝔  ꒱\n"
         f"{divider_line}\n"
         f"***『[{title}]({link})』— complete access granted!*** <a:Bow:1365575505171976246><a:whitesparklingstars2:1365569806966853664>\n\n"
@@ -169,7 +169,7 @@ def build_only_free_completion(novel, chap_field, chap_link, duration):
     chap_text = chap_field.replace("\u00A0", " ")
 
     return (
-        f"{role} | {comp_role}\n"
+        f"{role} | {comp_role} <a:HappyCloud:1365575487333859398>\n"
         "## ⁺‧ ༻•┈๑☽₊˚ ⌞Completion Announcement⋆ཋྀ ˚₊‧⁺ :kiwi: ∗༉‧₊˚\n"
         f"{divider_line}\n"
         f"***『[{title}]({link})』— officially completed!*** <a:Bow:1365575505171976246><a:whitesparklingstars2:1365569806966853664>\n\n"
