@@ -288,7 +288,8 @@ def process_arc(novel):
 
     # append footer to the main content
     full_content = content + footer_text
-
+    
+    print(full_content)
     payload = {
         "content": full_content,
         "embeds": [embed_unlocked, embed_locked],
