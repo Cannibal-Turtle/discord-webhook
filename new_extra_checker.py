@@ -30,7 +30,6 @@ def safe_send_bot(bot_token: str, channel_id: str, content: str):
         print("✅ Message sent via bot")
     except Exception as e:
         print(f"⚠️ Failed to send via bot: {e}", file=sys.stderr)
-}
 
 def load_state(path=STATE_PATH):
     try:
