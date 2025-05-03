@@ -87,6 +87,7 @@ async def send_new_entries():
             content = (
                 f"{role_id} | {GLOBAL_MENTION} <a:TurtleDance:1365253970435510293>\n"
                 f"<a:5037sweetpianoyay:1368138418487427102> **{title}** <:pink_unlock:1368206247790383294>"
+                )
 
             # build embed…
             chaptername = entry.get("chaptername","").strip()
