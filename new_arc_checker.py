@@ -277,7 +277,7 @@ def process_arc(novel):
     content = (
         f"{base_mention} | {ONGOING_ROLE} <a:Crown:1365575414550106154>\n"
         "## <a:announcement:1365566215975731274> NEW ARC ALERT <a:pinksparkles:1365566023201198161><a:Butterfly:1365572264774471700><a:pinksparkles:1365566023201198161>\n"
-        f"***<:babypinkarrowleft:1365566594503147550><:world_01:1368202193038999562><:world_02:1368202204468613162>{world_emoji}<:babypinkarrowright:1365566635838275595>is Live for*** <a:pinkloading:1365566815736172637>\n"
+        f"***<:babypinkarrowleft:1365566594503147550><:world_01:1368202193038999562><:world_02:1368202204468613162> {world_emoji}<:babypinkarrowright:1365566635838275595>is Live for*** <a:pinkloading:1365566815736172637>\n"
         f"### [{novel['novel_title']}]({novel['novel_link']}) "
         "<a:Turtle_Police:1365223650466205738>\n"
         "❀° ┄───────────────────────╮"
