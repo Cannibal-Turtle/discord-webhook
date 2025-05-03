@@ -139,6 +139,28 @@ def next_arc_number(history):
     print(f"🔢 No valid last_announced; max seen in history is {m}, so next will be {m+1}")
     return m + 1
 
+# ─── DIGIT EMOJI MAP & HELPER ──────────────────────────────────────────────────
+DIGIT_EMOJI = {
+    '0': '<:7987_zero_emj_png:1368137498496335902>',
+    '1': '<:5849_one_emj_png:1368137451801149510>',
+    '2': '<:4751_two_emj_png:1368137429369753742>',
+    '3': '<:5286_three_emj_png:1368137406523637811>',
+    '4': '<:4477_four_emj_png:1368137382813106196>',
+    '5': '<:3867_five_emj_png:1368137358800715806>',
+    '6': '<:8923_six_emj_png:1368137333886550098>',
+    '7': '<:4380_seven_emj_png:1368137314240303165>',
+    '8': '<:9891_eight_emj_png:1368137290517581995>',
+    '9': '<:1898_nine_emj_png:1368137143196717107>',
+}
+
+def number_to_emoji(n: int) -> str:
+    """
+    Convert an integer to its emoji-digit representation.
+    e.g. 24 -> DIGIT_EMOJI['2'] + DIGIT_EMOJI['4']
+    """
+    return ''.join(DIGIT_EMOJI[d] for d in str(n))
+# ──────────────────────────────────────────────────────────────────────────────
+
 # === PROCESS NOVEL FUNCTION ===
 
 def process_arc(novel):
@@ -241,6 +263,7 @@ def process_arc(novel):
 
     # number for header
     world_number = extract_arc_number(new_full)
+    world_emoji = number_to_emoji(world_number)
 
     # build message
     unlocked_md = "\n".join(format_stored_title(t) for t in history["unlocked"])
@@ -254,7 +277,7 @@ def process_arc(novel):
     content = (
         f"{base_mention} | {ONGOING_ROLE} <a:Crown:1365575414550106154>\n"
         "## <a:announcement:1365566215975731274> NEW ARC ALERT <a:pinksparkles:1365566023201198161><a:Butterfly:1365572264774471700><a:pinksparkles:1365566023201198161>\n"
-        f"***<:babypinkarrowleft:1365566594503147550>World {world_number}<:babypinkarrowright:1365566635838275595>is Live for*** <a:pinkloading:1365566815736172637>\n"
+        f"***<:babypinkarrowleft:1365566594503147550>World {world_emoji}<:babypinkarrowright:1365566635838275595>is Live for*** <a:pinkloading:1365566815736172637>\n"
         f"### [{novel['novel_title']}]({novel['novel_link']}) "
         "<a:Turtle_Police:1365223650466205738>\n"
         "❀° ┄───────────────────────╮"
