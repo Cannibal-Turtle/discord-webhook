@@ -72,7 +72,10 @@ async def send_new_paid_entries():
             # build message content
             role_id     = entry.get("discord_role_id","").strip()
             title_text  = entry.get("title","").strip()
-            content     = f"{role_id} | {GLOBAL_MENTION} <a:TurtleDance:1365253970435510293>\n**{title_text}**  🔒"
+            content = (
+                f"{role_id} | {GLOBAL_MENTION} <a:TurtleDance:1365253970435510293>\n"
+                f"<a:1366_sweetpiano_happy:1368136820965249034> **{title}**  🔓"
+            )
 
             # build embed
             chaptername = entry.get("chaptername","").strip()
