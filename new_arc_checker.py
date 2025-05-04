@@ -325,7 +325,7 @@ def process_arc(novel):
                 "Content-Type":  "application/json"
             },
             json={
-                "content": "<a:5693pinkwings:1368138669004820500> `Unlocked <:pink_unlock:1368266307824255026>` <a:5046_bounce_pink:1368138460027813888>",
+                "content": "<a:5693pinkwings:1368138669004820500> `Unlocked 🔓` <a:5046_bounce_pink:1368138460027813888>",
                 "embeds": [embed_unlocked],
                 "allowed_mentions": {"parse": ["roles"]}
             }
@@ -343,7 +343,7 @@ def process_arc(novel):
                 "Content-Type":  "application/json"
             },
             json={
-                "content": "<a:5693pinkwings:1368138669004820500> `Locked <:pink_lock:1368266294855733291>` <a:5046_bounce_pink:1368138460027813888>",
+                "content": "<a:5693pinkwings:1368138669004820500> `Locked 🔐` <a:5046_bounce_pink:1368138460027813888>",
                 "embeds": [embed_locked],
                 "allowed_mentions": {"parse": ["roles"]},
             }
