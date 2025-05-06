@@ -126,6 +126,7 @@ async def send_new_entries():
             save_state(state)
             print(f"💾 Updated {STATE_FILE} → {new_last}")
 
+        await asyncio.sleep(1)
         await bot.close()
 
     await bot.start(TOKEN)
