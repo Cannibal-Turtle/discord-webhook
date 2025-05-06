@@ -119,6 +119,7 @@ async def send_new_paid_entries():
             save_state(state)
             print(f"💾 Updated {STATE_FILE}[\"{FEED_KEY}\"] → {new_last}")
 
+        await asyncio.sleep(1)
         await bot.close()
 
     await bot.start(TOKEN)
