@@ -76,7 +76,7 @@ def process_extras(novel):
     # 2) now load state and guard against completion in state.json
     state    = load_state()
     novel_id = novel["novel_id"]
-    meta     = state.get(novel_id, {})
+    meta     = state.setdefault(novel_id, {})
     if meta.get("paid") or meta.get("free") or meta.get("only_free"):
         print(f"→ skipping extras for {novel_id} — already completed (state.json)")
         return
@@ -143,10 +143,26 @@ def process_extras(novel):
         base = f"<:babypinkarrowleft:1365566594503147550>***[{novel['novel_title']}]({novel['novel_link']})***<:babypinkarrowright:1365566635838275595>"
         extra_label = "extra" if tot_ex == 1 else "extras"
         ss_label    = "side story" if tot_ss == 1 else "side stories"
-        remaining = (
-            f"{base} is almost at the very end — just "
-            f"{tot_ex} {extra_label} and {tot_ss} {ss_label} left before we wrap up this journey for good  <:turtle_cowboy2:1365266375274266695>"
-        )
+        
+        if tot_ex and tot_ss:
+            remaining = (
+                f"{base} is almost at the very end — just "
+                f"{tot_ex} {extra_label} and {tot_ss} {ss_label} left before we wrap up this journey for good  <:turtle_cowboy2:1365266375274266695>"
+            )
+        elif tot_ex:
+            remaining = (
+                f"{base} is almost at the very end — just "
+                f"{tot_ex} {extra_label} left before we wrap up this journey for good  <:turtle_cowboy2:1365266375274266695>"
+            )
+        elif tot_ss:
+            remaining = (
+                f"{base} is almost at the very end — just "
+                f"{tot_ss} {ss_label} left before we wrap up this journey for good  <:turtle_cowboy2:1365266375274266695>"
+            )
+        else:
+            remaining = (
+                f"{base} is at the very end — no extras or side stories left!  <:turtle_cowboy2:1365266375274266695>"
+            )
 
         # — assemble & send the Discord message —
         msg = (
