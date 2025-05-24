@@ -116,7 +116,7 @@ def build_paid_completion(novel, chap_field, chap_link, duration: str):
     discord_url = novel.get("discord_role_url", "")
     count     = novel.get("chapter_count", "the entire series")
     comp_role = COMPLETE_ROLE
-    DIV = "<a:purple_divider1:1365652778957144165>"
+    DIV = "<:purple_divider1:1365652778957144165>"
     divider_line = DIV * 10
   
     # normalize NBSP
@@ -140,7 +140,7 @@ def build_free_completion(novel, chap_field, chap_link):
     discord_url = novel.get("discord_role_url", "")
     count     = novel.get("chapter_count", "the entire series")
     comp_role = COMPLETE_ROLE
-    DIV = "<a:purple_divider1:1365652778957144165>"
+    DIV = "<:purple_divider1:1365652778957144165>"
     divider_line = DIV * 10
 
     # normalize NBSP
@@ -165,7 +165,7 @@ def build_only_free_completion(novel, chap_field, chap_link, duration):
     host        = novel.get("host", "")
     discord_url = novel.get("discord_role_url", "")
     count       = novel.get("chapter_count", "the entire series")
-    DIV = "<a:purple_divider1:1365652778957144165>"
+    DIV = "<:purple_divider1:1365652778957144165>"
     divider_line = DIV * 10
 
     # normalize NBSP
