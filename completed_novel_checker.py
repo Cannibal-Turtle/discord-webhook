@@ -125,10 +125,11 @@ def build_paid_completion(novel, chap_field, chap_link, duration: str):
         f"{role} | {comp_role} <a:HappyCloud:1365575487333859398>\n"
         "## ꧁ᐟᐟ ◌ೄ⟢  Completion Announcement  :blueberries: ˚. ᵎᵎ˖ˎˊ-\n"
         f"{divider_line}\n"
-        f"***<a:kikilts_bracket:1365693072138174525>[{title}]({link})<a:lalalts_bracket:1365693058905014313>— officially completed!*** <a:cowiggle:1368136766791483472><a:Bow:1365575505171976246><a:whitesparkles:1365569806966853664>\n\n"
+        f"***<a:kikilts_bracket:1365693072138174525>[{title}]({link})<a:lalalts_bracket:1365693058905014313> — officially completed!*** <a:cowiggle:1368136766791483472><a:Bow:1365575505171976246><a:whitesparkles:1365569806966853664>\n\n"
         f"*The last chapter, [{chap_text}]({chap_link}), has now been released. <a:turtle_hyper:1365223449827737630>\n"
         f"After {duration} of updates, {title} is now fully translated with {count}! Thank you for coming on this journey and for your continued support <:turtle_plead:1365223487274352670> You can now visit {host} to binge all advance releases~*<a:Heart:1365575427724283944>"
-        f"<a:Paws:1365676154865979453>{'<:FF_Divider_Pink:1365575626194681936>' * 5}\n"
+        f"<a:Paws:1365676154865979453>\n"
+        f"{'<:FF_Divider_Pink:1365575626194681936>' * 5}\n"
         f"-# Check out other translated projects at {discord_url} and react to get the latest updates <a:LoveLetter:1365575475841339435>"
     )
   
@@ -153,7 +154,8 @@ def build_free_completion(novel, chap_field, chap_link):
         f"*All {count} has been unlocked and ready for you to binge—completely free!\n"
         f"Thank you all for your amazing support   <:green_turtle_heart:1365264636064305203>\n"
         f"Head over to {host} to dive straight in~*<a:Heart:1365575427724283944>"
-        f"<a:Paws:1365676154865979453>{'<:FF_Divider_Pink:1365575626194681936>' * 5}\n"
+        f"<a:Paws:1365676154865979453>\n"
+        f"{'<:FF_Divider_Pink:1365575626194681936>' * 5}\n"
         f"-# Check out other translated projects at {discord_url} and react to get the latest updates <a:LoveLetter:1365575475841339435>"
     )
 
@@ -175,10 +177,11 @@ def build_only_free_completion(novel, chap_field, chap_link, duration):
         f"{role} | {comp_role} <a:HappyCloud:1365575487333859398>\n"
         "## ⁺‧ ༻•┈๑☽₊˚ ⌞Completion Announcement⋆ཋྀ ˚₊‧⁺ :kiwi: ∗༉‧₊˚\n"
         f"{divider_line}\n"
-        f"***<a:kikilts_bracket:1365693072138174525>[{title}]({link})<a:lalalts_bracket:1365693058905014313>— officially completed!*** <a:cowiggle:1368136766791483472><a:Bow:1365575505171976246><a:whitesparkles:1365569806966853664>\n\n"
+        f"***<a:kikilts_bracket:1365693072138174525>[{title}]({link})<a:lalalts_bracket:1365693058905014313> — officially completed!*** <a:cowiggle:1368136766791483472><a:Bow:1365575505171976246><a:whitesparkles:1365569806966853664>\n\n"
         f"*The last chapter, [{chap_text}]({chap_link}), has now been released. <a:turtle_hyper:1365223449827737630>\n"
         f"After {duration} of updates, {title} is now fully translated with {count}! Thank you for coming on this journey and for your continued support <:luv_turtle:365263712549736448> You can now visit {host} to binge on all the releases~*<a:Heart:1365575427724283944>"
-        f"<a:Paws:1365676154865979453>{'<:FF_Divider_Pink:1365575626194681936>' * 5}\n"
+        f"<a:Paws:1365676154865979453>\n"
+        f"{'<:FF_Divider_Pink:1365575626194681936>' * 5}\n"
         f"-# Check out other translated projects at {discord_url} and react to get the latest updates <a:LoveLetter:1365575475841339435>"
     )
 
