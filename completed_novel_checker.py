@@ -291,6 +291,7 @@ def main():
                 duration = get_duration(novel.get("start_date",""), chap_date)
 
                 msg = build_paid_completion(novel, chap_field, entry.link, duration)
+                print(f"→ Built message of {len(msg)} characters")
                 if bot_token and channel_id:
                     safe_send_bot(bot_token, channel_id, msg)
                     print(f"✔️ Sent paid-completion announcement for {novel_id}")
