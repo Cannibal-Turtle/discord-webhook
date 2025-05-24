@@ -60,9 +60,12 @@ def safe_send_bot(bot_token: str, channel_id: str, content: str):
     """
     try:
         send_bot_message(bot_token, channel_id, content)
+        return True
     except requests.HTTPError as e:
-        status = e.response.status_code if (e.response and e.response.status_code) else "?"
-        print(f"⚠️ Bot send failed with status {status}: {e}", file=sys.stderr)
+        status = e.response.status_code if e.response else "?"
+        body   = e.response.text       if e.response else ""
+        print(f"⚠️ Bot send failed ({status}):\n{body}", file=sys.stderr)
+        return False
 
 def get_duration(start_date_str: str, end_date: datetime) -> str:
     """
@@ -114,7 +117,7 @@ def build_paid_completion(novel, chap_field, chap_link, duration: str):
     count     = novel.get("chapter_count", "the entire series")
     comp_role = COMPLETE_ROLE
     DIV = "<a:purple_divider1:1365652778957144165>"
-    divider_line = DIV * 14
+    divider_line = DIV * 10
   
     # normalize NBSP
     chap_text = chap_field.replace("\u00A0", " ")
@@ -122,10 +125,10 @@ def build_paid_completion(novel, chap_field, chap_link, duration: str):
         f"{role} | {comp_role} <a:HappyCloud:1365575487333859398>\n"
         "## ꧁ᐟᐟ ◌ೄ⟢  Completion Announcement  :blueberries: ˚. ᵎᵎ˖ˎˊ-\n"
         f"{divider_line}\n"
-        f"***<a:kikilts_bracket:1365693072138174525>[{title}]({link})<a:lalalts_bracket:1365693058905014313>— officially completed!*** <a:1108_cowiggle:1368136766791483472><a:Bow:1365575505171976246><a:whitesparklingstars2:1365569806966853664>\n\n"
-        f"*The last chapter, [{chap_text}]({chap_link}), has now been released. <a:turtle_super_hyper:1365223449827737630>\n"
+        f"***<a:kikilts_bracket:1365693072138174525>[{title}]({link})<a:lalalts_bracket:1365693058905014313>— officially completed!*** <a:cowiggle:1368136766791483472><a:Bow:1365575505171976246><a:whitesparkles:1365569806966853664>\n\n"
+        f"*The last chapter, [{chap_text}]({chap_link}), has now been released. <a:turtle_hyper:1365223449827737630>\n"
         f"After {duration} of updates, {title} is now fully translated with {count}! Thank you for coming on this journey and for your continued support <:turtle_plead:1365223487274352670> You can now visit {host} to binge all advance releases~*<a:Heart:1365575427724283944>"
-        f"<a:Paws:1365676154865979453>{'<:FF_Divider_Pink:1365575626194681936>' * 6}\n"
+        f"<a:Paws:1365676154865979453>{'<:FF_Divider_Pink:1365575626194681936>' * 5}\n"
         f"-# Check out other translated projects at {discord_url} and react to get the latest updates <a:LoveLetter:1365575475841339435>"
     )
   
@@ -138,7 +141,7 @@ def build_free_completion(novel, chap_field, chap_link):
     count     = novel.get("chapter_count", "the entire series")
     comp_role = COMPLETE_ROLE
     DIV = "<a:purple_divider1:1365652778957144165>"
-    divider_line = DIV * 14
+    divider_line = DIV * 10
 
     # normalize NBSP
     chap_text = chap_field.replace("\u00A0", " ")
@@ -146,11 +149,11 @@ def build_free_completion(novel, chap_field, chap_link):
         f"{role} | {comp_role} <a:HappyCloud:1365575487333859398>\n"
         "## 𐔌  Announcing: Complete Series Unlocked ,, :cherries: — 𝝑𝝔  ꒱\n"
         f"{divider_line}\n"
-        f"***<a:kikilts_bracket:1365693072138174525>[{title}]({link})<a:lalalts_bracket:1365693058905014313>— complete access granted!*** <a:1108_cowiggle:1368136766791483472><a:Bow:1365575505171976246><a:whitesparklingstars2:1365569806966853664>\n\n"
+        f"***<a:kikilts_bracket:1365693072138174525>[{title}]({link})<a:lalalts_bracket:1365693058905014313>— complete access granted!*** <a:cowiggle:1368136766791483472><a:Bow:1365575505171976246><a:whitesparkles:1365569806966853664>\n\n"
         f"*All {count} has been unlocked and ready for you to binge—completely free!\n"
         f"Thank you all for your amazing support   <:green_turtle_heart:1365264636064305203>\n"
         f"Head over to {host} to dive straight in~*<a:Heart:1365575427724283944>"
-        f"<a:Paws:1365676154865979453>{'<:FF_Divider_Pink:1365575626194681936>' * 6}\n"
+        f"<a:Paws:1365676154865979453>{'<:FF_Divider_Pink:1365575626194681936>' * 5}\n"
         f"-# Check out other translated projects at {discord_url} and react to get the latest updates <a:LoveLetter:1365575475841339435>"
     )
 
@@ -163,7 +166,7 @@ def build_only_free_completion(novel, chap_field, chap_link, duration):
     discord_url = novel.get("discord_role_url", "")
     count       = novel.get("chapter_count", "the entire series")
     DIV = "<a:purple_divider1:1365652778957144165>"
-    divider_line = DIV * 14
+    divider_line = DIV * 10
 
     # normalize NBSP
     chap_text = chap_field.replace("\u00A0", " ")
@@ -172,10 +175,10 @@ def build_only_free_completion(novel, chap_field, chap_link, duration):
         f"{role} | {comp_role} <a:HappyCloud:1365575487333859398>\n"
         "## ⁺‧ ༻•┈๑☽₊˚ ⌞Completion Announcement⋆ཋྀ ˚₊‧⁺ :kiwi: ∗༉‧₊˚\n"
         f"{divider_line}\n"
-        f"***<a:kikilts_bracket:1365693072138174525>[{title}]({link})<a:lalalts_bracket:1365693058905014313>— officially completed!*** <a:1108_cowiggle:1368136766791483472><a:Bow:1365575505171976246><a:whitesparklingstars2:1365569806966853664>\n\n"
-        f"*The last chapter, [{chap_text}]({chap_link}), has now been released. <a:turtle_super_hyper:1365223449827737630>\n"
-        f"After {duration} of updates, {title} is now fully translated with {count}! Thank you for coming on this journey and for your continued support <:d_greena_luv_turtle:365263712549736448> You can now visit {host} to binge on all the releases~*<a:Heart:1365575427724283944>"
-        f"<a:Paws:1365676154865979453>{'<:FF_Divider_Pink:1365575626194681936>' * 6}\n"
+        f"***<a:kikilts_bracket:1365693072138174525>[{title}]({link})<a:lalalts_bracket:1365693058905014313>— officially completed!*** <a:cowiggle:1368136766791483472><a:Bow:1365575505171976246><a:whitesparkles:1365569806966853664>\n\n"
+        f"*The last chapter, [{chap_text}]({chap_link}), has now been released. <a:turtle_hyper:1365223449827737630>\n"
+        f"After {duration} of updates, {title} is now fully translated with {count}! Thank you for coming on this journey and for your continued support <:luv_turtle:365263712549736448> You can now visit {host} to binge on all the releases~*<a:Heart:1365575427724283944>"
+        f"<a:Paws:1365676154865979453>{'<:FF_Divider_Pink:1365575626194681936>' * 5}\n"
         f"-# Check out other translated projects at {discord_url} and react to get the latest updates <a:LoveLetter:1365575475841339435>"
     )
 
@@ -263,16 +266,17 @@ def main():
                 duration = get_duration(novel.get("start_date",""), chap_date)
 
                 msg = build_only_free_completion(novel, chap_field, entry.link, duration)
-                if bot_token and channel_id:
-                    safe_send_bot(bot_token, channel_id, msg)
+                print(f"→ Built message of {len(msg)} characters")
+                success = safe_send_bot(bot_token, channel_id, msg)
+                if success:
                     print(f"✔️ Sent only-free completion announcement for {novel_id}")
+                    state.setdefault(novel_id, {})["only_free"] = {
+                        "chapter": chap_field,
+                        "sent_at": datetime.now().isoformat()
+                    }
+                    save_state(state)
                 else:
-                    print("⚠️ Bot token or channel ID missing; skipped bot post", file=sys.stderr)
-                state.setdefault(novel_id, {})["only_free"] = {
-                    "chapter": chap_field,
-                    "sent_at": datetime.now().isoformat()
-                }
-                save_state(state)
+                    print(f"→ Not marking {novel_id} as ‘only_free’ because send failed")
                 break
 
             # --- PAID COMPLETE ---
@@ -292,16 +296,17 @@ def main():
 
                 msg = build_paid_completion(novel, chap_field, entry.link, duration)
                 print(f"→ Built message of {len(msg)} characters")
-                if bot_token and channel_id:
-                    safe_send_bot(bot_token, channel_id, msg)
+                success = safe_send_bot(bot_token, channel_id, msg)
+                if success:
                     print(f"✔️ Sent paid-completion announcement for {novel_id}")
+                    state.setdefault(novel_id, {})["paid"] = {
+                        "chapter": chap_field,
+                        "sent_at": datetime.now().isoformat()
+                    }
+                    save_state(state)
                 else:
-                    print("⚠️ Bot token or channel ID missing; skipped bot post", file=sys.stderr)
-                state.setdefault(novel_id, {})["paid"] = {
-                    "chapter": chap_field,
-                    "sent_at": datetime.now().isoformat()
-                }
-                save_state(state)
+                    print(f"→ Not marking {novel_id} as ‘paid’ because send failed")
+            
                 break
 
             # --- STANDARD FREE (has paid_feed) ---
@@ -311,16 +316,17 @@ def main():
                     break
 
                 msg = build_free_completion(novel, chap_field, entry.link)
-                if bot_token and channel_id:
-                    safe_send_bot(bot_token, channel_id, msg)
+                print(f"→ Built message of {len(msg)} characters")
+                success = safe_send_bot(bot_token, channel_id, msg)
+                if success:
                     print(f"✔️ Sent free-completion announcement for {novel_id}")
+                    state.setdefault(novel_id, {})["free"] = {
+                        "chapter": chap_field,
+                        "sent_at": datetime.now().isoformat()
+                    }
+                    save_state(state)
                 else:
-                    print("⚠️ Bot token or channel ID missing; skipped bot post", file=sys.stderr)
-                state.setdefault(novel_id, {})["free"] = {
-                    "chapter": chap_field,
-                    "sent_at": datetime.now().isoformat()
-                }
-                save_state(state)
+                    print(f"→ Not marking {novel_id} as ‘free’ because send failed")
                 break
 
 if __name__ == "__main__":
