@@ -23,7 +23,7 @@ from novel_mappings import HOSTING_SITE_DATA
 STATE_PATH  = "state.json"
 BOT_TOKEN_ENV   = "DISCORD_BOT_TOKEN"
 CHANNEL_ID_ENV  = "DISCORD_CHANNEL_ID"
-COMPLETE_ROLE = "<@&1329391480435114005>"
+COMPLETE_ROLE = "<@&1329502614110474270>"
 # ────────────────────────────────────────────────────────────────────────────────
 
 def load_state(path=STATE_PATH):
