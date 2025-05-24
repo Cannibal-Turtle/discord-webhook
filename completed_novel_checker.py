@@ -237,10 +237,9 @@ def main():
             continue
 
         # parse RSS
-        feed = feedparser.parse(url)
-        if feed.bozo:
-            print(f"WARNING: could not parse {feed_key}: {feed.bozo_exception}", file=sys.stderr)
-            continue
+        resp = requests.get(url)
+        feed = feedparser.parse(resp.text)
+        print(f"Parsing {feed_key} for {novel_id}: got {len(feed.entries)} entries (Content-Type: {resp.headers.get('Content-Type')})")
 
         # look for last_chapter
         for entry in feed.entries:
