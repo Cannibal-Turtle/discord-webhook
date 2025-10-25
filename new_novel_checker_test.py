@@ -11,13 +11,13 @@ Goal:
 - Do NOT write to state.json.
 - Do NOT care if it's already been "announced".
 
-How this differs from the real script:
+Differences from production:
 - We hard-pick one novel in TARGET_TEST_TITLE.
-- We always treat the first matching feed entry as "Chapter 1".
-- We skip the "already announced" check.
-- We don't update state.json.
+- We just grab the first matching feed entry for that novel and pretend it's Chapter 1.
+- We skip the "already announced" guard.
+- We do not update state.json.
 
-So you can preview formatting in your real channel.
+This lets you preview formatting in your real channel.
 """
 
 import os
@@ -37,14 +37,15 @@ BOT_TOKEN_ENV  = "DISCORD_BOT_TOKEN"
 CHANNEL_ID_ENV = "DISCORD_CHANNEL_ID"
 
 GLOBAL_ROLE = "<@&1329502873503006842>"        # @new novels (global ping)
-NSFW_ROLE   = "<@&1343352825811439616>"        # @nsfw role ping
+NSFW_ROLE   = "<@&1343352825811439616>"        # @nsfw ping (goes LAST)
 
-# 👇 change this string if you want to test a different title
+# 👇 change this to whichever novel you want to "fake launch"
 TARGET_TEST_TITLE = "Quick Transmigration: The Villain Is Too Pampered and Alluring"
 # ───────────────────────────────────────────────────────────────────────────────
 
 
 def parsed_time_to_aware(struct_t, fallback_now):
+    """turn feedparser's published_parsed into aware local datetime"""
     if not struct_t:
         return fallback_now
     try:
@@ -63,6 +64,7 @@ def parsed_time_to_aware(struct_t, fallback_now):
 
 
 def nice_footer_time(chap_dt: datetime, now_dt: datetime) -> str:
+    """Pretty footer timestamp like 'Today at 14:22', 'Yesterday at 09:18', etc."""
     chap_day = chap_dt.date()
     now_day  = now_dt.date()
     hhmm     = chap_dt.strftime("%H:%M")
@@ -80,8 +82,7 @@ def nice_footer_time(chap_dt: datetime, now_dt: datetime) -> str:
 def send_bot_message_embed(bot_token: str, channel_id: str, content: str, embed: dict):
     """
     Send a Discord message containing both a normal text block (`content`)
-    and a rich embed (`embed`).
-    Uses your bot token to post as the bot to the channel ID.
+    and a rich embed (`embed`) using your bot token.
     """
     url = f"https://discord.com/api/v10/channels/{channel_id}/messages"
     headers = {
@@ -102,49 +103,78 @@ def clean_feed_description(raw_html: str) -> str:
     """
     Clean up the <description> block from the feed.
 
-    We:
-    - Stop at first <hr> (cut Patreon/Ko-fi calls etc)
-    - Strip tags
-    - Collapse whitespace
-    - Trim to Discord-safe length
+    Steps:
+    - Cut off everything after first <hr> so Ko-fi / NU / Discord promo doesn't show.
+    - Strip all tags.
+    - HTML-unescape entities (&quot; → " etc).
+    - Collapse excessive whitespace to keep it neat.
+    - Enforce Discord safety (~4k chars).
     """
     if not raw_html:
         return ""
 
+    # 1) Stop at first <hr>
     parts = re.split(r"(?i)<hr[^>]*>", raw_html, maxsplit=1)
     main_part = parts[0]
 
+    # 2) Drop HTML tags
     no_tags = re.sub(r"(?s)<[^>]+>", "", main_part)
+
+    # 3) Decode entities
     text = html.unescape(no_tags)
 
+    # 4) Whitespace normalize
     text = re.sub(r"\s+\n", "\n", text)
     text = re.sub(r"\n\s+", "\n", text)
     text = re.sub(r"[ \t]+", " ", text)
     text = text.strip()
 
+    # 5) Hard cap (Discord embed.description max 4096)
     if len(text) > 4000:
         text = text[:4000].rstrip() + "…"
 
     return text
 
 
+def shorten_description(desc_text: str, max_words: int = 50) -> str:
+    """
+    Take the cleaned description and keep only the first `max_words` words.
+    If we cut anything off, add "..." at the end.
+    """
+    if not desc_text:
+        return ""
+
+    words = desc_text.split()
+    if len(words) <= max_words:
+        return desc_text
+
+    preview = " ".join(words[:max_words])
+    return preview.rstrip() + "..."
+
+
 def build_ping_roles(novel_title: str,
                      extra_ping_roles_value: str) -> str:
     """
     First line of the announcement.
-    Order:
-    - GLOBAL_ROLE (@new novels etc.)
-    - extra_ping_roles (e.g. @Quick Transmigration @CN dao @Yaoi)
-    - NSFW_ROLE at the end *if* this title is in get_nsfw_novels()
+
+    Order you wanted:
+    1. GLOBAL_ROLE (your global @new novels ping)
+    2. per-novel bundle of roles from mapping (e.g. @Quick Transmigration @CN dao @Yaoi)
+    3. IF nsfw: NSFW_ROLE LAST
+
+    We do NOT insert anything in the middle of your bundle, we keep its order.
     """
     parts = []
 
+    # global alert role
     if GLOBAL_ROLE:
         parts.append(GLOBAL_ROLE.strip())
 
+    # the per-novel / genre roles exactly like you wrote in mapping
     if extra_ping_roles_value:
         parts.append(extra_ping_roles_value.strip())
 
+    # and NSFW at the very end if this title is NSFW
     if novel_title in get_nsfw_novels():
         parts.append(NSFW_ROLE)
 
@@ -160,8 +190,10 @@ def build_launch_content(ping_line: str,
                          role_thread_url: str,
                          custom_emoji: str) -> str:
     """
-    The pretty text block above the embed, exactly like production.
+    The stylized text (non-embed) that sits above the embed.
+    This matches your production vibe.
     """
+    # fix any weird non-breaking spaces
     chap_display = chap_name.replace("\u00A0", " ").strip()
 
     return (
@@ -188,23 +220,25 @@ def build_launch_embed(translator: str,
                        chap_dt_local: datetime,
                        now_local: datetime) -> dict:
     """
-    The embed under the text:
-    - author = translator name
-    - title/url = series link
-    - description = summary pulled from <description>
-    - image = cover art
-    - footer = host + nice timestamp (Today 14:22 / Yesterday ...)
+    The embed below the text block:
+    - author.name  = "<translator> ⋆. 𐙚"
+    - title/url    = novel link
+    - description  = first 50 words of cleaned <description> + "..."
+    - image.url    = cover
+    - footer.text  = "<host> • Today at HH:MM" etc, with host logo icon
     """
     footer_time = nice_footer_time(chap_dt_local, now_local)
     footer_text = f"{host_name} • {footer_time}"
 
+    short_desc = shorten_description(desc_text, max_words=50)
+
     embed = {
         "author": {
-            "name": translator
+            "name": f"{translator} ⋆. 𐙚"
         },
         "title": title,
         "url": novel_url,
-        "description": desc_text,
+        "description": short_desc,
         "image": {
             "url": cover_url
         },
@@ -212,6 +246,8 @@ def build_launch_embed(translator: str,
             "text": footer_text,
             "icon_url": host_logo_url
         }
+        # no timestamp field; you're styling time in the footer yourself
+        # no color; default accent color is fine
     }
 
     return embed
@@ -219,12 +255,8 @@ def build_launch_embed(translator: str,
 
 def load_test_novel_from_mapping():
     """
-    Pull your HOSTING_SITE_DATA and return just the one novel
-    we want to test (TARGET_TEST_TITLE).
-
-    We also pull host info (translator, host_logo, etc.)
-    and novel info (featured_image, custom_emoji, etc.)
-    which is what the real script uses.
+    Look in HOSTING_SITE_DATA for TARGET_TEST_TITLE.
+    Return a dict of all the fields we need to build the message.
     """
     for host_name, host_data in HOSTING_SITE_DATA.items():
         translator   = host_data.get("translator", "")
@@ -237,7 +269,7 @@ def load_test_novel_from_mapping():
 
             free_feed_url = details.get("free_feed")
             if not free_feed_url:
-                # can't test if there's no free/public feed
+                # can't test launch-style without a free/public feed
                 continue
 
             return {
@@ -253,7 +285,7 @@ def load_test_novel_from_mapping():
                 "custom_emoji":     details.get("custom_emoji", ""),
                 "discord_role_url": details.get("discord_role_url", ""),
 
-                # like "<@&QuickTransRole> <@&CNdao> <@&Yaoi>"
+                # e.g. "<@&1329500516304158901> <@&1329427832077684736> <@&1330469014895595620>"
                 "extra_ping_roles": details.get("extra_ping_roles", ""),
             }
 
@@ -261,11 +293,13 @@ def load_test_novel_from_mapping():
 
 
 def main():
+    # grab secrets from env (these should already exist in your repo / Actions env)
     bot_token  = os.getenv(BOT_TOKEN_ENV)
     channel_id = os.getenv(CHANNEL_ID_ENV)
     if not (bot_token and channel_id):
         raise SystemExit("❌ Missing DISCORD_BOT_TOKEN or DISCORD_CHANNEL_ID (check repo secrets).")
 
+    # grab mapping data for the test title
     novel = load_test_novel_from_mapping()
     if not novel:
         raise SystemExit(f"❌ Could not find {TARGET_TEST_TITLE} (or it has no free_feed) in HOSTING_SITE_DATA.")
@@ -281,13 +315,13 @@ def main():
     feed = feedparser.parse(resp.text)
     print(f"[test] Parsed {len(feed.entries)} entries")
 
-    # We'll just grab the FIRST feed item for this novel_title and pretend it's Chapter 1.
+    # we just grab the FIRST matching entry for this novel and pretend it's Chapter 1
     for entry in feed.entries:
         entry_title = (entry.get("title") or "").strip()
         if entry_title != novel_title:
             continue
 
-        # chapter label from feed (could be "Chapter 1180", "Extra 8", whatever)
+        # chapter label (whatever is in feed: 'Chapter 377', etc.)
         chap_field = (
             entry.get("chaptername")
             or entry.get("chapter")
@@ -295,7 +329,7 @@ def main():
         )
         chap_link = entry.link
 
-        # clean summary/description for embed
+        # summary text for embed (we'll shorten to 50 words later)
         raw_desc_html = (
             entry.get("description")
             or entry.get("summary")
@@ -303,20 +337,20 @@ def main():
         )
         desc_text = clean_feed_description(raw_desc_html)
 
-        # timestamp for footer (Today / Yesterday)
+        # timestamp for footer display
         chap_dt_local = parsed_time_to_aware(
             entry.get("published_parsed")
             or entry.get("updated_parsed"),
             now_local
         )
 
-        # build the first line with all the role pings
+        # build @role pings line (global → per-novel bundle → NSFW last)
         ping_line = build_ping_roles(
             novel_title,
             novel.get("extra_ping_roles", "")
         )
 
-        # message text block
+        # main body text (with bows and borders etc.)
         content_msg = build_launch_content(
             ping_line=ping_line,
             title=novel_title,
@@ -328,7 +362,7 @@ def main():
             custom_emoji=novel.get("custom_emoji", "")
         )
 
-        # the embed (preview card)
+        # embed below it (translator flair + 50-word preview + cover art)
         embed_obj = build_launch_embed(
             translator=novel.get("translator", ""),
             title=novel_title,
@@ -349,7 +383,7 @@ def main():
             embed=embed_obj
         )
         print("[test] Done. Check your channel.")
-        return  # stop after first matching entry
+        return  # only send once
 
     print("❌ No matching entries found in feed.")
 
