@@ -193,7 +193,7 @@ The workflow listens for:
    ```fix
    python new_extra_checker.py
    ```
-3. **New Launch Checker**
+3. **Completion Checker**
    ```yaml
    - name: Paid Completion
      run: python completed_novel_checker.py --feed paid
@@ -201,7 +201,7 @@ The workflow listens for:
    - name: Free Completion
      run: python completed_novel_checker.py --feed free
    ```
-4. **Completion Checker**
+4. **New Launch Checker**
    ```yaml
    - name: New Launch Checker
      run: python new_novel_checker.py --feed free
