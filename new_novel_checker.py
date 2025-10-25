@@ -274,12 +274,12 @@ def build_launch_content(ping_line: str,
     # inline emojis exactly as text (no constants)
     return (
         f"{ping_line} <a:Bow:1365575505171976246>\n"
-        "## ꉂ`:fish_cake: ･ﾟ✧ New Series Launch ִֶָ. ..𓂃 ࣪ ִֶָ:wing:་༘࿐\n"
-        f"***<a:kikilts_bracket:1365693072138174525>[{title}]({novel_url})<a:lalalts_bracket:1365693058905014313>*** — now officially added to cannibal turtle's lineup! <a:Turtle_Idk:1365253708363075664><a:whitesparkle:1365568591449034832> \n\n"
+        "## ꉂ`:fish_cake: ･ﾟ✧ New Series Launch ִֶָ. ..𓂃 ࣪ ִֶָ:wing:་༘࿐<a:1678whalepink:1368136879857205308>\n"
+        f"***<a:kikilts_bracket:1365693072138174525>[{title}]({novel_url})<a:lalalts_bracket:1365693058905014313>*** — now officially added to cannibal turtle's lineup! <a:1620cupcakepink:1368136855903801404> \n\n"
         f"[{chap_display}]({chap_link}), is out on {host}. "
         "Please give lots of love to our new baby and welcome it to the server "
         "<a:hellokittydance:1365566988826705960>\n"
-        "Updates will continue regularly, so hop in early and start reading now <:pastelheart:1365570074215321680> \n"
+        "Updates will continue regularly, so hop in early and start reading now <a:2713pandaroll:1368137698212184136> \n"
         f"{'<a:6535_flower_border:1368146360871948321>' * 10}\n"
         f"-# To get pings for new chapters, head to {role_thread_url} "
         f"and react for the role {custom_emoji}"
