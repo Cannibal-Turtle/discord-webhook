@@ -178,7 +178,6 @@ jobs:
 
   new_launch_checker:
     runs-on: ubuntu-latest
-    # make sure this only runs when free feed is relevant AND after free_completion
     needs: free_completion
     if: >
       github.event_name == 'schedule' ||
