@@ -302,25 +302,31 @@ def shorten_description(desc_text: str, max_words: int = 50) -> str:
     return preview.rstrip() + "..."
 
 
-def build_launch_embed(translator: str,
-                       title: str,
-                       novel_url: str,
-                       desc_text: str,
-                       cover_url: str,
-                       host_name: str,
-                       host_logo_url: str,
-                       chap_dt_local: datetime,
-                       now_local: datetime) -> dict:
+def build_launch_embed(
+    translator: str,
+    title: str,
+    novel_url: str,
+    desc_text: str,
+    cover_url: str,
+    host_name: str,
+    host_logo_url: str,
+    chap_dt_local: datetime  # this is the chapter's datetime from the feed
+) -> dict:
     """
-    Build the embed object that looks like your chapter-release embed:
+    Build the embed object:
     - author.name: translator ⋆. 𐙚
     - title/url:   clickable series title
-    - description: first 50 words of cleaned <description> + "..."
+    - description: cleaned summary
     - image.url:   cover art
-    - footer:      "<host> • Yesterday at 20:00", with host logo
+    - footer:      host name + host logo
+    - timestamp:   actual chapter time (Discord will render "Today at HH:MM"
+                   in each viewer's local timezone)
+    - color:       pastel #AEC6CF
     """
-    footer_time = nice_footer_time(chap_dt_local, now_local)
-    footer_text = f"{host_name} • {footer_time}"
+
+    # Discord expects timestamp in ISO8601, and will auto-localize.
+    # We just make sure chap_dt_local is aware (has tzinfo).
+    iso_timestamp = chap_dt_local.astimezone(timezone.utc).isoformat()
 
     embed = {
         "author": {
@@ -333,13 +339,17 @@ def build_launch_embed(translator: str,
             "url": cover_url
         },
         "footer": {
-            "text": footer_text,
+            "text": host_name,
             "icon_url": host_logo_url
         },
-        "color": 11454159
+        # pastel embed color aec6cf
+        "color": 0xAEC6CF,
+        # THIS is the magic: send the chapter's time up to Discord
+        "timestamp": iso_timestamp,
     }
 
     return embed
+
 
 def load_novels_from_mapping():
     """
@@ -495,8 +505,7 @@ def main():
                 cover_url=novel.get("featured_image", ""),
                 host_name=host_name,
                 host_logo_url=novel.get("host_logo", ""),
-                chap_dt_local=chap_dt_local,
-                now_local=now_local
+                chap_dt_local=chap_dt_local
             )
 
             print(
