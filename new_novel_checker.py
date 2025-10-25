@@ -286,6 +286,22 @@ def build_launch_content(ping_line: str,
     )
 
 
+def shorten_description(desc_text: str, max_words: int = 50) -> str:
+    """
+    Keep only the first `max_words` words of desc_text.
+    If truncated, add "...".
+    """
+    if not desc_text:
+        return ""
+
+    words = desc_text.split()
+    if len(words) <= max_words:
+        return desc_text
+
+    preview = " ".join(words[:max_words])
+    return preview.rstrip() + "..."
+
+
 def build_launch_embed(translator: str,
                        title: str,
                        novel_url: str,
@@ -297,22 +313,25 @@ def build_launch_embed(translator: str,
                        now_local: datetime) -> dict:
     """
     Build the embed object that looks like your chapter-release embed:
-    - author.name: translator
+    - author.name: translator ⋆. 𐙚
     - title/url:   clickable series title
-    - description: cleaned first part of <description> from the feed
+    - description: first 50 words of cleaned <description> + "..."
     - image.url:   cover art
     - footer:      "<host> • Yesterday at 20:00", with host logo
     """
     footer_time = nice_footer_time(chap_dt_local, now_local)
     footer_text = f"{host_name} • {footer_time}"
 
+    # limit description to ~50 words for the preview
+    short_desc = shorten_description(desc_text, max_words=50)
+
     embed = {
         "author": {
-            "name": translator
+            "name": f"{translator} ⋆. 𐙚"
         },
         "title": title,
         "url": novel_url,
-        "description": desc_text,
+        "description": short_desc,
         "image": {
             "url": cover_url
         },
@@ -320,12 +339,11 @@ def build_launch_embed(translator: str,
             "text": footer_text,
             "icon_url": host_logo_url
         }
-        # No "timestamp" field because your embed style shows time only in footer.
-        # No "color" so Discord picks default accent.
+        # no "timestamp": you're styling the time yourself in footer_text
+        # no "color": Discord will just use default accent
     }
 
     return embed
-
 
 def load_novels_from_mapping():
     """
