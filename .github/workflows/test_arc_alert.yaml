@@ -1,0 +1,17 @@
+name: Test Arc Alert
+on:
+  workflow_dispatch: {}
+jobs:
+  test-arc:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.x"
+      - run: pip install requests
+      - env:
+          DRY_RUN: "true"
+          DISCORD_BOT_TOKEN: "fake"
+          DISCORD_CHANNEL_ID: "fake"
+        run: python new_arc_checker_test.py
