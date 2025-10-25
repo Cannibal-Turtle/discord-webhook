@@ -5,6 +5,7 @@ Automatically monitors paid and free RSS feeds for your novels, tracks arc histo
 1. **New Arc Alerts** (locked‑advance content)
 2. **Side Stories/Extra Alerts** (locked‑advance content, fires one time for each novel)
 3. **Completion Announcements** when the final chapter appears (paid) and full series unlocks (free)
+4. **New Novel Launch Alerts** when the first chapter of a new series is available (free)
 
 All notifications use a single Discord webhook URL stored in the `DISCORD_WEBHOOK` secret.
 
@@ -192,7 +193,7 @@ The workflow listens for:
    ```fix
    python new_extra_checker.py
    ```
-3. **Completion Checker**
+3. **New Launch Checker**
    ```yaml
    - name: Paid Completion
      run: python completed_novel_checker.py --feed paid
@@ -200,7 +201,11 @@ The workflow listens for:
    - name: Free Completion
      run: python completed_novel_checker.py --feed free
    ```
----
+4. **Completion Checker**
+   ```yaml
+   - name: New Launch Checker
+     run: python new_novel_checker.py --feed free
+   ```
 
 ## 🎯 Notes
 - If a novel has no history of previous arcs, then history file like `tvitpa_history.json` must be inserted manually before it can pick up automatically from the RSS feed.
