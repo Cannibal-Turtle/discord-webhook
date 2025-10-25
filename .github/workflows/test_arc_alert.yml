@@ -32,5 +32,5 @@ jobs:
         env:
           DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
           DISCORD_CHANNEL_ID: ${{ secrets.DISCORD_CHANNEL_ID }}
-          DRY_RUN: "true"  # <- if your test script supports this to avoid posting
+          DRY_RUN: "false"  # <- if your test script supports this to avoid posting
         run: python new_arc_checker_test.py
