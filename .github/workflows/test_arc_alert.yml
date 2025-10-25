@@ -1,17 +1,14 @@
-name: Test Arc Checker
+name: Arc Checker (Live Preview)
 
 on:
-  workflow_dispatch:  # manual run only so you don't spam prod
-
-permissions:
-  contents: write
+  workflow_dispatch:
 
 jobs:
-  arc_checker_test:
+  arc_checker_preview:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout discord-webhook repo
+      - name: Checkout
         uses: actions/checkout@v3
         with:
           persist-credentials: true
@@ -28,9 +25,13 @@ jobs:
           pip install feedparser requests
           pip install --upgrade git+https://github.com/Cannibal-Turtle/rss-feed.git@main
 
-      - name: Run Arc Checker TEST
+      - name: Run arc checker dry-run (but post to Discord)
         env:
           DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
           DISCORD_CHANNEL_ID: ${{ secrets.DISCORD_CHANNEL_ID }}
-          DRY_RUN: "false"  # <- if your test script supports this to avoid posting
-        run: python new_arc_checker_test.py
+
+          # ↓↓↓ VERY IMPORTANT ↓↓↓
+          # false = send messages to Discord,
+          # true  = print only (no send)
+          DRY_RUN: "false"
+        run: python new_arc_checker_dryrun.py
