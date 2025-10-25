@@ -322,16 +322,13 @@ def build_launch_embed(translator: str,
     footer_time = nice_footer_time(chap_dt_local, now_local)
     footer_text = f"{host_name} • {footer_time}"
 
-    # limit description to ~50 words for the preview
-    short_desc = shorten_description(desc_text, max_words=50)
-
     embed = {
         "author": {
             "name": f"{translator} ⋆. 𐙚"
         },
         "title": title,
         "url": novel_url,
-        "description": short_desc,
+        "description": desc_text,
         "image": {
             "url": cover_url
         },
