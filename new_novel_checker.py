@@ -336,8 +336,7 @@ def build_launch_embed(translator: str,
             "text": footer_text,
             "icon_url": host_logo_url
         }
-        # no "timestamp": you're styling the time yourself in footer_text
-        # no "color": Discord will just use default accent
+        "color": 11454159
     }
 
     return embed
