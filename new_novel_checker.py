@@ -335,7 +335,7 @@ def build_launch_embed(translator: str,
         "footer": {
             "text": footer_text,
             "icon_url": host_logo_url
-        }
+        },
         "color": 11454159
     }
 
