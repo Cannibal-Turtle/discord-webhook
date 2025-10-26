@@ -218,7 +218,7 @@ The workflow listens for:
 
 ---
 
-## 🆕 UPDATE: New Bot Scripts (v2.1)
+## 🆕 UPDATE: New Bot Scripts (v3.1)
 
 We’ve just added three standalone Python bots (migrated from MonitoRSS) that post directly as your own Discord bot:
 
@@ -235,12 +235,13 @@ We’ve just added three standalone Python bots (migrated from MonitoRSS) that p
 
    | Name                              | Value                                            |
    |-----------------------------------|--------------------------------------------------|
-   | `DISCORD_BOT_TOKEN`               | Bot’s token                    
+   | `DISCORD_BOT_TOKEN`               | Bot’s token                                      |
+   | `DISCORD_CHANNEL_ID      `        | Channel ID for news/announcements                |
    | `DISCORD_FREE_CHAPTERS_CHANNEL`   | Channel ID for free-chapter posts                |
    | `DISCORD_ADVANCE_CHAPTERS_CHANNEL`| Channel ID for paid-chapter posts                |
    | `DISCORD_COMMENTS_CHANNEL`        | Channel ID for comment posts                     |
 
-2. **Dependencies**  
+3. **Dependencies**  
    Ensure your CI/workflow install step includes:
    ```bash
    pip install discord.py feedparser python-dateutil aiohttp
