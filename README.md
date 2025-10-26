@@ -239,7 +239,7 @@ The workflow listens for:
   - `free_feed`: the global/public RSS that lists ALL free/public chapters from all novels.
   - `paid_feed`: the global/advance RSS that lists ALL paid/locked chapters from all novels.
   The checkers filter those feeds by `<title>` to isolate just that novel.  
-  Some scripts (like arc + extras) will silently skip a novel if one of these feeds is missing. See:
+  Some scripts will silently skip a novel if one of these feeds is missing. See:
 
 ### Feed Requirements Per Checker
 
