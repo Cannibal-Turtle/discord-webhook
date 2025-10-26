@@ -22,6 +22,7 @@ The old setup used a single `DISCORD_WEBHOOK` URL — that webhook flow is legac
 | `GH_PAT`          | Personal Access Token for history push |
 
 ### 🔑 1. Add the Discord Webhook URL to Secrets
+### (Legacy — See update below for new Repository Secrets)
 1. Go to **Settings** → **Secrets and variables** → **Actions**.
 2. Click **New repository secret**.
 3. Set **Name** to `DISCORD_WEBHOOK`.
