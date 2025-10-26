@@ -169,6 +169,7 @@ Each `<item>` in the feed is expected to look like this:
   <hostLogo url="https://dragonholic.com/wp-content/uploads/2025/01/Web-Logo-White.png"/>
   <guid isPermaLink="false">10850</guid>
 </item>
+```
 
 The scripts rely on a few specific fields:
 
