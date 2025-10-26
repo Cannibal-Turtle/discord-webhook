@@ -2,12 +2,13 @@
 
 Automatically monitors paid and free RSS feeds for your novels, tracks arc history, side stories/extras published, and fires three types of Discord announcements via webhook:
 
-1. **New Arc Alerts** (locked‑advance content)
-2. **Side Stories/Extra Alerts** (locked‑advance content, fires one time for each novel)
-3. **Completion Announcements** when the final chapter appears (paid) and full series unlocks (free)
-4. **New Novel Launch Alerts** looks out for the first free chapter of a new series (Ch. 1, Chapter 1, Ep. 1, Episode 1, 1.1, Prologue)
+1. **New Novel Launch Alerts** looks out for the first free chapter of a new series (Ch. 1, Chapter 1, Ep. 1, Episode 1, 1.1, Prologue)
+2. **New Arc Alerts** (locked‑advance content)
+3. **Side Stories/Extra Alerts** (locked‑advance content, fires one time for each novel)
+4. **Completion Announcements** when the final chapter appears (paid) and full series unlocks (free)
 
-All notifications use a single Discord webhook URL stored in the `DISCORD_WEBHOOK` secret.
+Notifications are sent via the Discord bot API (using `DISCORD_BOT_TOKEN` + `DISCORD_CHANNEL_ID`).  
+The old setup used a single `DISCORD_WEBHOOK` URL — that webhook flow is legacy and only applies to earlier versions.
 
 ---
 
