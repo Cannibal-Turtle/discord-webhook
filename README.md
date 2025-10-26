@@ -150,7 +150,27 @@ Only if you choose not to install the mapping package.
 ---
 ## 📑 Supported RSS Item Fields
 
-The scripts look for these XML tags in each `<item>`:
+All scripts read from your generated RSS/Atom-style feeds (`free_feed`, `paid_feed`).  
+Each `<item>` in the feed is expected to look like this:
+
+```xml
+<item>
+  <title>Quick Transmigration: The Villain Is Too Pampered and Alluring</title>
+  <volume/>
+  <chaptername>Chapter 377</chaptername>
+  <nameextend>***My Fiancé Is Definitely Not a Little Pitiful Person 039***</nameextend>
+  <link>https://dragonholic.com/novel/.../chapter-377/</link>
+  <description><![CDATA[ ... HTML summary ... ]]></description>
+  <category>SFW</category>
+  <translator>Cannibal Turtle</translator>
+  <featuredImage url="https://dragonholic.com/wp-content/uploads/2024/08/177838.jpg"/>
+  <pubDate>Sat, 25 Oct 2025 12:00:00 +0000</pubDate>
+  <host>Dragonholic</host>
+  <hostLogo url="https://dragonholic.com/wp-content/uploads/2025/01/Web-Logo-White.png"/>
+  <guid isPermaLink="false">10850</guid>
+</item>
+
+The scripts rely on a few specific fields:
 
 | Tag           | Purpose                                             |
 |---------------|-----------------------------------------------------|
