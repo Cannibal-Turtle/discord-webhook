@@ -149,6 +149,7 @@ def is_first_chapter_name(chapter_field: str) -> bool:
     Decide if a chapter title means "this is the first public drop".
     We match:
       - "Chapter 1", "Ch 1", "Chapter 001", "Ch.01"
+      - "Episode 1", "Ep 1", "Ep.01"
       - "Prologue"
       - "1.1" (or "1 .1", "1. 1", "1．1"), but not "2.1", "10.1", etc.
     """
@@ -159,6 +160,10 @@ def is_first_chapter_name(chapter_field: str) -> bool:
 
     # ch 1 / chapter 1 / chapter 001 / ch.01
     if re.search(r"\bch(?:apter)?\.?\s*0*1\b", text):
+        return True
+
+    # ep 1 / episode 1 / ep.01
+    if re.search(r"\bep(?:isode)?\.?\s*0*1\b", text):
         return True
 
     # prologue
