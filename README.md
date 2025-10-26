@@ -243,6 +243,11 @@ The workflow listens for:
 
 ### Feed Requirements Per Checker
 
+**New Series Launch Alerts**
+- Requires: `free_feed`
+- Behavior: only fires when a *public* first drop appears (`Chapter 1`, `Ch 1`, `Episode 1`, `Ep 1`, `1.1`, `Prologue`)
+- Skips paywalled-only debuts
+
 **New Arc Alerts**
 - Requires: `free_feed` **and** `paid_feed`
 - Behavior: if either feed is missing, that novel is skipped (no ping, no history update)
@@ -261,11 +266,6 @@ The workflow listens for:
     - Requires: `free_feed`  
     - Announces: the full series is now unlocked for free / bingeable
 - Behavior: each side only fires once per novel
-
-**New Series Launch Alerts**
-- Requires: `free_feed`
-- Behavior: only fires when a *public* first drop appears (`Chapter 1`, `Ch 1`, `Episode 1`, `Ep 1`, `1.1`, `Prologue`)
-- Skips paywalled-only debuts
 
 ---
 🚀 **Now, you're ready to automate new arc and novel completion announcements to Discord!**
