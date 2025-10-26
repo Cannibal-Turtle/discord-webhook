@@ -1,4 +1,4 @@
-# Discord Novel Arc, Extras & Completion Notifier
+# Discord Novel Launch, Arc, Extras & Completion Notifier
 
 Automatically monitors paid and free RSS feeds for your novels, tracks arc history, side stories/extras published, and fires three types of Discord announcements via webhook:
 
