@@ -38,7 +38,12 @@ def load_history(history_file):
         with open(history_file, "r", encoding="utf-8") as f:
             history = json.load(f)
             history.setdefault("last_announced", "")
-        print(f"📂 Loaded history from {history_file}: {len(history['unlocked'])} unlocked, {len(history['locked'])} locked, last_announced={history['last_announced']}")
+        print(
+            f"📂 Loaded history from {history_file}: "
+            f"{len(history['unlocked'])} unlocked, "
+            f"{len(history['locked'])} locked, "
+            f"last_announced={history['last_announced']}"
+        )
         return history
     else:
         print(f"📂 No history file found at {history_file}, starting fresh")
@@ -46,7 +51,12 @@ def load_history(history_file):
 
 def save_history(history, history_file):
     """Saves the novel's arc history to JSON file with proper encoding."""
-    print(f"📂 Saving history to {history_file} (unlocked={len(history['unlocked'])}, locked={len(history['locked'])}, last_announced={history['last_announced']})")
+    print(
+        f"📂 Saving history to {history_file} "
+        f"(unlocked={len(history['unlocked'])}, "
+        f"locked={len(history['locked'])}, "
+        f"last_announced={history['last_announced']})"
+    )
     with open(history_file, "w", encoding="utf-8") as f:
         json.dump(history, f, indent=4, ensure_ascii=False)
     print(f"✅ Successfully updated history file: {history_file}")
@@ -113,10 +123,10 @@ def strip_any_number_prefix(s: str) -> str:
     """
     Remove any leading text up through the first run of digits (plus
     any immediately following punctuation and spaces).
-    E.g.  
-      "【Arc 22】Foo"    → "Foo"  
-      "Arc 22: Foo"     → "Foo"  
-      "World10 - Bar"   → "Bar"  
+    E.g.
+      "【Arc 22】Foo"    → "Foo"
+      "Arc 22: Foo"     → "Foo"
+      "World10 - Bar"   → "Bar"
       "Prefix 3) Baz"   → "Baz"
     """
     return re.sub(r"^.*?\d+[^\w\s]*\s*", "", s)
@@ -159,8 +169,8 @@ def number_to_emoji(n: int) -> str:
     e.g. 24 -> DIGIT_EMOJI['2'] + DIGIT_EMOJI['4']
     """
     return ''.join(DIGIT_EMOJI[d] for d in str(n))
-# ──────────────────────────────────────────────────────────────────────────────
 
+# ──────────────────────────────────────────────────────────────────────────────
 # === PROCESS NOVEL FUNCTION ===
 
 def process_arc(novel):
@@ -188,13 +198,16 @@ def process_arc(novel):
     # 2. Load history
     history = load_history(history_file)
 
+    # snapshot BEFORE we mutate history so we know if this is truly first-ever arc
+    had_any_locked_before    = bool(history["locked"])
+    had_any_unlocked_before  = bool(history["unlocked"])
+
     # Helper: does string look like a "new arc start" marker
     def is_new_marker(raw):
         # match "001", "(1)", or ".1" at the end
         return bool(re.search(r"\b001\b|\(1\)|\.\s*1$", raw))
 
-    # Extract arc "bases" (the human-readable arc label without the number prefix),
-    # from feed entries that look like fresh arc starts.
+    # Extract potential new arc "bases" from feed entries that look like fresh arc starts
     def extract_new_bases(feed):
         bases = []
         for e in feed.entries:
@@ -206,7 +219,7 @@ def process_arc(novel):
             if not (is_new_marker(raw_extend) or is_new_marker(raw_chap)):
                 continue
 
-            # Choose a base name in priority order:
+            # Choose a base name priority: volume > nameextend > chaptername
             if raw_vol:
                 base = clean_feed_title(raw_vol)
             elif raw_extend:
@@ -214,7 +227,7 @@ def process_arc(novel):
             else:
                 base = raw_chap
 
-            # Strip any leading "Arc 22: " / "World 3 - " / etc.
+            # Strip any leading numbering like "Arc 22: Foo", "World 3 - Foo"
             base = strip_any_number_prefix(base)
 
             bases.append(base)
@@ -224,14 +237,11 @@ def process_arc(novel):
     paid_new = extract_new_bases(paid_feed)
     print(f"🔍 Detected {len(free_new)} new free arcs, {len(paid_new)} new paid arcs")
 
-    # 3. Update history with free-start arcs and paid/locked arcs
+    # 3. Update history with free-start arcs / paid-start arcs
     free_created_new_arc = False
     paid_created_new_arc = False
 
-    # --- 3A. Handle free arcs:
-    # Either:
-    #   - unlock an arc that used to be locked (move from locked -> unlocked)
-    #   - OR record a BRAND NEW arc that started unlocked (first arc is free)
+    # --- 3A. Handle free arcs
     for base in free_new:
         matched_locked = False
 
@@ -258,8 +268,7 @@ def process_arc(novel):
                 free_created_new_arc = True
                 print(f"🌿 Registered brand-new free arc: {full}")
 
-    # --- 3B. Handle paid arcs:
-    # New paid arc = goes into locked with next arc number
+    # --- 3B. Handle paid arcs
     seen_bases_after_free = [
         re.sub(r"^【Arc\s*\d+】", "", f)
         for f in (history["unlocked"] + history["locked"])
@@ -272,60 +281,76 @@ def process_arc(novel):
             paid_created_new_arc = True
             print(f"🔐 New locked arc: {full}")
 
-    # 4. Dedupe lists
+    # 4. Deduplicate lists
     history["unlocked"] = deduplicate(history["unlocked"])
     history["locked"]   = deduplicate(history["locked"])
 
-    # 5. Figure out what (if anything) we might announce
-    new_full = history["locked"][-1] if history["locked"] else None
-    last_announced = history.get("last_announced", "")
+    # 5. Figure out what (if anything) to announce
 
-    # Are we in the special "first arc is free and nothing is locked yet" case?
-    #   - we created a new arc from free (free_created_new_arc == True)
-    #   - we did NOT create a locked arc this run
-    #   - there are still no locked arcs in history at all
+    # A) Special case 1: first-ever arc started FREE and nothing locked
     scenario_first_arc_free_only = (
         free_created_new_arc
         and not paid_created_new_arc
-        and not history["locked"]  # means no locked arcs exist yet
+        and not history["locked"]  # still zero locked arcs
     )
 
     if scenario_first_arc_free_only:
-        # ✅ We MUST persist this numbering so Arc 2 won't become "Arc 1".
-        # BUT we do NOT announce and we do NOT touch last_announced.
         print("🌱 First arc started free. Saving numbering to history, no Discord ping.")
         save_history(history, novel["history_file"])
         commit_history_update(novel["history_file"])
         return
 
-    # If we have no locked arcs at all (so nothing to announce), we're done.
-    if not new_full:
-        print("ℹ️ No locked arcs exist. Nothing to announce.")
-        # We did NOT save_history() here because you only want to log after an announcement,
-        # except for that first-free-arc bootstrap above.
+    # B) Special case 2: first-ever arc started PAID ONLY
+    scenario_first_arc_paid_only = (
+        paid_created_new_arc
+        and not free_created_new_arc
+        and not had_any_locked_before
+        and not had_any_unlocked_before
+    )
+
+    if scenario_first_arc_paid_only:
+        print("💸 First arc started paid-only. Saving numbering to history, no Discord ping.")
+        # Don't touch last_announced.
+        save_history(history, novel["history_file"])
+        commit_history_update(novel["history_file"])
         return
 
-    # If we've already announced this exact locked arc before, done.
+    # After those two bootstraps, continue like normal.
+
+    # If we have no locked arcs at all (nothing advance-only to hype), stop.
+    if not history["locked"]:
+        print("ℹ️ No locked arcs exist. Nothing to announce.")
+        return
+
+    new_full = history["locked"][-1]  # newest locked arc title, e.g. "【Arc 5】..."
+    last_announced = history.get("last_announced", "")
+
+    # If we've already announced this exact locked arc, we're done.
     if new_full == last_announced:
         print(f"✅ Already announced latest locked arc: {new_full}")
-        # Again: not saving to disk since no new public announcement.
         return
 
-    # 6. Build strings for embeds/messages using the UPDATED history (after dedupe)
+    # 6. Build display strings with UPDATED history
     world_number = extract_arc_number(new_full)
     world_emoji  = number_to_emoji(world_number) if world_number is not None else ""
 
-    unlocked_md = "\n".join(format_stored_title(t) for t in history["unlocked"])
-    locked_lines = [format_stored_title(t) for t in history["locked"]]
+    # Build pretty text lists for unlocked / locked arcs
+    unlocked_list = history["unlocked"]
+    locked_list   = history["locked"]
+
+    has_unlocked = bool(unlocked_list)
+
+    unlocked_md = "\n".join(format_stored_title(t) for t in unlocked_list)
+
+    locked_lines = [format_stored_title(t) for t in locked_list]
     locked_lines = deduplicate(locked_lines)
     if locked_lines:
         # mark the newest locked arc with a pink arrow
         locked_lines[-1] = f"<a:9410pinkarrow:1368139217556996117>{locked_lines[-1]}"
     locked_md = "\n".join(locked_lines)
 
-    # 7. Build the 4 Discord messages we'll send
+    # 7. Build the Discord messages
 
-    # (1) header / banner message
     content_header = (
         f"{base_mention} | {ONGOING_ROLE} <a:Crown:1365575414550106154>\n"
         "## <a:announcement:1365566215975731274> NEW ARC ALERT "
@@ -342,30 +367,32 @@ def process_arc(novel):
         "❀° ┄───────────────────────╮"
     )
 
-    # (2) unlocked list embed
-    embed_unlocked = {
-        "description": f"||{unlocked_md}||" if unlocked_md else "None",
-        "color": 0xFFF9BF
-    }
+    # Only build embed_unlocked if there's actually at least one unlocked arc
+    if has_unlocked:
+        embed_unlocked = {
+            "description": unlocked_md,
+            "color": 0xFFF9BF
+        }
+    else:
+        embed_unlocked = None  # sentinel
 
-    # (3) locked list embed
     embed_locked = {
-        "description": f"||{locked_md}||" if locked_md else "None",
+        "description": f"||{locked_md if locked_md else 'None'}||",
         "color": 0xA87676
     }
 
-    # (4) footer / react line
     footer_and_react = (
         "╰───────────────────────┄ °❀\n"
-        f"> *Advance access is ready for you on {novel['host']}! <a:holo_diamond:1365566087277711430>*\n"
-        + "<:pinkdiamond_border:1365575603734183936>" * 6
-        + "\n-# React to the "
-        + f"{novel['custom_emoji']} @ {novel['discord_role_url']} "
-        + "to get notified on updates and announcements "
+        f"> *Advance access is ready for you on {novel['host']}! "
+        "<a:holo_diamond:1365566087277711430>*\n"
+        + "<:pinkdiamond_border:1365575603734183936>" * 6 + "\n"
+        "-# React to the "
+        f"{novel['custom_emoji']} @ {novel['discord_role_url']} "
+        "to get notified on updates and announcements "
         "<a:LoveLetter:1365575475841339435>"
     )
 
-    # 8. Send all 4 Discord messages
+    # 8. Send all Discord messages
     header_ok = False
     try:
         r1 = requests.post(
@@ -387,23 +414,28 @@ def process_arc(novel):
     except requests.RequestException as e:
         print(f"⚠️ Header send failed: {e}", file=sys.stderr)
 
-    try:
-        requests.post(
-            f"https://discord.com/api/v10/channels/{CHANNEL_ID}/messages",
-            headers={
-                "Authorization": f"Bot {BOT_TOKEN}",
-                "Content-Type":  "application/json"
-            },
-            json={
-                "content": "<a:5693pinkwings:1368138669004820500> `Unlocked 🔓` <a:5046_bounce_pink:1368138460027813888>",
-                "embeds": [embed_unlocked],
-                "allowed_mentions": {"parse": ["roles"]}
-            }
-        ).raise_for_status()
-        print(f"✅ Unlocked embed sent for: {new_full}")
-    except requests.RequestException as e:
-        print(f"⚠️ Unlocked send failed: {e}", file=sys.stderr)
+    # Send "Unlocked 🔓" block only if we actually have unlocked arcs
+    if has_unlocked and embed_unlocked is not None:
+        try:
+            requests.post(
+                f"https://discord.com/api/v10/channels/{CHANNEL_ID}/messages",
+                headers={
+                    "Authorization": f"Bot {BOT_TOKEN}",
+                    "Content-Type":  "application/json"
+                },
+                json={
+                    "content": "<a:5693pinkwings:1368138669004820500> `Unlocked 🔓` <a:5046_bounce_pink:1368138460027813888>",
+                    "embeds": [embed_unlocked],
+                    "allowed_mentions": {"parse": ["roles"]},
+                }
+            ).raise_for_status()
+            print(f"✅ Unlocked embed sent for: {new_full}")
+        except requests.RequestException as e:
+            print(f"⚠️ Unlocked send failed: {e}", file=sys.stderr)
+    else:
+        print("ℹ️ Skipping Unlocked block (no unlocked arcs).")
 
+    # Locked block (always send, because this is the new arc hype)
     try:
         requests.post(
             f"https://discord.com/api/v10/channels/{CHANNEL_ID}/messages",
@@ -421,6 +453,7 @@ def process_arc(novel):
     except requests.RequestException as e:
         print(f"⚠️ Locked send failed: {e}", file=sys.stderr)
 
+    # Footer / react block
     try:
         requests.post(
             f"https://discord.com/api/v10/channels/{CHANNEL_ID}/messages",
@@ -438,8 +471,7 @@ def process_arc(novel):
     except requests.RequestException as e:
         print(f"⚠️ Footer/react send failed: {e}", file=sys.stderr)
 
-    # 9. Only now do we mark it announced and save/commit.
-    #    This matches your rule: "history should be updated after announcing."
+    # 9. Mark it announced, save, commit.
     if header_ok:
         history["last_announced"] = new_full
         save_history(history, novel["history_file"])
@@ -453,17 +485,19 @@ def process_arc(novel):
 if __name__ == "__main__":
     for host, host_data in HOSTING_SITE_DATA.items():
         for title, d in host_data.get("novels", {}).items():
+            # Only process novels that have both feeds configured
             if not d.get("free_feed") or not d.get("paid_feed"):
                 continue
+
             novel = {
-                "novel_title":     title,
-                "role_mention":    d.get("discord_role_id", ""),
-                "host":            host,
-                "free_feed":       d["free_feed"],
-                "paid_feed":       d["paid_feed"],
-                "novel_link":      d.get("novel_url", ""),
-                "custom_emoji":    d.get("custom_emoji", ""),
-                "discord_role_url":d.get("discord_role_url", ""),
-                "history_file":    d.get("history_file", "")
+                "novel_title":      title,
+                "role_mention":     d.get("discord_role_id", ""),
+                "host":             host,
+                "free_feed":        d["free_feed"],
+                "paid_feed":        d["paid_feed"],
+                "novel_link":       d.get("novel_url", ""),
+                "custom_emoji":     d.get("custom_emoji", ""),
+                "discord_role_url": d.get("discord_role_url", ""),
+                "history_file":     d.get("history_file", "")
             }
             process_arc(novel)
