@@ -235,6 +235,37 @@ The workflow listens for:
 - Arcs are stored persistently and prevent duplicate notifications.
 - NSFW detection adds an extra Discord role mention.
 - Every Discord webhook payload uses `"allowed_mentions":{"parse":["roles"]}` to color role pings and `"flags":4` to suppress all link-preview embeds.
+- Each novel in `HOSTING_SITE_DATA` must define:
+  - `free_feed`: the global/public RSS that lists ALL free/public chapters from all novels.
+  - `paid_feed`: the global/advance RSS that lists ALL paid/locked chapters from all novels.
+  The checkers filter those feeds by `<title>` to isolate just that novel.  
+  Some scripts (like arc + extras) will silently skip a novel if one of these feeds is missing. See:
+
+### Feed Requirements Per Checker
+
+**New Arc Alerts**
+- Requires: `free_feed` **and** `paid_feed`
+- Behavior: if either feed is missing, that novel is skipped (no ping, no history update)
+
+**Extras / Side Story Alerts**
+- Requires: `paid_feed`
+- Behavior: if `paid_feed` is missing, that novel is skipped
+- Purpose: announces when extras / side stories begin dropping in paid/advance access
+
+**Completion Announcements**
+- Runs twice:
+  - `python completed_novel_checker.py --feed paid`  
+    - Requires: `paid_feed`  
+    - Announces: the final paid/advance chapter is out (series is fully translated)
+  - `python completed_novel_checker.py --feed free`  
+    - Requires: `free_feed`  
+    - Announces: the full series is now unlocked for free / bingeable
+- Behavior: each side only fires once per novel
+
+**New Series Launch Alerts**
+- Requires: `free_feed`
+- Behavior: only fires when a *public* first drop appears (`Chapter 1`, `Ch 1`, `Episode 1`, `Ep 1`, `1.1`, `Prologue`)
+- Skips paywalled-only debuts
 
 ---
 🚀 **Now, you're ready to automate new arc and novel completion announcements to Discord!**
