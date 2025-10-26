@@ -208,6 +208,7 @@ The workflow listens for:
    ```
 
 ## 🎯 Notes
+- For each novel, the `HOSTING_SITE_DATA` must be updated first before 1st chapter is scheduled to launch.
 - For each novel, set a `history_file` (e.g. `tvitpa_history.json`) in `novel_mappings.py`. If it doesn't exist yet, the script will create it on first run and quietly record Arc 1 (no ping on the very first arc).
 - Arcs are stored persistently and prevent duplicate notifications.
 - NSFW detection adds an extra Discord role mention.
