@@ -18,7 +18,7 @@ The old setup used a single `DISCORD_WEBHOOK` URL — that webhook flow is legac
 
 | Name              | Value                                  |
 |-------------------|----------------------------------------|
-| `DISCORD_WEBHOOK` | Your Discord webhook URL               |
+| `DISCORD_WEBHOOK` | Your Discord webhook URL (Legacy, not required for bot use             |
 | `GH_PAT`          | Personal Access Token for history push |
 
 ### 🔑 1. Add the Discord Webhook URL to Secrets
