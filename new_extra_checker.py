@@ -198,6 +198,7 @@ if __name__ == "__main__":
                 "novel_title":   title,
                 "paid_feed":     d["paid_feed"],
                 "chapter_count": d.get("chapter_count",""),
+                "last_chapter":  d.get("last_chapter",""),   # <-- add this
                 "host":          host,
                 "novel_link":    d.get("novel_url",""),
                 "role_mention":  d.get("discord_role_id","")
