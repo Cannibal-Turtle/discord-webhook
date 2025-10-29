@@ -1,6 +1,7 @@
 import os
 import json
 import asyncio
+import re
 import feedparser
 from dateutil import parser as dateparser
 
@@ -8,7 +9,6 @@ import discord
 from discord import Embed
 from discord.ui import View, Button
 
-# pull mapping info so we can get coin_emoji / coin_price
 from novel_mappings import HOSTING_SITE_DATA
 
 # ─── CONFIG ────────────────────────────────────────────────────────────────
@@ -20,8 +20,7 @@ FEED_KEY   = "paid_last_guid"
 
 RSS_URL    = "https://raw.githubusercontent.com/Cannibal-Turtle/rss-feed/main/paid_chapters_feed.xml"
 
-GLOBAL_MENTION = "<@&1342484466043453511>"  # your always-ping role
-
+GLOBAL_MENTION = "<@&1342484466043453511>"  # the always-ping role
 # ──────────────────────────────────────────────────────────────────────────
 
 
@@ -46,56 +45,63 @@ def save_state(state):
 
 def parse_custom_emoji(e: str):
     """
-    Take a custom emoji string like '<:mistmint_currency:1433046707121422487>'
-    and return discord.PartialEmoji(name='mistmint_currency', id=1433046707121422487)
-
-    If it's not that format, return None.
+    Convert "<:mistmint_currency:1433046707121422487>" or "<a:wiggle:...>"
+    into discord.PartialEmoji(...).
+    If it's just a unicode emoji like "🔥", return that string.
+    Otherwise return None.
     """
     if not e:
         return None
-    e = e.strip()
 
-    # match <:name:id>  OR <a:name:id> (animated)
-    # groups:
-    #   animated? (a: optional)
-    #   name
-    #   id
-    import re
-    m = re.match(r"^<a?:([A-Za-z0-9_]+):([0-9]+)>$", e)
-    if not m:
-        # might be a plain unicode emoji like "🔥"
-        # discord.py lets you just pass the raw unicode char as emoji kwarg,
-        # so we can just return the string for unicode.
-        # quick heuristic: if it has no '<' and no ':' and length <= 4-ish,
-        # assume it's unicode.
-        if "<" not in e and ":" not in e and len(e) <= 8:
-            return e
-        return None
+    s = e.strip()
 
-    name = m.group(1)
-    _id  = int(m.group(2))
-    return discord.PartialEmoji(name=name, id=_id)
+    # match custom emoji <...> form
+    m = re.match(
+        r"^<(?P<anim>a?):(?P<name>[A-Za-z0-9_]+):(?P<id>\d+)>$",
+        s
+    )
+    if m:
+        animated = bool(m.group("anim"))
+        name     = m.group("name")
+        emoji_id = int(m.group("id"))
+        return discord.PartialEmoji(
+            name=name,
+            id=emoji_id,
+            animated=animated,
+        )
+
+    # maybe it's plain unicode
+    if "<" not in s and ">" not in s and ":" not in s and len(s) <= 8:
+        return s
+
+    return None
 
 
 def get_coin_button_parts(host: str, novel_title: str, fallback_price: str, fallback_emoji=None):
     """
     Look up coin_price and coin_emoji in HOSTING_SITE_DATA for this host+novel.
 
-    Return (label_text, emoji_obj_for_button)
+    Returns (label_text, emoji_for_button)
 
-    - label_text: e.g. "5"
-    - emoji_obj_for_button: discord.PartialEmoji(...) or unicode emoji or None
+    label_text: "5"
+    emoji_for_button: PartialEmoji | unicode | None
     """
     host_block = HOSTING_SITE_DATA.get(host, {})
     novels     = host_block.get("novels", {})
     details    = novels.get(novel_title, {})
 
-    # price label
+    # price text (exposed on button as label)
     price_str = str(details.get("coin_price", fallback_price or "")).strip()
 
-    # emoji field
-    emoji_raw = details.get("coin_emoji", fallback_emoji)
-    emoji_obj = parse_custom_emoji(emoji_raw) if emoji_raw else None
+    # emoji source priority:
+    # novel.coin_emoji > host.coin_emoji > fallback_emoji
+    emoji_raw = (
+        details.get("coin_emoji")
+        or host_block.get("coin_emoji")
+        or fallback_emoji
+        or ""
+    )
+    emoji_obj = parse_custom_emoji(emoji_raw)
 
     return price_str, emoji_obj
 
@@ -104,9 +110,9 @@ async def send_new_paid_entries():
     state   = load_state()
     last    = state.get(FEED_KEY)
     feed    = feedparser.parse(RSS_URL)
-    entries = list(reversed(feed.entries))  # oldest → newest
+    entries = list(reversed(feed.entries))  # oldest → newest order
 
-    # figure out what we haven't posted yet
+    # find which entries are new since last guid we posted
     guids = [(e.get("guid") or e.get("id")) for e in entries]
     if last in guids:
         to_send = entries[guids.index(last) + 1 :]
@@ -131,9 +137,9 @@ async def send_new_paid_entries():
         new_last = last
 
         for entry in to_send:
-            guid        = entry.get("guid") or entry.get("id")
+            guid = entry.get("guid") or entry.get("id")
 
-            # --- pull metadata from feed item ---
+            # --- pull metadata from the RSS entry ---
             novel_title = entry.get("novel_title", "").strip()
             host        = entry.get("host", "").strip()
 
@@ -154,16 +160,15 @@ async def send_new_paid_entries():
             pubdate_raw = getattr(entry, "published", None)
             timestamp   = dateparser.parse(pubdate_raw) if pubdate_raw else None
 
-            # chapter cost
             coin_label_raw = entry.get("coin","").strip()
 
-            # --- build the ping content line ---
+            # --- top text with pings ---
             content = (
                 f"{role_id} | {GLOBAL_MENTION} <a:TurtleDance:1365253970435510293>\n"
                 f"<a:1366_sweetpiano_happy:1368136820965249034> **{title_text}** <:pink_lock:1368266294855733291>"
             )
 
-            # --- build the embed (chapter info box) ---
+            # --- embed with chapter info ---
             embed = Embed(
                 title=f"<a:moonandstars:1365569468629123184>**{chaptername}**",
                 url=link,
@@ -177,36 +182,31 @@ async def send_new_paid_entries():
             embed.set_footer(text=host, icon_url=host_logo)
 
             # --- build the button row ---
-            # we want: [ <emoji> <coin price> ] that links to chapter.
-            # the emoji + price depend on host/novel mapping.
             label_text, emoji_obj = get_coin_button_parts(
                 host=host,
                 novel_title=novel_title,
-                fallback_price=coin_label_raw,    # from feed <coin>
-                fallback_emoji=None               # feed doesn't send coin_emoji yet
+                fallback_price=coin_label_raw,
+                fallback_emoji=None,
             )
 
-            # if we somehow have neither price nor emoji, fall back to "Read here"
             if not label_text and not emoji_obj:
                 label_text = "Read here"
 
-            # Make the view / button
-            view = View()
-            # discord.ui.Button for link-style buttons: give url=..., style auto Link
-            view.add_item(
-                Button(
-                    label=label_text,
-                    url=link,
-                    emoji=emoji_obj  # can be PartialEmoji or unicode
-                )
+            btn = Button(
+                label=label_text,
+                url=link,
+                emoji=emoji_obj  # PartialEmoji or unicode is fine
             )
 
-            # --- send message ---
+            view = View()
+            view.add_item(btn)
+
+            # send
             await channel.send(content=content, embed=embed, view=view)
             print(f"📨 Sent paid: {chaptername} / {guid}")
             new_last = guid
 
-        # update pointer
+        # update the pointer (so we don't repost next run)
         if new_last and new_last != state.get(FEED_KEY):
             state[FEED_KEY] = new_last
             save_state(state)
