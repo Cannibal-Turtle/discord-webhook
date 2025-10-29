@@ -208,33 +208,40 @@ def process_arc(novel):
         return bool(re.search(r"\b001\b|\(1\)|\.\s*1$", raw))
 
     # Extract potential new arc "bases" from feed entries that look like fresh arc starts
-    def extract_new_bases(feed):
+    def extract_new_bases(feed, current_title):
         bases = []
         for e in feed.entries:
-            raw_vol    = e.get("volume", "").replace("\u00A0", " ").strip()
-            raw_extend = e.get("nameextend", "").replace("\u00A0", " ").strip()
-            raw_chap   = e.get("chaptername", "").replace("\u00A0", " ").strip()
-
-            # Only consider entries that have a "start marker"
+            # only consider entries that actually belong to THIS novel
+            entry_title = (e.get("title") or "").strip()
+            if entry_title != current_title:
+                continue
+    
+            raw_vol    = (e.get("volume", "") or "").replace("\u00A0", " ").strip()
+            raw_extend = (e.get("nameextend", "") or "").replace("\u00A0", " ").strip()
+            raw_chap   = (e.get("chaptername", "") or "").replace("\u00A0", " ").strip()
+    
+            # Only consider entries that look like "start of an arc"
             if not (is_new_marker(raw_extend) or is_new_marker(raw_chap)):
                 continue
-
-            # Choose a base name priority: volume > nameextend > chaptername
+    
+            # Pick a base name to represent the arc:
+            # prefer <volume> ("Arc 3: Tentacled Alien Gong × ...")
             if raw_vol:
                 base = clean_feed_title(raw_vol)
             elif raw_extend:
                 base = extract_arc_title(raw_extend)
             else:
                 base = raw_chap
-
-            # Strip any leading numbering like "Arc 22: Foo", "World 3 - Foo"
+    
+            # Remove leading numbering like "Arc 3: " / "World 7 - "
             base = strip_any_number_prefix(base)
-
+    
             bases.append(base)
+    
         return bases
-
-    free_new = extract_new_bases(free_feed)
-    paid_new = extract_new_bases(paid_feed)
+    
+    free_new = extract_new_bases(free_feed, novel["novel_title"])
+    paid_new = extract_new_bases(paid_feed, novel["novel_title"])
     print(f"🔍 Detected {len(free_new)} new free arcs, {len(paid_new)} new paid arcs")
 
     # 3. Update history with free-start arcs / paid-start arcs
