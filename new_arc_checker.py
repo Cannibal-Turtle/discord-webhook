@@ -225,11 +225,57 @@ def process_arc(novel):
     had_any_unlocked_before  = bool(history["unlocked"])
 
     # Helper: does string look like a "new arc start" marker
-    def is_new_marker(raw):
-        # match "001", "(1)", or ".1" at the end
-        return bool(re.search(r"\b001\b|\(1\)|\.\s*1$", raw))
+    # Helper: does this entry look like the FIRST chapter of a new arc/world?
+    def is_new_marker(raw: str):
+        """
+        Legacy Dragonholic markers:
+         - ends with '001'
+         - ends with '(1)'
+         - ends with '.1'
+         (We also allow trailing **** now, for safety.)
+        """
+        if not raw:
+            return False
+        raw = raw.strip()
+        return bool(
+            re.search(r"(001|\(1\)|\.\s*1)(\*+)?\s*$", raw)
+        )
 
-    # Extract potential new arc "bases" from feed entries that look like fresh arc starts
+    def looks_like_arc_start(raw_vol: str, raw_chap: str, raw_extend: str):
+        """
+        Decide if this RSS entry is the 'Arc just started' chapter.
+
+        Supports:
+        - Dragonholic style:
+            nameextend like "Demon Hunter 001"
+            OR "Demon Hunter (1)"
+            OR "Demon Hunter .1"
+        - Mistmint style:
+            volume starts with "Arc <num>: ..."
+            AND chaptername == "Chapter 1"
+            OR nameextend looks like "1.1" (possibly wrapped in ***)
+        """
+        rv = (raw_vol or "").strip()
+        rc = (raw_chap or "").strip()
+        rext = (raw_extend or "").strip()
+
+        # 1) Dragonholic pattern
+        if is_new_marker(rext) or is_new_marker(rc):
+            return True
+
+        # 2) Mistmint pattern A:
+        #    volume: "Arc 1: Tycoon Boss Gong × ...",
+        #    chaptername: "Chapter 1"
+        if re.match(r"(?i)^arc\s*\d+", rv) and re.match(r"(?i)^chapter\s*1(\b|$)", rc):
+            return True
+
+        # 3) Mistmint pattern B:
+        #    nameextend is basically "1.1", maybe wrapped in *** like ***1.1***
+        if re.match(r"^\**\s*\d+\.\d+\s*\**$", rext):
+            return True
+
+        return False
+
     def extract_new_bases(feed, current_title):
         bases = []
         for e in feed.entries:
@@ -237,30 +283,31 @@ def process_arc(novel):
             entry_title = (e.get("title") or "").strip()
             if entry_title != current_title:
                 continue
-    
+
             raw_vol    = (e.get("volume", "") or "").replace("\u00A0", " ").strip()
             raw_extend = (e.get("nameextend", "") or "").replace("\u00A0", " ").strip()
             raw_chap   = (e.get("chaptername", "") or "").replace("\u00A0", " ").strip()
-    
-            # Only consider entries that look like "start of an arc"
-            if not (is_new_marker(raw_extend) or is_new_marker(raw_chap)):
+
+            # is this entry the START of an arc/world?
+            if not looks_like_arc_start(raw_vol, raw_chap, raw_extend):
                 continue
-    
-            # Pick a base name to represent the arc:
-            # prefer <volume> ("Arc 3: Tentacled Alien Gong × ...")
+
+            # Pick a base name to represent the arc/world:
+            # prefer volume ("Arc 1: Tycoon Boss Gong × ...")
             if raw_vol:
                 base = clean_feed_title(raw_vol)
             elif raw_extend:
                 base = extract_arc_title(raw_extend)
             else:
                 base = raw_chap
-    
-            # Remove leading numbering like "Arc 3: " / "World 7 - "
+
+            # Remove leading numbering like "Arc 3: ", "World 7 - ", etc.
             base = strip_any_number_prefix(base)
-    
+
             bases.append(base)
-    
+
         return bases
+
     
     free_new = extract_new_bases(free_feed, novel["novel_title"])
     paid_new = extract_new_bases(paid_feed, novel["novel_title"])
