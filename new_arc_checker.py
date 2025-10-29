@@ -355,9 +355,14 @@ def process_arc(novel):
     # --- NEW: unified first-run bootstrap guard ---
     # If history was empty before this run, don't announce anything even if both
     # free and paid created entries. Just save numbering and exit.
-    if (not had_any_locked_before and not had_any_unlocked_before
-        and (free_created_new_arc or paid_created_new_arc)):
-        print("🌱 First run detected (history was empty). Storing arc numbering only; no Discord ping.")
+    first_run = (not had_any_locked_before and not had_any_unlocked_before)
+    if first_run and (free_created_new_arc or paid_created_new_arc):
+        # Mark the newest locked arc as already "announced" so run #2 won't post Arc 1
+        if history["locked"]:
+            history["last_announced"] = history["locked"][-1]
+            print(f"🌱 Bootstrap: marking last_announced = {history['last_announced']}")
+        else:
+            print("🌱 Bootstrap: no locked arcs yet; leaving last_announced empty")
         save_history(history, novel["history_file"])
         commit_history_update(novel["history_file"])
         return
