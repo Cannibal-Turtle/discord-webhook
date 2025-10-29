@@ -1,8 +1,6 @@
-# .github/workflows/chapters_discord.yml
 name: Check RSS & Send Chapters
 
-# ──────────────────────────────────────────────────────────────────────────────
-# Never run two of these at the same time
+# prevent races
 concurrency:
   group: rss-to-discord-chapters
   cancel-in-progress: false
@@ -22,24 +20,26 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1) Grab the code (including state_rss.json)
+      # 1) pull this repo (so we have bot_paid_chapters.py, state_rss.json, etc.)
       - name: Checkout repository
         uses: actions/checkout@v3
         with:
           persist-credentials: true
           fetch-depth: 0
 
-      # 2) Install Python & deps
+      # 2) python runtime
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.x'
 
+      # 3) deps for both bots
       - name: Install dependencies
         run: |
           pip install discord.py feedparser python-dateutil
+          pip install --upgrade git+https://github.com/Cannibal-Turtle/rss-feed.git@main
 
-      # 3) Run FREE bot when schedule OR dispatch.feed=free
+      # 4) Free bot (runs on schedule, manual, or dispatch.free)
       - name: Run Free Chapters Bot
         if: >
           github.event_name == 'schedule' ||
@@ -51,7 +51,7 @@ jobs:
           DISCORD_FREE_CHAPTERS_CHANNEL: ${{ secrets.DISCORD_FREE_CHAPTERS_CHANNEL }}
         run: python bot_free_chapters.py
 
-      # 4) Run PAID bot when schedule OR dispatch.feed=paid
+      # 5) Paid bot (runs on schedule, manual, or dispatch.paid)
       - name: Run Paid Chapters Bot
         if: >
           github.event_name == 'schedule' ||
@@ -63,13 +63,12 @@ jobs:
           DISCORD_ADVANCE_CHAPTERS_CHANNEL: ${{ secrets.DISCORD_ADVANCE_CHAPTERS_CHANNEL }}
         run: python bot_paid_chapters.py
 
-      # 6) Commit whatever changed in state_rss.json
+      # 6) save updated state_rss.json back to main
       - name: Sync & commit state_rss.json
         shell: bash
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # fetch any updates (should be none, since concurrency locked)
           git pull origin main --rebase --autostash
           git add state_rss.json
           if git diff --cached --quiet; then
