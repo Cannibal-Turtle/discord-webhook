@@ -45,21 +45,21 @@ def save_state(state):
 
 def parse_custom_emoji(e: str):
     """
-    Convert "<:mistmint_currency:1433046707121422487>" or "<a:wiggle:...>"
-    into discord.PartialEmoji(...).
-    If it's just a unicode emoji like "🔥", return that string.
-    Otherwise return None.
+    Try to turn something like "<:mistmint_currency:1433046707121422487>"
+    or "<a:dance:1234567890>" into a PartialEmoji that can be passed as
+    Button(emoji=...).
+
+    If it's plain unicode like "🔥", return the unicode string.
+
+    If it's junk / empty, return None.
     """
     if not e:
         return None
 
     s = e.strip()
 
-    # match custom emoji <...> form
-    m = re.match(
-        r"^<(?P<anim>a?):(?P<name>[A-Za-z0-9_]+):(?P<id>\d+)>$",
-        s
-    )
+    # custom discord emoji format
+    m = re.match(r"^<(?P<anim>a?):(?P<name>[A-Za-z0-9_]+):(?P<id>\d+)>$", s)
     if m:
         animated = bool(m.group("anim"))
         name     = m.group("name")
@@ -70,40 +70,90 @@ def parse_custom_emoji(e: str):
             animated=animated,
         )
 
-    # maybe it's plain unicode
+    # fallback: maybe it's just a normal unicode emoji like "🔥"
+    # heuristic: no '<' '>' ':' and not super long
     if "<" not in s and ">" not in s and ":" not in s and len(s) <= 8:
         return s
 
     return None
 
 
-def get_coin_button_parts(host: str, novel_title: str, fallback_price: str, fallback_emoji=None):
+def get_coin_button_parts(host: str,
+                          novel_title: str,
+                          fallback_price: str,
+                          fallback_emoji: str = None):
     """
-    Look up coin_price and coin_emoji in HOSTING_SITE_DATA for this host+novel.
+    Decide what the paid button should show.
+
+    We try to pull data from HOSTING_SITE_DATA, but we ALSO try to parse
+    the <coin> field from the feed itself as a backup.
 
     Returns (label_text, emoji_for_button)
 
-    label_text: "5"
-    emoji_for_button: PartialEmoji | unicode | None
+    - label_text -> string that becomes Button(label=...)
+                    (ex: "5" or "Read here")
+    - emoji_for_button -> PartialEmoji | unicode | None
+                          (goes to Button(emoji=...))
     """
-    host_block = HOSTING_SITE_DATA.get(host, {})
-    novels     = host_block.get("novels", {})
-    details    = novels.get(novel_title, {})
 
-    # price text (exposed on button as label)
-    price_str = str(details.get("coin_price", fallback_price or "")).strip()
+    # ----- 1. Start with completely empty defaults
+    label_text   = ""
+    emoji_obj    = None
 
-    # emoji source priority:
-    # novel.coin_emoji > host.coin_emoji > fallback_emoji
-    emoji_raw = (
-        details.get("coin_emoji")
-        or host_block.get("coin_emoji")
-        or fallback_emoji
-        or ""
-    )
-    emoji_obj = parse_custom_emoji(emoji_raw)
+    # ----- 2. Try mapping first (preferred)
+    try:
+        host_block = HOSTING_SITE_DATA.get(host, {})
+        novels     = host_block.get("novels", {})
+        details    = novels.get(novel_title, {})
 
-    return price_str, emoji_obj
+        # coin_price from mapping (ex: 5)
+        mapped_price = details.get("coin_price")
+        if mapped_price is not None:
+            label_text = str(mapped_price).strip()
+
+        # coin_emoji priority: per-novel > per-host
+        mapped_emoji_raw = (
+            details.get("coin_emoji")
+            or host_block.get("coin_emoji")
+            or fallback_emoji
+            or ""
+        )
+        emoji_obj = parse_custom_emoji(mapped_emoji_raw)
+    except Exception:
+        # if HOSTING_SITE_DATA wasn't imported or something exploded,
+        # we silently fall back to feed parsing next
+        pass
+
+    # ----- 3. If still missing either emoji or price, try to steal it from the RSS <coin> text
+    # fallback_price is literally entry.get("coin") from the feed,
+    # which might look like "<:mint:12345> 5" all in one string.
+    coin_text = (fallback_price or "").strip()
+
+    if coin_text:
+        # try to grab an emoji and/or number from that string
+        # pattern: optional custom emoji + optional number
+        # e.g. "<:mistmint_currency:1433046707121422487> 5"
+        m = re.match(
+            r"^(?P<emoji><a?:[A-Za-z0-9_]+:\d+>)?\s*(?P<num>\d+)?",
+            coin_text
+        )
+        if m:
+            # only fill fields we *don't* already have
+            if not emoji_obj:
+                emoji_raw_from_feed = (m.group("emoji") or "").strip()
+                emoji_obj = parse_custom_emoji(emoji_raw_from_feed)
+
+            if not label_text:
+                num = (m.group("num") or "").strip()
+                if num:
+                    label_text = num
+
+    # ----- 4. Absolute last safety net
+    if not label_text and not emoji_obj:
+        # we have literally nothing -> generic fallback
+        label_text = "Read here"
+
+    return label_text, emoji_obj
 
 
 async def send_new_paid_entries():
