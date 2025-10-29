@@ -243,37 +243,28 @@ def process_arc(novel):
 
     def looks_like_arc_start(raw_vol: str, raw_chap: str, raw_extend: str):
         """
-        Decide if this RSS entry is the 'Arc just started' chapter.
-
-        Supports:
-        - Dragonholic style:
-            nameextend like "Demon Hunter 001"
-            OR "Demon Hunter (1)"
-            OR "Demon Hunter .1"
-        - Mistmint style:
-            volume starts with "Arc <num>: ..."
-            AND chaptername == "Chapter 1"
-            OR nameextend looks like "1.1" (possibly wrapped in ***)
+        Decide if this RSS entry is the 'new arc/world just started' chapter.
         """
-        rv = (raw_vol or "").strip()
-        rc = (raw_chap or "").strip()
-        rext = (raw_extend or "").strip()
-
-        # 1) Dragonholic pattern
+        rv   = (raw_vol    or "").strip()   # e.g. "Arc 2: ..."
+        rc   = (raw_chap   or "").strip()   # e.g. "Chapter 50"
+        rext = (raw_extend or "").strip()   # e.g. "***2.1***"
+    
+        # 1) Dragonholic / legacy markers: "001", "(1)", ".1"
         if is_new_marker(rext) or is_new_marker(rc):
             return True
-
-        # 2) Mistmint pattern A:
-        #    volume: "Arc 1: Tycoon Boss Gong × ...",
-        #    chaptername: "Chapter 1"
-        if re.match(r"(?i)^arc\s*\d+", rv) and re.match(r"(?i)^chapter\s*1(\b|$)", rc):
-            return True
-
-        # 3) Mistmint pattern B:
-        #    nameextend is basically "1.1", maybe wrapped in *** like ***1.1***
+    
+        # 2) Mistmint pattern: local index "X.Y" (maybe wrapped in ***)
         if re.match(r"^\**\s*\d+\.\d+\s*\**$", rext):
-            return True
-
+            # sanity: volume should look like Arc/World/Plane/Story/Volume/Vol/V <num>
+            if re.match(r"(?i)^(arc|world|plane|story|volume|vol|v)\s*\d+", rv):
+                return True
+    
+        # 3) Soft fallback:
+        #    Volume looks like Arc/World/... <num>, BUT rext didn't carry a first-subchapter marker
+        if re.match(r"(?i)^(arc|world|plane|story|volume|vol|v)\s*\d+", rv):
+            if not is_new_marker(rext) and not re.match(r"^\**\s*\d+\.\d+\s*\**$", rext):
+                return True
+    
         return False
 
     def extract_new_bases(feed, current_title):
