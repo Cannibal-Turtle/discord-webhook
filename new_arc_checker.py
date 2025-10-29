@@ -33,11 +33,32 @@ def send_bot_message(bot_token: str, channel_id: str, content: str):
     resp.raise_for_status()
 
 def load_history(history_file):
-    """Loads the novel's arc history from JSON file."""
+    """
+    Loads the novel's arc history from JSON file.
+    If the file is missing OR it's empty / invalid JSON,
+    we fall back to a fresh structure so the run doesn't die.
+    """
     if os.path.exists(history_file):
         with open(history_file, "r", encoding="utf-8") as f:
-            history = json.load(f)
-            history.setdefault("last_announced", "")
+            raw = f.read().strip()
+
+        if not raw:
+            # file exists but is blank
+            print(f"📂 {history_file} is empty, initializing fresh history")
+            return {"unlocked": [], "locked": [], "last_announced": ""}
+
+        try:
+            history = json.loads(raw)
+        except json.JSONDecodeError:
+            # file exists but has garbage / half-written JSON
+            print(f"📂 {history_file} was invalid JSON, re-initializing fresh history")
+            history = {"unlocked": [], "locked": [], "last_announced": ""}
+
+        # make sure keys exist
+        history.setdefault("unlocked", [])
+        history.setdefault("locked", [])
+        history.setdefault("last_announced", "")
+
         print(
             f"📂 Loaded history from {history_file}: "
             f"{len(history['unlocked'])} unlocked, "
@@ -45,9 +66,10 @@ def load_history(history_file):
             f"last_announced={history['last_announced']}"
         )
         return history
-    else:
-        print(f"📂 No history file found at {history_file}, starting fresh")
-        return {"unlocked": [], "locked": [], "last_announced": ""}
+
+    # no file at all -> brand new novel
+    print(f"📂 No history file found at {history_file}, starting fresh")
+    return {"unlocked": [], "locked": [], "last_announced": ""}
 
 def save_history(history, history_file):
     """Saves the novel's arc history to JSON file with proper encoding."""
