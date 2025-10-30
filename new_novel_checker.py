@@ -286,7 +286,7 @@ def build_launch_content(ping_line: str,
         "<a:hellokittydance:1365566988826705960>\n"
         "Updates will continue regularly, so hop in early and start reading now <a:2713pandaroll:1368137698212184136> \n"
         f"{'<a:6535_flower_border:1368146360871948321>' * 10}\n"
-        f"-# To get pings for new chapters, head to {role_thread_url} "
+        f"-# To get pings for new chapters, head to {role_thread_url}"
         f"and react for the role {custom_emoji}"
     )
 
