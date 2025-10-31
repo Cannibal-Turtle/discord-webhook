@@ -197,6 +197,7 @@ def number_to_emoji(n: int) -> str:
 
 def process_arc(novel):
     print(f"\n=== Processing novel: {novel['novel_title']} ===")
+    history_changed = False  # track mutations even if we don't announce
 
     # 0. Fetch feeds for this novel
     free_feed = feedparser.parse(novel["free_feed"])
@@ -319,6 +320,7 @@ def process_arc(novel):
                 history["locked"].remove(full)
                 if full not in history["unlocked"]:
                     history["unlocked"].append(full)
+                    history_changed = True
                     print(f"🔓 Unlocked arc: {full}")
                 break
 
@@ -333,6 +335,7 @@ def process_arc(novel):
                 full = f"【Arc {n}】{base}"
                 history["unlocked"].append(full)
                 free_created_new_arc = True
+                history_changed = True
                 print(f"🌿 Registered brand-new free arc: {full}")
 
     # --- 3B. Handle paid arcs
@@ -346,6 +349,7 @@ def process_arc(novel):
             full = f"【Arc {n}】{base}"
             history["locked"].append(full)
             paid_created_new_arc = True
+            history_changed = True
             print(f"🔐 New locked arc: {full}")
 
     # 4. Deduplicate lists
@@ -401,6 +405,9 @@ def process_arc(novel):
 
     # If we have no locked arcs at all (nothing advance-only to hype), stop.
     if not history["locked"]:
+        if history_changed:
+            save_history(history, novel["history_file"])
+            commit_history_update(novel["history_file"])
         print("ℹ️ No locked arcs exist. Nothing to announce.")
         return
 
@@ -409,6 +416,9 @@ def process_arc(novel):
 
     # If we've already announced this exact locked arc, we're done.
     if new_full == last_announced:
+        if history_changed:
+            save_history(history, novel["history_file"])
+            commit_history_update(novel["history_file"])
         print(f"✅ Already announced latest locked arc: {new_full}")
         return
 
@@ -560,6 +570,11 @@ def process_arc(novel):
         commit_history_update(novel["history_file"])
         print(f"📌 Finished announcing and recorded last_announced = {new_full}")
     else:
+        if history_changed:
+            # Persist promotions/numbering even if the announce failed
+            save_history(history, novel["history_file"])
+            commit_history_update(novel["history_file"])
+            print("📌 Saved history changes despite header failure (last_announced untouched).")
         print("⚠️ Did not update last_announced because header send failed.")
 
 
