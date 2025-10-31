@@ -105,27 +105,6 @@ def parsed_time_to_aware(struct_t, fallback_now):
         return fallback_now
 
 
-def nice_footer_time(chap_dt: datetime, now_dt: datetime) -> str:
-    """
-    Match your style:
-    "Today at HH:MM"
-    "Yesterday at HH:MM"
-    or "YYYY-MM-DD HH:MM"
-    """
-    chap_day = chap_dt.date()
-    now_day  = now_dt.date()
-    hhmm     = chap_dt.strftime("%H:%M")
-
-    if chap_day == now_day:
-        return f"Today at {hhmm}"
-
-    delta_days = (now_day - chap_day).days
-    if delta_days == 1:
-        return f"Yesterday at {hhmm}"
-
-    return chap_dt.strftime("%Y-%m-%d %H:%M")
-
-
 def send_bot_message_embed(bot_token: str, channel_id: str, content: str, embed: dict):
     """
     Send a Discord message containing both a normal text block (`content`)
