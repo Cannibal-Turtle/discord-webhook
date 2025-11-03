@@ -1,0 +1,140 @@
+name: Fix embeds (other server, URL only)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Update target messages
+        env:
+          DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+        run: |
+          python - << 'PY'
+          import os, json, requests
+
+          BOT = f"Bot {os.environ['DISCORD_BOT_TOKEN']}"
+          IMG = "https://web-novel-mistmint.s3.ap-southeast-1.amazonaws.com/novels/dd6947d3-dd7f-4c5b-a42c-aaba5363502b.png"
+
+          # Server (guild) for reference only (not required by the API calls)
+          GUILD_ID = "1329384099609051136"
+
+          # 1) Full-size image target (set embed.image.url)
+          FULLSIZE = [
+            ("1330049962129489930", "1434050179262058537"),
+          ]
+
+          # 2) Thumbnail targets (remove full image, set embed.thumbnail.url)
+          THUMBS = [
+            ("1329384438542499892", "1434050119363461233"),
+            ("1342475922581884968", "1433124449820999844"),
+            ("1342475922581884968", "1434514456129441895"),
+          ]
+
+          base = "https://discord.com/api/v10"
+          H = {"Authorization": BOT}
+
+          # Keep only fields Discord accepts on edit
+          def sanitize_embed(e: dict) -> dict:
+            out = {}
+            for k in ("title","type","description","url","timestamp","color"):
+              if k in e: out[k] = e[k]
+            if isinstance(e.get("footer"), dict):
+              f = e["footer"]; fo = {}
+              if "text" in f: fo["text"] = f["text"]
+              if "icon_url" in f: fo["icon_url"] = f["icon_url"]
+              if fo: out["footer"] = fo
+            if isinstance(e.get("author"), dict):
+              a = e["author"]; ao = {}
+              if "name" in a: ao["name"] = a["name"]
+              if "url" in a: ao["url"] = a["url"]
+              if "icon_url" in a: ao["icon_url"] = a["icon_url"]
+              if ao: out["author"] = ao
+            fields = []
+            for fld in e.get("fields") or []:
+              if isinstance(fld, dict) and "name" in fld and "value" in fld:
+                item = {"name": fld["name"], "value": fld["value"]}
+                if "inline" in fld: item["inline"] = bool(fld["inline"])
+                fields.append(item)
+            if fields: out["fields"] = fields
+            # note: we deliberately do NOT copy image/thumbnail; we set them explicitly below
+            return out
+
+          def maybe_join_thread(channel_id: str):
+            # Only attempt to join if it's a thread (types 10/11/12)
+            cj = requests.get(f"{base}/channels/{channel_id}", headers=H, timeout=15)
+            if cj.status_code != 200:
+              return
+            cinfo = cj.json()
+            if cinfo.get("type") in (10, 11, 12):
+              requests.put(f"{base}/channels/{channel_id}/thread-members/@me", headers=H, timeout=15)
+
+          def preserve_attachments(msg: dict):
+            return [{"id": str(a["id"]), "filename": a["filename"]} for a in msg.get("attachments", [])]
+
+          def patch_fullsize(channel_id: str, message_id: str):
+            maybe_join_thread(channel_id)
+            m = requests.get(f"{base}/channels/{channel_id}/messages/{message_id}", headers=H, timeout=15)
+            m.raise_for_status()
+            msg = m.json()
+
+            embeds = msg.get("embeds") or [{}]
+            # Modify first embed → set full-size image
+            se0 = sanitize_embed(embeds[0])
+            se0["image"] = {"url": IMG}
+            new_embeds = [se0] + [sanitize_embed(e) for e in embeds[1:]]
+
+            payload = {"embeds": new_embeds}
+            atts = preserve_attachments(msg)
+            if atts: payload["attachments"] = atts
+
+            r = requests.patch(
+              f"{base}/channels/{channel_id}/messages/{message_id}",
+              headers={**H, "Content-Type":"application/json"},
+              json=payload, timeout=30
+            )
+            r.raise_for_status()
+            print(f"✅ Full-size updated: {channel_id}/{message_id}")
+
+          def patch_thumbnail(channel_id: str, message_id: str):
+            maybe_join_thread(channel_id)
+            m = requests.get(f"{base}/channels/{channel_id}/messages/{message_id}", headers=H, timeout=15)
+            m.raise_for_status()
+            msg = m.json()
+
+            embeds = msg.get("embeds") or [{}]
+            new_embeds = []
+            for e in embeds:
+              se = sanitize_embed(e)
+              # Remove any full image, set side thumbnail
+              se.pop("image", None)
+              se["thumbnail"] = {"url": IMG}
+              new_embeds.append(se)
+
+            payload = {"embeds": new_embeds}
+            atts = preserve_attachments(msg)
+            if atts: payload["attachments"] = atts
+
+            r = requests.patch(
+              f"{base}/channels/{channel_id}/messages/{message_id}",
+              headers={**H, "Content-Type":"application/json"},
+              json=payload, timeout=30
+            )
+            r.raise_for_status()
+            print(f"✅ Thumbnail updated: {channel_id}/{message_id}")
+
+          for ch, mid in FULLSIZE:
+            patch_fullsize(ch, mid)
+
+          for ch, mid in THUMBS:
+            patch_thumbnail(ch, mid)
+          PY
