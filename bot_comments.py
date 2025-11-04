@@ -80,6 +80,11 @@ async def main():
                 safe_comment = comment_txt
             full_title = f"{start_marker}{safe_comment}{end_marker}"
 
+            # pick embed color per host
+            default_hex = "F0C7A4"
+            nu_hex = "2d3f51"
+            color_hex = nu_hex if host.strip().lower() == "novel updates" else default_hex
+            
             # ─── Build the embed dict (no author icon_url) ────────────────
             embed = {
                 "author": {
@@ -88,12 +93,13 @@ async def main():
                 },
                 "title":     full_title,
                 "timestamp": timestamp,
-                "color":     int("F0C7A4", 16),
+                "color":     int(color_hex, 16),  # <-- special color for Novel Updates
                 "footer": {
                     "text":     host,
                     "icon_url": host_logo
                 }
             }
+
             # only include description if reply_chain exists
             if reply_chain:
                 embed["description"] = reply_chain
