@@ -24,23 +24,7 @@ jobs:
     strategy:
       matrix:
         feed: [free, paid]
-      # makes the two matrix jobs run one after another,
-      # so your state_rss.json commits don't race.
-      max-parallel: 1
-
-    # Run rules per job tile:
-    # - schedule / manual: run both tiles
-    # - repository_dispatch: run only the requested feed (or both if 'both')
-    if: |
-      github.event_name == 'schedule' ||
-      github.event_name == 'workflow_dispatch' ||
-      (
-        github.event_name == 'repository_dispatch' &&
-        (
-          github.event.client_payload.feed == matrix.feed ||
-          github.event.client_payload.feed == 'both'
-        )
-      )
+      max-parallel: 1   # serialize to avoid state_rss.json push races
 
     steps:
       - name: Checkout repository
@@ -59,17 +43,32 @@ jobs:
           pip install discord.py feedparser python-dateutil
           pip install --upgrade git+https://github.com/Cannibal-Turtle/rss-feed.git@main
 
-      # Run the correct script for this tile
+      # ── Run only when this tile is 'free'
       - name: Run Free Chapters Bot
-        if: matrix.feed == 'free'
+        if: |
+          matrix.feed == 'free' && (
+            github.event_name == 'schedule' ||
+            github.event_name == 'workflow_dispatch' ||
+            (github.event_name == 'repository_dispatch' &&
+              (github.event.client_payload.feed == 'free' ||
+               github.event.client_payload.feed == 'both'))
+          )
         timeout-minutes: 5
         env:
           DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
           DISCORD_FREE_CHAPTERS_CHANNEL: ${{ secrets.DISCORD_FREE_CHAPTERS_CHANNEL }}
         run: python bot_free_chapters.py
 
+      # ── Run only when this tile is 'paid'
       - name: Run Paid Chapters Bot
-        if: matrix.feed == 'paid'
+        if: |
+          matrix.feed == 'paid' && (
+            github.event_name == 'schedule' ||
+            github.event_name == 'workflow_dispatch' ||
+            (github.event_name == 'repository_dispatch' &&
+              (github.event.client_payload.feed == 'paid' ||
+               github.event.client_payload.feed == 'both'))
+          )
         timeout-minutes: 5
         env:
           DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
