@@ -4,6 +4,8 @@ import asyncio
 import feedparser
 from datetime import datetime
 from dateutil import parser as dateparser
+import html
+from urllib.parse import urlsplit, urlunsplit
 
 import discord
 from discord import Embed
@@ -15,6 +17,10 @@ CHANNEL_ID      = int(os.environ["DISCORD_FREE_CHAPTERS_CHANNEL"])
 STATE_FILE      = "state_rss.json"
 FEED_KEY        = "free_last_guid"
 RSS_URL         = "https://raw.githubusercontent.com/Cannibal-Turtle/rss-feed/main/free_chapters_feed.xml"
+SEEN_KEY       = "seen_guids_free"
+LAST_POST_TIME = "last_post_time_free"
+SEEN_CAP       = 500
+TIME_BACKSTOP  = True
 
 # a global “always-mention” role id you used in MonitoRSS
 GLOBAL_MENTION = "<@&1342483851338846288>"
@@ -22,33 +28,79 @@ GLOBAL_MENTION = "<@&1342483851338846288>"
 
 def load_state():
     try:
-        return json.load(open(STATE_FILE, encoding="utf-8"))
+        st = json.load(open(STATE_FILE, encoding="utf-8"))
     except (FileNotFoundError, json.JSONDecodeError):
-        initial = {
-          "free_last_guid":    None,
-          "paid_last_guid":    None,
-          "comments_last_guid": None
+        st = {
+          "free_last_guid":     None,
+          "paid_last_guid":     None,
+          "comments_last_guid": None,
+          SEEN_KEY:             [],
+          LAST_POST_TIME:       None,
         }
         with open(STATE_FILE, "w", encoding="utf-8") as f:
-            json.dump(initial, f, indent=2, ensure_ascii=False)
-        return initial
+            json.dump(st, f, indent=2, ensure_ascii=False)
+        return st
+
+    changed = False
+    if SEEN_KEY not in st:
+        st[SEEN_KEY] = []
+        changed = True
+    if LAST_POST_TIME not in st:
+        st[LAST_POST_TIME] = None
+        changed = True
+    if changed:
+        with open(STATE_FILE, "w", encoding="utf-8") as f:
+            json.dump(st, f, indent=2, ensure_ascii=False)
+    return st
 
 def save_state(state):
+    if isinstance(state.get(SEEN_KEY), list) and len(state[SEEN_KEY]) > SEEN_CAP:
+        state[SEEN_KEY] = state[SEEN_KEY][-SEEN_CAP:]
     with open(STATE_FILE, "w", encoding="utf-8") as f:
         json.dump(state, f, indent=2, ensure_ascii=False)
+
+def normalize_guid(entry):
+    # host::guid  (guid unescaped, URL host lowercased if URL-like)
+    host = (entry.get("host") or "").strip().lower()
+    raw  = (entry.get("guid") or entry.get("id") or "").strip()
+    raw  = html.unescape(raw)
+    try:
+        p = urlsplit(raw)
+        if p.scheme and p.netloc:
+            raw = urlunsplit((p.scheme, p.netloc.lower(), p.path, p.query, p.fragment))
+    except Exception:
+        pass
+    return f"{host}::{raw}"
+
+def parse_pub_iso(entry):
+    pub_raw = getattr(entry, "published", None)
+    if not pub_raw:
+        return None
+    try:
+        return dateparser.parse(pub_raw)
+    except Exception:
+        return None
 
 async def send_new_entries():
     state = load_state()
     last  = state.get(FEED_KEY)
     feed  = feedparser.parse(RSS_URL)
     entries = list(reversed(feed.entries))  # oldest → newest
+    seen = set(state.get(SEEN_KEY, []))
+    
+    last_post_time = state.get(LAST_POST_TIME)
+    last_post_dt = dateparser.parse(last_post_time) if (TIME_BACKSTOP and last_post_time) else None
 
-    # 1) Compute list of GUIDs & slice out only the new entries
-    guids   = [(e.get("guid") or e.get("id")) for e in entries]
-    if last in guids:
-        to_send = entries[guids.index(last)+1:]
-    else:
-        to_send = entries
+    to_send = []
+    for e in entries:
+        norm = normalize_guid(e)
+        if norm in seen:
+            continue
+        if last_post_dt is not None:
+            dt = parse_pub_iso(e)
+            if dt and dt <= last_post_dt:
+                continue
+        to_send.append(e)
 
     # 2) Early exit if nothing new
     if not to_send:
@@ -67,18 +119,11 @@ async def send_new_entries():
             await bot.close()
             return
 
-        # 1) Prepare chronological slice
-        guids   = [(e.get("guid") or e.get("id")) for e in entries]
-        last    = state.get(FEED_KEY)
-        if last in guids:
-            idx     = guids.index(last)
-            to_send = entries[idx+1:]
-        else:
-            to_send = entries
+        # Use the precomputed list that already applies seen_guids + time backstop
+        to_deliver = to_send
+        new_last = state.get(FEED_KEY)
 
-        # 2) Send only those new entries
-        new_last = last
-        for entry in to_send:
+        for entry in to_deliver:
             guid = entry.get("guid") or entry.get("id")
 
             # build content…
@@ -117,6 +162,12 @@ async def send_new_entries():
             view.add_item(Button(label="Read here", url=link))
             await channel.send(content=content, embed=embed, view=view)
             print(f"📨 Sent: {chaptername} / {guid}")
+            # mark as seen and bump time
+            norm = normalize_guid(entry)
+            state[SEEN_KEY].append(norm)
+            dt = parse_pub_iso(entry) or datetime.utcnow()
+            state[LAST_POST_TIME] = dt.isoformat()
+            save_state(state)
 
             new_last = guid
 
