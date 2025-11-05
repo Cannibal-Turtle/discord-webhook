@@ -4,6 +4,8 @@ import asyncio
 import feedparser
 from dateutil import parser as dateparser
 import aiohttp
+import html
+from urllib.parse import urlsplit, urlunsplit
 
 # ─── CONFIG ────────────────────────────────────────────────────────────────────
 TOKEN       = os.environ["DISCORD_BOT_TOKEN"]
@@ -12,32 +14,96 @@ STATE_FILE  = "state_rss.json"
 FEED_KEY    = "comments_last_guid"
 RSS_URL     = "https://raw.githubusercontent.com/Cannibal-Turtle/rss-feed/main/aggregated_comments_feed.xml"
 API_URL     = f"https://discord.com/api/v10/channels/{CHANNEL_ID}/messages"
+SEEN_KEY       = "seen_guids"       # bounded history of posted items
+LAST_POST_TIME = "last_post_time"   # ISO string of last successful post time
+SEEN_CAP       = 500                # keep the last 500 GUIDs
+TIME_BACKSTOP  = True               # also require pubDate > last_post_time
 # ────────────────────────────────────────────────────────────────────────────────
 
 def load_state():
     try:
-        return json.load(open(STATE_FILE, encoding="utf-8"))
+        st = json.load(open(STATE_FILE, encoding="utf-8"))
     except (FileNotFoundError, json.JSONDecodeError):
-        initial = {
-          "free_last_guid":    None,
-          "paid_last_guid":    None,
-          "comments_last_guid": None
+        st = {
+          "free_last_guid":     None,
+          "paid_last_guid":     None,
+          "comments_last_guid": None,
+          SEEN_KEY:             [],
+          LAST_POST_TIME:       None,
         }
         with open(STATE_FILE, "w", encoding="utf-8") as f:
-            json.dump(initial, f, indent=2, ensure_ascii=False)
-        return initial
+            json.dump(st, f, indent=2, ensure_ascii=False)
+        return st
+
+    # migrate if missing
+    changed = False
+    if SEEN_KEY not in st:
+        st[SEEN_KEY] = []
+        changed = True
+    if LAST_POST_TIME not in st:
+        st[LAST_POST_TIME] = None
+        changed = True
+    if changed:
+        with open(STATE_FILE, "w", encoding="utf-8") as f:
+            json.dump(st, f, indent=2, ensure_ascii=False)
+    return st
 
 def save_state(state):
+    # cap the seen list
+    if isinstance(state.get(SEEN_KEY), list) and len(state[SEEN_KEY]) > SEEN_CAP:
+        state[SEEN_KEY] = state[SEEN_KEY][-SEEN_CAP:]
     with open(STATE_FILE, "w", encoding="utf-8") as f:
         json.dump(state, f, indent=2, ensure_ascii=False)
+
+def normalize_guid(entry):
+    """
+    Composite identity so tiny encoding changes or cross-host collisions don't dup.
+    host::guid (guid unescaped, URL host lowercased if URL-like)
+    """
+    host = (entry.get("host") or "").strip().lower()
+    raw  = (entry.get("guid") or entry.get("id") or "").strip()
+    raw  = html.unescape(raw)
+    # normalize URL-ish GUIDs
+    try:
+        p = urlsplit(raw)
+        if p.scheme and p.netloc:
+            raw = urlunsplit((p.scheme, p.netloc.lower(), p.path, p.query, p.fragment))
+    except Exception:
+        pass
+    return f"{host}::{raw}"
+
+def parse_pub_iso(entry):
+    pubdate_raw = getattr(entry, "published", None)
+    if not pubdate_raw:
+        return None
+    try:
+        return dateparser.parse(pubdate_raw)
+    except Exception:
+        return None
 
 async def main():
     state   = load_state()
     feed    = feedparser.parse(RSS_URL)
-    entries = list(reversed(feed.entries))  # oldest → newest
-    guids   = [(e.get("guid") or e.get("id")) for e in entries]
-    last     = state.get(FEED_KEY)
-    to_send = entries[guids.index(last)+1:] if last in guids else entries
+    entries = list(reversed(feed.entries))  # oldest → newest (keep your order)
+    seen = set(state.get(SEEN_KEY, []))
+
+    # optional time backstop
+    last_post_time = state.get(LAST_POST_TIME)
+    last_post_dt = dateparser.parse(last_post_time) if (TIME_BACKSTOP and last_post_time) else None
+
+    to_send = []
+    for e in entries:
+        norm = normalize_guid(e)
+        if norm in seen:
+            continue
+        if last_post_dt is not None:
+            dt = parse_pub_iso(e)
+            # if we can parse pubdate and it isn't newer than last posted time, skip
+            if dt and dt <= last_post_dt:
+                continue
+        to_send.append(e)
+
+    last = state.get(FEED_KEY)  # keep your legacy key around (harmless)
 
     if not to_send:
         print("🛑 No new comments to send.")
@@ -113,7 +179,11 @@ async def main():
                 text = await resp.text()
                 if resp.status in (200, 204):
                     print(f"✅ Sent comment {guid}")
+                    norm = normalize_guid(entry)
+                    state[SEEN_KEY].append(norm)
+                    state[LAST_POST_TIME] = (parse_pub_iso(entry) or dateparser.parse("1970-01-01")).isoformat()
                     new_last = guid
+                    save_state(state)
                 else:
                     print(f"❌ Error {resp.status} for {guid}: {text}")
 
