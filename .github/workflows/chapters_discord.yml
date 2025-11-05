@@ -6,111 +6,137 @@ concurrency:
 
 on:
   schedule:
-    - cron: '0 15 * * *'      # daily at 15:00 UTC
+    - cron: '0 15 * * *'
   repository_dispatch:
     types: [trigger-discord-notify]
   workflow_dispatch:
-    inputs:
-      feed:
-        description: Which feed to run
-        type: choice
-        default: both
-        options: [both, free, paid]
 
 permissions:
   contents: write
 
 jobs:
   free_bot:
-    # run if: scheduled OR (manual with inputs.feed in {both,free}) OR
-    # repo_dispatch with client_payload.feed in {both,free}
+    name: free_bot
+    runs-on: ubuntu-latest
     if: |
       github.event_name == 'schedule' ||
-      (github.event_name == 'workflow_dispatch' &&
-       (inputs.feed == 'both' || inputs.feed == 'free')) ||
-      (github.event_name == 'repository_dispatch' &&
-       (github.event.client_payload.feed == 'both' || github.event.client_payload.feed == 'free'))
-    runs-on: ubuntu-latest
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'repository_dispatch' && (github.event.client_payload.feed == 'free' || github.event.client_payload.feed == 'both'))
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          persist-credentials: true
-          fetch-depth: 0
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.x'
-
-      - name: Install dependencies
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.x' }
+      - name: Install deps
         run: |
           pip install discord.py feedparser python-dateutil
-          pip install --upgrade git+https://github.com/Cannibal-Turtle/rss-feed.git@main
-
+          pip install --upgrade "git+https://github.com/Cannibal-Turtle/rss-feed.git@main"
       - name: Run Free Chapters Bot
-        timeout-minutes: 5
         env:
-          DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+          DISCORD_BOT_TOKEN:           ${{ secrets.DISCORD_BOT_TOKEN }}
           DISCORD_FREE_CHAPTERS_CHANNEL: ${{ secrets.DISCORD_FREE_CHAPTERS_CHANNEL }}
         run: python bot_free_chapters.py
-
-      - name: Sync & commit state_rss.json
-        shell: bash
-        run: |
-          git add state_rss.json || true
-          if git diff --cached --quiet; then
-            echo "No state changes to commit (free)."
-          else
-            git config user.name  "github-actions[bot]"
-            git config user.email "github-actions[bot]@users.noreply.github.com"
-            git commit -m "ci: update state_rss.json (free)"
-            git push origin ${{ github.ref_name || 'main' }}
-          fi
+      - name: Upload free state
+        uses: actions/upload-artifact@v4
+        with:
+          name: state-free
+          path: state_rss.json
+          if-no-files-found: ignore
 
   paid_bot:
-    # run if: scheduled OR (manual with inputs.feed in {both,paid}) OR
-    # repo_dispatch with client_payload.feed in {both,paid}
+    name: paid_bot
+    runs-on: ubuntu-latest
     if: |
       github.event_name == 'schedule' ||
-      (github.event_name == 'workflow_dispatch' &&
-       (inputs.feed == 'both' || inputs.feed == 'paid')) ||
-      (github.event_name == 'repository_dispatch' &&
-       (github.event.client_payload.feed == 'both' || github.event.client_payload.feed == 'paid'))
-    runs-on: ubuntu-latest
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'repository_dispatch' && (github.event.client_payload.feed == 'paid' || github.event.client_payload.feed == 'both'))
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          persist-credentials: true
-          fetch-depth: 0
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.x'
-
-      - name: Install dependencies
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.x' }
+      - name: Install deps
         run: |
           pip install discord.py feedparser python-dateutil
-          pip install --upgrade git+https://github.com/Cannibal-Turtle/rss-feed.git@main
-
+          pip install --upgrade "git+https://github.com/Cannibal-Turtle/rss-feed.git@main"
       - name: Run Paid Chapters Bot
-        timeout-minutes: 5
         env:
-          DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+          DISCORD_BOT_TOKEN:              ${{ secrets.DISCORD_BOT_TOKEN }}
           DISCORD_ADVANCE_CHAPTERS_CHANNEL: ${{ secrets.DISCORD_ADVANCE_CHAPTERS_CHANNEL }}
         run: python bot_paid_chapters.py
+      - name: Upload paid state
+        uses: actions/upload-artifact@v4
+        with:
+          name: state-paid
+          path: state_rss.json
+          if-no-files-found: ignore
 
-      - name: Sync & commit state_rss.json
-        shell: bash
+  persist_state:
+    name: persist_state
+    needs: [free_bot, paid_bot]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # Download artifacts if they exist
+      - uses: actions/download-artifact@v4
+        with: { name: state-free, path: tmp/free }
+        continue-on-error: true
+      - uses: actions/download-artifact@v4
+        with: { name: state-paid, path: tmp/paid }
+        continue-on-error: true
+
+      # Merge JSONs so we don’t lose one job’s updates
+      - name: Merge state_rss.json
         run: |
-          git add state_rss.json || true
+          python - << 'PY'
+          import json, os, sys
+          from pathlib import Path
+
+          repo = Path("state_rss.json")
+          free = Path("tmp/free/state_rss.json")
+          paid = Path("tmp/paid/state_rss.json")
+
+          def load(p):
+              try:
+                  with open(p, encoding="utf-8") as f:
+                      return json.load(f)
+              except Exception:
+                  return {}
+
+          base = load(repo) if repo.exists() else {}
+          fdat = load(free) if free.exists() else {}
+          pdat = load(paid) if paid.exists() else {}
+
+          # Merge strategy:
+          # - start from base
+          # - overlay free-only keys
+          # - overlay paid-only keys
+          # - extend seen lists (dedupe)
+          out = dict(base)
+          for src in (fdat, pdat):
+              for k, v in src.items():
+                  if k.startswith("seen_guids") and isinstance(v, list):
+                      merged = list(dict.fromkeys(out.get(k, []) + v))  # dedupe, keep order
+                      out[k] = merged
+                  else:
+                      out[k] = v
+
+          with open("state_rss.json", "w", encoding="utf-8") as f:
+              json.dump(out, f, indent=2, ensure_ascii=False)
+          PY
+
+      - name: Commit merged state
+        run: |
+          git pull --rebase --autostash
+          git add state_rss.json
           if git diff --cached --quiet; then
-            echo "No state changes to commit (paid)."
-          else
-            git config user.name  "github-actions[bot]"
-            git config user.email "github-actions[bot]@users.noreply.github.com"
-            git commit -m "ci: update state_rss.json (paid)"
-            git push origin ${{ github.ref_name || 'main' }}
+            echo "No state changes to commit."
+            exit 0
           fi
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git commit -m "ci: merge & update state_rss.json"
+          git push
