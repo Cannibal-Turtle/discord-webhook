@@ -1,13 +1,15 @@
 name: Check RSS & Send Chapters
+run-name: >-
+  RSS → Discord • ${{ github.event_name }}
+  • feed=${{ github.event.client_payload.feed || 'schedule/manual' }}
 
-# prevent races
 concurrency:
   group: rss-to-discord-chapters
   cancel-in-progress: false
 
 on:
   schedule:
-    - cron: '0 15 * * *'       # daily at 15:00 UTC
+    - cron: '0 15 * * *'
   repository_dispatch:
     types: [trigger-discord-notify]
   workflow_dispatch:
@@ -16,54 +18,64 @@ permissions:
   contents: write
 
 jobs:
-  chapters:
+  bots:
+    name: ${{ matrix.feed }}_bot
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        feed: [free, paid]
+      # makes the two matrix jobs run one after another,
+      # so your state_rss.json commits don't race.
+      max-parallel: 1
+
+    # Run rules per job tile:
+    # - schedule / manual: run both tiles
+    # - repository_dispatch: run only the requested feed (or both if 'both')
+    if: |
+      github.event_name == 'schedule' ||
+      github.event_name == 'workflow_dispatch' ||
+      (
+        github.event_name == 'repository_dispatch' &&
+        (
+          github.event.client_payload.feed == matrix.feed ||
+          github.event.client_payload.feed == 'both'
+        )
+      )
 
     steps:
-      # 1) pull this repo (so we have bot_paid_chapters.py, state_rss.json, etc.)
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           persist-credentials: true
           fetch-depth: 0
 
-      # 2) python runtime
       - name: Setup Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.x'
 
-      # 3) deps for both bots
       - name: Install dependencies
         run: |
           pip install discord.py feedparser python-dateutil
           pip install --upgrade git+https://github.com/Cannibal-Turtle/rss-feed.git@main
 
-      # 4) Free bot (runs on schedule, manual, or dispatch.free)
+      # Run the correct script for this tile
       - name: Run Free Chapters Bot
-        if: >
-          github.event_name == 'schedule' ||
-          github.event_name == 'workflow_dispatch' ||
-          (github.event_name == 'repository_dispatch' && github.event.client_payload.feed == 'free')
+        if: matrix.feed == 'free'
         timeout-minutes: 5
         env:
           DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
           DISCORD_FREE_CHAPTERS_CHANNEL: ${{ secrets.DISCORD_FREE_CHAPTERS_CHANNEL }}
         run: python bot_free_chapters.py
 
-      # 5) Paid bot (runs on schedule, manual, or dispatch.paid)
       - name: Run Paid Chapters Bot
-        if: >
-          github.event_name == 'schedule' ||
-          github.event_name == 'workflow_dispatch' ||
-          (github.event_name == 'repository_dispatch' && github.event.client_payload.feed == 'paid')
+        if: matrix.feed == 'paid'
         timeout-minutes: 5
         env:
           DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
           DISCORD_ADVANCE_CHAPTERS_CHANNEL: ${{ secrets.DISCORD_ADVANCE_CHAPTERS_CHANNEL }}
         run: python bot_paid_chapters.py
 
-      # 6) save updated state_rss.json back to main
       - name: Sync & commit state_rss.json
         shell: bash
         env:
@@ -76,6 +88,6 @@ jobs:
           else
             git config user.name  "github-actions[bot]"
             git config user.email "github-actions[bot]@users.noreply.github.com"
-            git commit -m "ci: update state_rss.json"
+            git commit -m "ci: update state_rss.json (${{ matrix.feed }})"
             git push origin main
           fi
