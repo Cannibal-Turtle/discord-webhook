@@ -80,54 +80,48 @@ jobs:
       - uses: actions/checkout@v4
         with: { fetch-depth: 0 }
   
-      - uses: actions/download-artifact@v4
+      # only try to pull free artifact if free_bot ran & succeeded
+      - if: ${{ needs.free_bot.result == 'success' }}
+        uses: actions/download-artifact@v4
         with: { name: state-free, path: tmp/free }
         continue-on-error: true
   
-      - uses: actions/download-artifact@v4
+      # only try to pull paid artifact if paid_bot ran & succeeded
+      - if: ${{ needs.paid_bot.result == 'success' }}
+        uses: actions/download-artifact@v4
         with: { name: state-paid, path: tmp/paid }
         continue-on-error: true
-      
-      # Merge JSONs so we don’t lose one job’s updates
+  
       - name: Merge state_rss.json
         run: |
           python - << 'PY'
-          import json, os, sys
+          import json
           from pathlib import Path
-
           repo = Path("state_rss.json")
           free = Path("tmp/free/state_rss.json")
           paid = Path("tmp/paid/state_rss.json")
-
+  
           def load(p):
               try:
-                  with open(p, encoding="utf-8") as f:
-                      return json.load(f)
+                  return json.loads(p.read_text(encoding="utf-8"))
               except Exception:
                   return {}
-
+  
           base = load(repo) if repo.exists() else {}
           fdat = load(free) if free.exists() else {}
           pdat = load(paid) if paid.exists() else {}
-
-          # Merge strategy:
-          # - start from base
-          # - overlay free-only keys
-          # - overlay paid-only keys
-          # - extend seen lists (dedupe)
+  
           out = dict(base)
           for src in (fdat, pdat):
               for k, v in src.items():
                   if k.startswith("seen_guids") and isinstance(v, list):
-                      merged = list(dict.fromkeys(out.get(k, []) + v))  # dedupe, keep order
-                      out[k] = merged
+                      out[k] = list(dict.fromkeys(out.get(k, []) + v))
                   else:
                       out[k] = v
-
-          with open("state_rss.json", "w", encoding="utf-8") as f:
-              json.dump(out, f, indent=2, ensure_ascii=False)
+  
+          repo.write_text(json.dumps(out, indent=2, ensure_ascii=False), encoding="utf-8")
           PY
-
+  
       - name: Commit merged state
         run: |
           git pull --rebase --autostash
