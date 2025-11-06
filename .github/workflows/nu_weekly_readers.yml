@@ -42,6 +42,7 @@ jobs:
         timeout-minutes: 5
         env:
           DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+          DISCORD_CHANNEL_ID:  ${{ secrets.DISCORD_CHANNEL_ID }}
         run: python nu_weekly_readers.py
 
       - name: Commit updated state file
