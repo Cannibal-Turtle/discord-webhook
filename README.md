@@ -234,7 +234,6 @@ The workflow listens for:
 - For each novel, set a `history_file` (e.g. `tvitpa_history.json`) in `novel_mappings.py`. If it doesn't exist yet, the script will create it on first run and quietly record Arc 1 (no ping on the very first arc).
 - Arcs are stored persistently and prevent duplicate notifications.
 - NSFW detection adds an extra Discord role mention.
-- 🆕NSFW novels' cover is blurred out.
 - Every Discord webhook payload uses `"allowed_mentions":{"parse":["roles"]}` to color role pings and `"flags":4` to suppress all link-preview embeds.
 - Each novel in `HOSTING_SITE_DATA` must define:
   - `free_feed`: the global/public RSS that lists ALL free/public chapters from all novels.
