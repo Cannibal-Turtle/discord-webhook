@@ -76,9 +76,9 @@ DEFAULT_STATE_PATH = os.environ.get("NU_STATE_PATH", "state_rss.json")
 # Timestamp in embeds will use UTC so Discord localizes it per user; TZ env not needed.
 DEFAULT_TZ = "UTC"
 
-# Regex for: On <b class="rlist">1,234</b> Reading Lists
+# tolerant of tiny NU changes; allows singular/plural
 _RLIST_RE = re.compile(
-    r"On\s*<b[^>]*class=\"?rlist\"?[^>]*>\s*([\d,]+)\s*</b>\s*Reading\s+Lists",
+    r"On\s*<b[^>]*class=[\"']?rlist[\"']?[^>]*>\s*([\d,]+)\s*</b>\s*Reading\s+Lists?",
     re.IGNORECASE | re.DOTALL,
 )
 
@@ -133,31 +133,57 @@ def _normalize_role_mention(raw: str) -> str:
 
 def _fetch_reading_lists_count(series_url: str, timeout: int = 30) -> Optional[int]:
     headers = {
-        "User-Agent": (
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-            "AppleWebKit/537.36 (KHTML, like Gecko) "
-            "Chrome/122.0 Safari/537.36"
-        ),
+        "User-Agent": ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                       "AppleWebKit/537.36 (KHTML, like Gecko) "
+                       "Chrome/124.0 Safari/537.36"),
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
         "Accept-Language": "en-US,en;q=0.7",
         "Connection": "close",
+        "Referer": series_url,
     }
-    try:
-        resp = requests.get(series_url, headers=headers, timeout=timeout)
-        if resp.status_code != 200:
-            print(f"[warn] GET {series_url} -> HTTP {resp.status_code}")
-            return None
-        html = resp.text
-        m = _RLIST_RE.search(html)
-        if not m:
-            print(f"[warn] Could not find 'Reading Lists' block on {series_url}")
-            return None
-        n = int(m.group(1).replace(",", ""))
-        return n
-    except Exception as e:
-        print(f"[warn] Exception fetching {series_url}: {e}")
-        return None
 
+    def _try_parse(text: str) -> Optional[int]:
+        m = _RLIST_RE.search(text)
+        if not m:
+            return None
+        try:
+            return int(m.group(1).replace(",", ""))
+        except Exception:
+            return None
+
+    # 1) requests first
+    try:
+        r = requests.get(series_url, headers=headers, timeout=timeout)
+        if r.status_code == 200:
+            n = _try_parse(r.text)
+            if n is not None:
+                return n
+            print(f"[warn] Pattern not found on {series_url}. Snippet: {r.text[:250]!r}")
+        else:
+            print(f"[warn] GET {series_url} -> HTTP {r.status_code}")
+    except Exception as e:
+        print(f"[warn] requests exception {series_url}: {e}")
+
+    # 2) optional fallback if CF blocks the runner
+    try:
+        import cloudscraper  # pip install cloudscraper
+        scraper = cloudscraper.create_scraper(
+            browser={"browser": "chrome", "platform": "windows", "mobile": False}
+        )
+        r2 = scraper.get(series_url, timeout=timeout)
+        if r2.status_code == 200:
+            n = _try_parse(r2.text)
+            if n is not None:
+                return n
+            print(f"[warn] cloudscraper miss {series_url}. Snippet: {r2.text[:250]!r}")
+        else:
+            print(f"[warn] cloudscraper GET {series_url} -> HTTP {r2.status_code}")
+    except ImportError:
+        print("[info] cloudscraper not installed; skipping CF fallback")
+    except Exception as e:
+        print(f"[warn] cloudscraper exception {series_url}: {e}")
+
+    return None
 
 # --------------------------- state handling -----------------------------
 
@@ -228,7 +254,7 @@ def _build_description(lines: List[Tuple[str, int, Optional[int]]]) -> str:
 
 def _build_embed(description: str) -> Dict[str, any]:
     now_utc = dt.datetime.utcnow().replace(tzinfo=dt.timezone.utc)
-    footer_text = "Data retrieved (UTC)"
+    footer_text = "Data retrieved"
     embed = {
         "author": {"name": AUTHOR_NAME, "icon_url": AUTHOR_ICON},
         "title": TITLE_BOX,
@@ -313,6 +339,9 @@ def main(argv: Optional[List[str]] = None) -> int:
     lock_fd = _acquire_lock(state_path + ".lock")
 
     targets = collect_targets()
+    print(f"[info] Found {len(targets)} NU targets")
+    for _, title, role, url in targets:
+        print(f"[info]  • {title}  {role or '(no-role)'}  -> {url}")
     if not targets:
         print("[info] No novels with novelupdates_feed_url found in mappings.")
         _release_lock(lock_fd, state_path + ".lock")
@@ -346,6 +375,8 @@ def main(argv: Optional[List[str]] = None) -> int:
         new_counts[key] = {"count": int(curr), "when": dt.datetime.utcnow().isoformat() + "Z"}
 
     description = _build_description(results)
+    if not description.strip():
+        description = "_No data this week (no NU counts retrieved)._"
     embed = _build_embed(description)
 
     # Persist state (with lock)
