@@ -48,5 +48,5 @@ jobs:
           IMAGE_URL:    ${{ github.event.inputs.image_url }}
           PING_LINE:    ${{ github.event.inputs.ping_line }}
           BLUR_SPOILER: ${{ github.event.inputs.blur_spoiler }}
-          USE_BIG_IMAGE:${{ github.event.inputs.use_big_image }}
+          USE_BIG_IMAGE: ${{ github.event.inputs.use_big_image }}
         run: python send_embed_once.py
