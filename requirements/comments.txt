@@ -1,0 +1,4 @@
+feedparser~=6.0
+requests~=2.32
+python-dateutil~=2.9
+aiohttp~=3.10
