@@ -12,7 +12,7 @@ import discord
 from discord import Embed
 from discord.ui import View, Button
 
-from novel_mappings import HOSTING_SITE_DATA
+from novel_mappings import HOSTING_SITE_DATA, get_nsfw_novels
 
 # ─── CONFIG ────────────────────────────────────────────────────────────────
 TOKEN      = os.environ["DISCORD_BOT_TOKEN"]
@@ -28,6 +28,7 @@ TIME_BACKSTOP   = True
 RSS_URL    = "https://raw.githubusercontent.com/Cannibal-Turtle/rss-feed/main/paid_chapters_feed.xml"
 
 GLOBAL_MENTION = "<@&1342484466043453511>"  # the always-ping role
+NSFW_ROLE = "<@&1343352825811439616>"
 # ──────────────────────────────────────────────────────────────────────────
 
 def load_state():
@@ -64,6 +65,27 @@ def save_state(state):
         state[SEEN_KEY] = state[SEEN_KEY][-SEEN_CAP:]
     with open(STATE_FILE, "w", encoding="utf-8") as f:
         json.dump(state, f, indent=2, ensure_ascii=False)
+
+def _join_role_mentions(*parts) -> str:
+    """Join pieces with ' | ', split/trim on pipes/spaces, and dedupe in order."""
+    seen, out = set(), []
+    for p in parts:
+        if not p:
+            continue
+        for seg in (x.strip() for x in re.split(r"[| ]+", p) if x.strip()):
+            if seg not in seen:
+                seen.add(seg)
+                out.append(seg)
+    return " | ".join(out)
+
+def _build_chapter_mention(series_role: str, novel_title: str, global_mention: str) -> str:
+    """
+    Compose: <series role> [| <NSFW>] | <GLOBAL_MENTION>
+    If series_role is empty, you’ll just get: <GLOBAL_MENTION>.
+    """
+    nsfw_tail = NSFW_ROLE if novel_title in get_nsfw_novels() else None
+    # order changed: series → nsfw? → global
+    return _join_role_mentions(series_role, nsfw_tail, global_mention)
 
 def normalize_guid(entry):
     # host::guid  (guid unescaped, URL host lowercased if URL-like)
@@ -245,7 +267,15 @@ async def send_new_paid_entries():
             novel_title = entry.get("novel_title", "").strip()
             host        = entry.get("host", "").strip()
 
-            role_id     = entry.get("discord_role_id","").strip()
+            series_role = (entry.get("discord_role_id") or "").strip()
+            if not series_role:
+                series_role = (
+                    HOSTING_SITE_DATA.get(host, {})
+                                     .get("novels", {})
+                                     .get(novel_title, {})
+                                     .get("discord_role_id", "")
+                    or ""
+                ).strip()
             title_text  = entry.get("title","").strip()
 
             chaptername = entry.get("chaptername","").strip()
@@ -263,10 +293,16 @@ async def send_new_paid_entries():
             timestamp   = dateparser.parse(pubdate_raw) if pubdate_raw else None
 
             coin_label_raw = entry.get("coin","").strip()
-
+            
+            mention_line = _build_chapter_mention(
+                series_role=series_role,
+                novel_title=novel_title,
+                global_mention=GLOBAL_MENTION,
+            )
+            
             # --- top text with pings ---
             content = (
-                f"{role_id} | {GLOBAL_MENTION} <a:TurtleDance:1365253970435510293>\n"
+                f"{mention_line} <a:TurtleDance:1365253970435510293>\n"
                 f"<a:1366_sweetpiano_happy:1368136820965249034> **{title_text}** <:pink_lock:1368266294855733291>"
             )
 
