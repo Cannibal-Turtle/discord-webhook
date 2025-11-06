@@ -22,18 +22,21 @@ jobs:
       cancel-in-progress: true
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Setup Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.x'
-
+          cache: 'pip'
+          cache-dependency-path: requirements/rss_dispatch.txt
+    
       - name: Install dependencies
+        env: { PIP_DISABLE_PIP_VERSION_CHECK: 1 }
         run: |
-          pip install feedparser requests
-          pip install --upgrade git+https://github.com/Cannibal-Turtle/rss-feed.git@main
-
+          python -m pip install --upgrade pip
+          pip install -r requirements/rss_dispatch.txt
+    
       - name: Run Arc Checker
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
@@ -52,21 +55,24 @@ jobs:
       group: rss-to-discord-extra
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           persist-credentials: true
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.x'
+          cache: 'pip'
+          cache-dependency-path: requirements/rss_dispatch.txt
 
       - name: Install dependencies
+        env: { PIP_DISABLE_PIP_VERSION_CHECK: 1 }
         run: |
-          pip install feedparser requests
-          pip install --upgrade git+https://github.com/Cannibal-Turtle/rss-feed.git@main
+          python -m pip install --upgrade pip
+          pip install -r requirements/rss_dispatch.txt
 
       - name: Run Extra Checker
         env:
@@ -97,21 +103,24 @@ jobs:
       group: rss-to-discord-paid-completion
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           persist-credentials: true
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.x'
+          cache: 'pip'
+          cache-dependency-path: requirements/rss_dispatch.txt
 
       - name: Install dependencies
+        env: { PIP_DISABLE_PIP_VERSION_CHECK: 1 }
         run: |
-          pip install feedparser requests python-dateutil
-          pip install --upgrade git+https://github.com/Cannibal-Turtle/rss-feed.git@main
+          python -m pip install --upgrade pip
+          pip install -r requirements/rss_dispatch.txt
 
       - name: Run Paid Completion Checker
         env:
@@ -141,21 +150,24 @@ jobs:
       group: rss-to-discord-free-completion
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           persist-credentials: true
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.x'
+          cache: 'pip'
+          cache-dependency-path: requirements/rss_dispatch.txt
 
       - name: Install dependencies
+        env: { PIP_DISABLE_PIP_VERSION_CHECK: 1 }
         run: |
-          pip install feedparser requests python-dateutil
-          pip install --upgrade git+https://github.com/Cannibal-Turtle/rss-feed.git@main
+          python -m pip install --upgrade pip
+          pip install -r requirements/rss_dispatch.txt
 
       - name: Run Free Completion Checker
         env:
@@ -186,21 +198,24 @@ jobs:
       group: rss-to-discord-new-launch
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           persist-credentials: true
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.x'
+          cache: 'pip'
+          cache-dependency-path: requirements/rss_dispatch.txt
 
       - name: Install dependencies
+        env: { PIP_DISABLE_PIP_VERSION_CHECK: 1 }
         run: |
-          pip install feedparser requests
-          pip install --upgrade git+https://github.com/Cannibal-Turtle/rss-feed.git@main
+          python -m pip install --upgrade pip
+          pip install -r requirements/rss_dispatch.txt
 
       - name: Run New Launch Checker
         env:
