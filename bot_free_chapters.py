@@ -2,7 +2,8 @@ import os
 import json
 import asyncio
 import feedparser
-from datetime import datetime
+import re
+from datetime import datetime, timezone
 from dateutil import parser as dateparser
 import html
 from urllib.parse import urlsplit, urlunsplit
@@ -10,6 +11,7 @@ from urllib.parse import urlsplit, urlunsplit
 import discord
 from discord import Embed
 from discord.ui import View, Button
+from novel_mappings import HOSTING_SITE_DATA, get_nsfw_novels
 
 # ─── CONFIG ────────────────────────────────────────────────────────────────────
 TOKEN           = os.environ["DISCORD_BOT_TOKEN"]
@@ -17,13 +19,13 @@ CHANNEL_ID      = int(os.environ["DISCORD_FREE_CHAPTERS_CHANNEL"])
 STATE_FILE      = "state_rss.json"
 FEED_KEY        = "free_last_guid"
 RSS_URL         = "https://raw.githubusercontent.com/Cannibal-Turtle/rss-feed/main/free_chapters_feed.xml"
-SEEN_KEY       = "seen_guids_free"
-LAST_POST_TIME = "last_post_time_free"
-SEEN_CAP       = 500
-TIME_BACKSTOP  = True
+SEEN_KEY        = "seen_guids_free"
+LAST_POST_TIME  = "last_post_time_free"
+SEEN_CAP        = 500
+TIME_BACKSTOP   = True
 
-# a global “always-mention” role id you used in MonitoRSS
-GLOBAL_MENTION = "<@&1342483851338846288>"
+GLOBAL_MENTION  = "<@&1342483851338846288>"   # always-mention role
+NSFW_ROLE       = "<@&1343352825811439616>"
 # ────────────────────────────────────────────────────────────────────────────────
 
 def load_state():
@@ -31,11 +33,11 @@ def load_state():
         st = json.load(open(STATE_FILE, encoding="utf-8"))
     except (FileNotFoundError, json.JSONDecodeError):
         st = {
-          "free_last_guid":     None,
-          "paid_last_guid":     None,
-          "comments_last_guid": None,
-          SEEN_KEY:             [],
-          LAST_POST_TIME:       None,
+            "free_last_guid":     None,
+            "paid_last_guid":     None,
+            "comments_last_guid": None,
+            SEEN_KEY:             [],
+            LAST_POST_TIME:       None,
         }
         with open(STATE_FILE, "w", encoding="utf-8") as f:
             json.dump(st, f, indent=2, ensure_ascii=False)
@@ -59,8 +61,28 @@ def save_state(state):
     with open(STATE_FILE, "w", encoding="utf-8") as f:
         json.dump(state, f, indent=2, ensure_ascii=False)
 
+def _join_role_mentions(*parts) -> str:
+    """Join pieces with ' | ', split/trim on pipes/spaces, and dedupe in order."""
+    seen, out = set(), []
+    for p in parts:
+        if not p:
+            continue
+        for seg in (x.strip() for x in re.split(r"[| ]+", p) if x.strip()):
+            if seg not in seen:
+                seen.add(seg)
+                out.append(seg)
+    return " | ".join(out)
+
+def _build_chapter_mention(series_role: str, novel_title: str, global_mention: str) -> str:
+    """
+    Compose: <series role> [| <NSFW>] | <GLOBAL_MENTION>
+    If series_role is empty, you’ll just get: <GLOBAL_MENTION>.
+    """
+    nsfw_tail = NSFW_ROLE if novel_title in get_nsfw_novels() else None
+    # order changed: series → nsfw? → global
+    return _join_role_mentions(series_role, nsfw_tail, global_mention)
+
 def normalize_guid(entry):
-    # host::guid  (guid unescaped, URL host lowercased if URL-like)
     host = (entry.get("host") or "").strip().lower()
     raw  = (entry.get("guid") or entry.get("id") or "").strip()
     raw  = html.unescape(raw)
@@ -86,8 +108,8 @@ async def send_new_entries():
     last  = state.get(FEED_KEY)
     feed  = feedparser.parse(RSS_URL)
     entries = list(reversed(feed.entries))  # oldest → newest
+
     seen = set(state.get(SEEN_KEY, []))
-    
     last_post_time = state.get(LAST_POST_TIME)
     last_post_dt = dateparser.parse(last_post_time) if (TIME_BACKSTOP and last_post_time) else None
 
@@ -102,12 +124,10 @@ async def send_new_entries():
                 continue
         to_send.append(e)
 
-    # 2) Early exit if nothing new
     if not to_send:
         print("🛑 No new free chapters—skipping Discord login.")
         return
 
-    # discord.py setup
     intents = discord.Intents.default()
     bot = discord.Client(intents=intents)
 
@@ -119,29 +139,50 @@ async def send_new_entries():
             await bot.close()
             return
 
-        # Use the precomputed list that already applies seen_guids + time backstop
-        to_deliver = to_send
-        new_last = state.get(FEED_KEY)
+        new_last = last
 
-        for entry in to_deliver:
+        for entry in to_send:
             guid = entry.get("guid") or entry.get("id")
 
-            # build content…
-            role_id = entry.get("discord_role_id","").strip()
-            title   = entry.get("title","").strip()
-            content = (
-                f"{role_id} | {GLOBAL_MENTION} <a:TurtleDance:1365253970435510293>\n"
-                f"<a:5037sweetpianoyay:1368138418487427102> **{title}** <:pink_unlock:1368266307824255026>"
-                )
+            # Pull source fields first
+            novel_title = (entry.get("novel_title") or "").strip()
+            host        = (entry.get("host") or "").strip()
 
-            # build embed…
-            chaptername = entry.get("chaptername","").strip()
-            nameextend  = entry.get("nameextend","").strip()
-            link        = entry.get("link","").strip()
-            translator  = entry.get("translator","").strip()
-            thumb_url   = (entry.get("featuredImage") or entry.get("featuredimage") or {}).get("url")
-            host        = entry.get("host","").strip()   # ← make sure host is pulled here
-            host_logo   = (entry.get("hostLogo") or entry.get("hostlogo") or {}).get("url")
+            # Resolve series_role (RSS first, then mapping fallback)
+            series_role = (entry.get("discord_role_id") or "").strip()
+            if not series_role:
+                series_role = (
+                    HOSTING_SITE_DATA.get(host, {})
+                                     .get("novels", {})
+                                     .get(novel_title, {})
+                                     .get("discord_role_id", "")
+                    or ""
+                ).strip()
+
+            # Build mention line *before* content
+            mention_line = _build_chapter_mention(
+                series_role=series_role,
+                novel_title=novel_title,
+                global_mention=GLOBAL_MENTION,
+            )
+
+            title   = (entry.get("title") or "").strip()
+            content = (
+                f"{mention_line} <a:TurtleDance:1365253970435510293>\n"
+                f"<a:5037sweetpianoyay:1368138418487427102> **{title}** <:pink_unlock:1368266307824255026>"
+            )
+
+            # Embed fields
+            chaptername = (entry.get("chaptername") or "").strip() or "New Chapter"
+            nameextend  = (entry.get("nameextend") or "").strip()
+            link        = (entry.get("link") or "").strip()
+            translator  = (entry.get("translator") or "").strip()
+            # featured image shape differs sometimes; try both
+            fi = entry.get("featuredImage") or entry.get("featuredimage") or {}
+            thumb_url   = (fi or {}).get("url")
+            hl = entry.get("hostLogo") or entry.get("hostlogo") or {}
+            host_logo   = (hl or {}).get("url")
+
             pubdate_raw = getattr(entry, "published", None)
             timestamp   = dateparser.parse(pubdate_raw) if pubdate_raw else None
 
@@ -157,25 +198,26 @@ async def send_new_entries():
                 embed.set_thumbnail(url=thumb_url)
             embed.set_footer(text=host, icon_url=host_logo)
 
-            # button & send…
+            # Button & send
             view = View()
             view.add_item(Button(label="Read here", url=link))
             await channel.send(content=content, embed=embed, view=view)
+
             print(f"📨 Sent: {chaptername} / {guid}")
-            # mark as seen and bump time
+
+            # mark as seen and bump time (timezone-aware)
             norm = normalize_guid(entry)
             state[SEEN_KEY].append(norm)
-            dt = parse_pub_iso(entry) or datetime.utcnow()
+            dt = parse_pub_iso(entry) or datetime.now(timezone.utc)
             state[LAST_POST_TIME] = dt.isoformat()
             save_state(state)
 
             new_last = guid
 
-        # 3) Save checkpoint & exit
         if new_last and new_last != state.get(FEED_KEY):
             state[FEED_KEY] = new_last
             save_state(state)
-            print(f"💾 Updated {STATE_FILE} → {new_last}")
+            print(f"💾 Updated {STATE_FILE}[\"{FEED_KEY}\"] → {new_last}")
 
         await asyncio.sleep(1)
         await bot.close()
