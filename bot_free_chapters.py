@@ -11,7 +11,6 @@ from urllib.parse import urlsplit, urlunsplit
 import discord
 from discord import Embed
 from discord.ui import View, Button
-from novel_mappings import HOSTING_SITE_DATA, get_nsfw_novels
 
 # ─── CONFIG ────────────────────────────────────────────────────────────────────
 TOKEN           = os.environ["DISCORD_BOT_TOKEN"]
@@ -61,6 +60,14 @@ def save_state(state):
     with open(STATE_FILE, "w", encoding="utf-8") as f:
         json.dump(state, f, indent=2, ensure_ascii=False)
 
+def is_nsfw(entry) -> bool:
+    cat = (entry.get("category") or "").strip().upper()
+    return cat == "NSFW"
+
+def get_series_role(entry) -> str:
+    # your feed stores a full mention like "<@&123...>" inside CDATA; just strip it
+    return (entry.get("discord_role_id") or "").strip()
+
 def _join_role_mentions(*parts) -> str:
     """Join pieces with ' | ', split/trim on pipes/spaces, and dedupe in order."""
     seen, out = set(), []
@@ -73,13 +80,12 @@ def _join_role_mentions(*parts) -> str:
                 out.append(seg)
     return " | ".join(out)
 
-def _build_chapter_mention(series_role: str, novel_title: str, global_mention: str) -> str:
+def _build_chapter_mention(series_role: str, nsfw: bool, global_mention: str) -> str:
     """
-    Compose: <series role> [| <NSFW>] | <GLOBAL_MENTION>
+    Compose: <series role> [| <NSFW_ROLE>] | <GLOBAL_MENTION>
     If series_role is empty, you’ll just get: <GLOBAL_MENTION>.
     """
-    nsfw_tail = NSFW_ROLE if novel_title in get_nsfw_novels() else None
-    # order changed: series → nsfw? → global
+    nsfw_tail = NSFW_ROLE if nsfw else None
     return _join_role_mentions(series_role, nsfw_tail, global_mention)
 
 def normalize_guid(entry):
@@ -145,24 +151,14 @@ async def send_new_entries():
             guid = entry.get("guid") or entry.get("id")
 
             # Pull source fields first
-            novel_title = (entry.get("novel_title") or "").strip()
             host        = (entry.get("host") or "").strip()
-
-            # Resolve series_role (RSS first, then mapping fallback)
-            series_role = (entry.get("discord_role_id") or "").strip()
-            if not series_role:
-                series_role = (
-                    HOSTING_SITE_DATA.get(host, {})
-                                     .get("novels", {})
-                                     .get(novel_title, {})
-                                     .get("discord_role_id", "")
-                    or ""
-                ).strip()
+            series_role = get_series_role(entry)
+            nsfw_flag   = is_nsfw(entry)
 
             # Build mention line *before* content
             mention_line = _build_chapter_mention(
                 series_role=series_role,
-                novel_title=novel_title,
+                nsfw=nsfw_flag,
                 global_mention=GLOBAL_MENTION,
             )
 
