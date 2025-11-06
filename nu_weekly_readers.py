@@ -62,6 +62,7 @@ except Exception as e:
 AUTHOR_NAME = "Novel Updates"
 AUTHOR_ICON = "https://www.novelupdates.com/appicon.png"
 EMBED_COLOR_HEX = os.environ.get("EMBED_COLOR", "2d3f51")
+GLOBAL_MENTION  = "||<@&1329392448798982214>||"
 
 # Default thread/channel to post into if no env/CLI provided (user-specified)
 CHANNEL_DEFAULT = os.environ.get("DISCORD_MOD_CHANNEL_ID", "").strip()
@@ -284,10 +285,10 @@ def _send_or_edit_discord_embed(
         "Authorization": f"Bot {token}",
         "Content-Type": "application/json",
     }
+  
     payload = {
-        "content": "",  # embed-only per user request
+        "content": f"{GLOBAL_MENTION}\n",
         "embeds": [embed],
-        "allowed_mentions": {"parse": ["roles"] if allow_pings else []},
     }
 
     sess = requests.Session()
