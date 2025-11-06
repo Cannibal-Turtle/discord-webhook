@@ -305,16 +305,17 @@ def main(argv: Optional[List[str]] = None) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--print-only", action="store_true", help="Don't post to Discord; print report only")
     ap.add_argument("--state", help="State JSON path (default env NU_STATE_PATH or nu_readers_state.json)")
-    ap.add_argument("--channel", help="Discord channel id (overrides env)")
+    ap.add_argument("--channel", help="Discord channel id (overrides default thread id)")
     ap.add_argument("--message", help="Discord message id to edit (overrides env)")
     args = ap.parse_args(argv)
 
     state_path = args.state or DEFAULT_STATE_PATH
-lock_fd = _acquire_lock(state_path + ".lock")
+    lock_fd = _acquire_lock(state_path + ".lock")
 
     targets = collect_targets()
     if not targets:
         print("[info] No novels with novelupdates_feed_url found in mappings.")
+        _release_lock(lock_fd, state_path + ".lock")
         return 0
 
     state = _load_state(state_path)
@@ -326,62 +327,54 @@ lock_fd = _acquire_lock(state_path + ".lock")
     for key, title, role, url in targets:
         curr = _fetch_reading_lists_count(url)
         if curr is None:
-            # Keep previous; report as unchanged if exists
             prev_entry = prev_counts.get(key)
             prev_val = (prev_entry or {}).get("count")
             if prev_val is None:
-                # Give up on this entry for now (skip in report)
                 print(f"[skip] No data for {title} ({url})")
                 continue
-            results.append((role, prev_val, None))  # None -> first run/unknown delta wording
+            results.append((role, prev_val, None))  # first-run/unknown delta
             continue
 
         prev_entry = prev_counts.get(key)
         delta: Optional[int]
         if prev_entry is None:
-            delta = None  # first run
+            delta = None
         else:
             delta = curr - int(prev_entry.get("count", 0))
 
         results.append((role, curr, delta))
         new_counts[key] = {"count": int(curr), "when": dt.datetime.utcnow().isoformat() + "Z"}
 
-    # Sort results by key for stability
-    # (Alternatively: sort by delta descending. Keep stable/simple.)
-    # results structure used only for description composition.
-
     description = _build_description(results)
     embed = _build_embed(description)
 
-    # Persist state
-state["last_updated"] = dt.datetime.utcnow().isoformat() + "Z"
-state["counts"] = new_counts
-_save_state(state_path, state)
-_release_lock(lock_fd, state_path + ".lock")
-print(f"[ok] State saved: {state_path}")
+    # Persist state (with lock)
+    state["last_updated"] = dt.datetime.utcnow().isoformat() + "Z"
+    state["counts"] = new_counts
+    _save_state(state_path, state)
+    _release_lock(lock_fd, state_path + ".lock")
+    print(f"[ok] State saved: {state_path}")
 
     # Decide to post
     token = os.environ.get("DISCORD_BOT_TOKEN", "").strip()
-# Accept multiple env aliases for channel/message and default to given thread id
-# Post specifically to your given thread unless overridden via --channel
-channel_id = args.channel or CHANNEL_DEFAULT
-message_id = (
-    args.message
-    or os.environ.get("DISCORD_MESSAGE_ID", "").strip()
-    or os.environ.get("DISCORD_NU_MESSAGE_ID", "").strip()
-)
-# Default to pinging roles unless explicitly disabled
-allow_pings = os.environ.get("ALLOW_ROLE_PINGS", "true").lower() == "true"
+
+    # Post specifically to your given thread unless overridden via --channel
+    channel_id = args.channel or CHANNEL_DEFAULT
+    message_id = (
+        args.message
+        or os.environ.get("DISCORD_MESSAGE_ID", "").strip()
+        or os.environ.get("DISCORD_NU_MESSAGE_ID", "").strip()
+    )
+    # Default to pinging roles unless explicitly disabled
+    allow_pings = os.environ.get("ALLOW_ROLE_PINGS", "true").lower() == "true"
 
     if args.print_only or not token or not channel_id:
-        # Dry-run: print the embed payload for inspection
         print("\n=== EMBED PREVIEW (dry-run) ===")
         print(json.dumps({"content": "", "embeds": [embed]}, ensure_ascii=False, indent=2))
         return 0
 
     _send_or_edit_discord_embed(embed, token, channel_id, message_id or None, allow_pings=allow_pings)
     return 0
-
 
 if __name__ == "__main__":
     raise SystemExit(main())
