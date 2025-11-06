@@ -325,5 +325,11 @@ These scripts are invoked by your `rss-feed` repository workflows, and can also 
   </tr>
 </table>
 
+---
 
+## 🆕 UPDATE: New Novel Updates Analytics (v4)
+
+- You can now receive announcements from Novel Updates to know about:
+   - New comments.
+   - Weekly readers' statistics.
 
