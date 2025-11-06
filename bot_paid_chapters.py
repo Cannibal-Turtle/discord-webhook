@@ -7,8 +7,7 @@ from dateutil import parser as dateparser
 import html
 from urllib.parse import urlsplit, urlunsplit
 from datetime import datetime, timezone
-import aiohttp
-from io import BytesIO
+
 import discord
 from discord import Embed
 from discord.ui import View, Button
@@ -87,22 +86,6 @@ def _build_chapter_mention(series_role: str, novel_title: str, global_mention: s
     nsfw_tail = NSFW_ROLE if novel_title in get_nsfw_novels() else None
     # order changed: series → nsfw? → global
     return _join_role_mentions(series_role, nsfw_tail, global_mention)
-
-async def spoiler_attachment_from_url(sess: aiohttp.ClientSession, url: str, fallback_name: str = "image.jpg"):
-    if not url:
-        return None, None
-    name = fallback_name.rsplit("/", 1)[-1]
-    if "." not in name:
-        name += ".jpg"
-    attach_name = f"SPOILER_{name}"
-    try:
-        async with sess.get(url, timeout=20) as r:
-            if r.status != 200:
-                return None, None
-            b = await r.read()
-        return discord.File(BytesIO(b), filename=attach_name), attach_name
-    except Exception:
-        return None, None
 
 def normalize_guid(entry):
     # host::guid  (guid unescaped, URL host lowercased if URL-like)
@@ -274,109 +257,108 @@ async def send_new_paid_entries():
             print(f"❌ Cannot find channel {CHANNEL_ID}")
             await bot.close()
             return
-    
+
         new_last = last
-    
-        # Reuse one HTTP session for all spoiler downloads
-        async with aiohttp.ClientSession() as sess:
-            for entry in to_send:
-                guid = entry.get("guid") or entry.get("id")
-    
-                # --- pull metadata from the RSS entry ---
-                novel_title = (entry.get("title") or "").strip()   # paid feed uses <title> for novel
-                host        = (entry.get("host") or "").strip()
-    
-                series_role = (entry.get("discord_role_id") or "").strip()
-                if not series_role:
-                    series_role = (
-                        HOSTING_SITE_DATA.get(host, {})
-                                         .get("novels", {})
-                                         .get(novel_title, {})
-                                         .get("discord_role_id", "")
-                        or ""
-                    ).strip()
-    
-                title_text  = (entry.get("title") or "").strip()
-                chaptername = (entry.get("chaptername") or "").strip()
-                nameextend  = (entry.get("nameextend") or "").strip()
-                link        = (entry.get("link") or "").strip()
-                translator  = (entry.get("translator") or "").strip()
-    
-                fi = entry.get("featuredImage") or entry.get("featuredimage") or {}
-                thumb_url = (fi or {}).get("url")
-                hl = entry.get("hostLogo") or entry.get("hostlogo") or {}
-                host_logo = (hl or {}).get("url")
-    
-                pubdate_raw = getattr(entry, "published", None)
-                timestamp   = dateparser.parse(pubdate_raw) if pubdate_raw else None
-    
-                coin_label_raw = (entry.get("coin") or "").strip()
-    
-                mention_line = _build_chapter_mention(
-                    series_role=series_role,
-                    novel_title=novel_title,
-                    global_mention=GLOBAL_MENTION,
-                )
-    
-                content = (
-                    f"{mention_line} <a:TurtleDance:1365253970435510293>\n"
-                    f"<a:1366_sweetpiano_happy:1368136820965249034> **{title_text}** <:pink_lock:1368266294855733291>"
-                )
-    
-                embed = Embed(
-                    title=f"<a:moonandstars:1365569468629123184>**{chaptername}**",
-                    url=link,
-                    description=nameextend or discord.Embed.Empty,
-                    timestamp=timestamp,
-                    color=int("A87676", 16),
-                )
-                embed.set_author(name=f"{translator}˙ᵕ˙")
-    
-                # --- spoiler-aware thumbnail for NSFW novels ---
-                files = []
-                if novel_title in get_nsfw_novels():
-                    file_obj, attach_name = await spoiler_attachment_from_url(sess, thumb_url, "thumb.jpg")
-                    if file_obj:
-                        files.append(file_obj)
-                        embed.set_thumbnail(url=f"attachment://{attach_name}")
-                    elif thumb_url:
-                        embed.set_thumbnail(url=thumb_url)  # fallback (no blur)
-                else:
-                    if thumb_url:
-                        embed.set_thumbnail(url=thumb_url)
-    
-                embed.set_footer(text=host, icon_url=host_logo)
-    
-                # --- paid button (your existing logic) ---
-                label_text, emoji_obj = get_coin_button_parts(
-                    host=host,
-                    novel_title=novel_title,
-                    fallback_price=coin_label_raw,
-                    fallback_emoji=None,
-                )
-                if not label_text and not emoji_obj:
-                    label_text = "Read here"
-    
-                view = View()
-                view.add_item(Button(label=label_text, url=link, emoji=emoji_obj))
-    
-                # send (include files if any)
-                await channel.send(content=content, embed=embed, view=view, files=files or None)
-                print(f"📨 Sent paid: {chaptername} / {guid}")
-    
-                # mark as seen and bump time
-                norm = normalize_guid(entry)
-                state[SEEN_KEY].append(norm)
-                dt = parse_pub_iso(entry) or datetime.now(timezone.utc)
-                state[LAST_POST_TIME] = dt.isoformat()
-                save_state(state)
-                new_last = guid
-    
+
+        for entry in to_send:
+            guid = entry.get("guid") or entry.get("id")
+
+            # --- pull metadata from the RSS entry ---
+            novel_title = entry.get("novel_title", "").strip()
+            host        = entry.get("host", "").strip()
+
+            series_role = (entry.get("discord_role_id") or "").strip()
+            if not series_role:
+                series_role = (
+                    HOSTING_SITE_DATA.get(host, {})
+                                     .get("novels", {})
+                                     .get(novel_title, {})
+                                     .get("discord_role_id", "")
+                    or ""
+                ).strip()
+            title_text  = entry.get("title","").strip()
+
+            chaptername = entry.get("chaptername","").strip()
+            nameextend  = entry.get("nameextend","").strip()
+
+            link        = entry.get("link","").strip()
+            translator  = entry.get("translator","").strip()
+
+            thumb_url   = (entry.get("featuredImage") or {}).get("url") \
+                          or (entry.get("featuredimage") or {}).get("url")
+            host_logo   = (entry.get("hostLogo") or {}).get("url") \
+                          or (entry.get("hostlogo") or {}).get("url")
+
+            pubdate_raw = getattr(entry, "published", None)
+            timestamp   = dateparser.parse(pubdate_raw) if pubdate_raw else None
+
+            coin_label_raw = entry.get("coin","").strip()
+            
+            mention_line = _build_chapter_mention(
+                series_role=series_role,
+                novel_title=novel_title,
+                global_mention=GLOBAL_MENTION,
+            )
+            
+            # --- top text with pings ---
+            content = (
+                f"{mention_line} <a:TurtleDance:1365253970435510293>\n"
+                f"<a:1366_sweetpiano_happy:1368136820965249034> **{title_text}** <:pink_lock:1368266294855733291>"
+            )
+
+            # --- embed with chapter info ---
+            embed = Embed(
+                title=f"<a:moonandstars:1365569468629123184>**{chaptername}**",
+                url=link,
+                description=nameextend or discord.Embed.Empty,
+                timestamp=timestamp,
+                color=int("A87676", 16),  # dusty rose hex -> int
+            )
+            embed.set_author(name=f"{translator}˙ᵕ˙")
+            if thumb_url:
+                embed.set_thumbnail(url=thumb_url)
+            embed.set_footer(text=host, icon_url=host_logo)
+
+            # --- build the button row ---
+            label_text, emoji_obj = get_coin_button_parts(
+                host=host,
+                novel_title=novel_title,
+                fallback_price=coin_label_raw,
+                fallback_emoji=None,
+            )
+
+            if not label_text and not emoji_obj:
+                label_text = "Read here"
+
+            btn = Button(
+                label=label_text,
+                url=link,
+                emoji=emoji_obj  # PartialEmoji or unicode is fine
+            )
+
+            view = View()
+            view.add_item(btn)
+
+            # send
+            await channel.send(content=content, embed=embed, view=view)
+            print(f"📨 Sent paid: {chaptername} / {guid}")
+            # mark as seen and bump time backstop
+            norm = normalize_guid(entry)
+            state[SEEN_KEY].append(norm)
+            
+            dt = parse_pub_iso(entry) or datetime.now(timezone.utc)
+            state[LAST_POST_TIME] = dt.isoformat()
+            
+            save_state(state)
+            
+            new_last = guid
+            
+        # update the pointer (so we don't repost next run)
         if new_last and new_last != state.get(FEED_KEY):
             state[FEED_KEY] = new_last
             save_state(state)
             print(f"💾 Updated {STATE_FILE}[\"{FEED_KEY}\"] → {new_last}")
-    
+
         await asyncio.sleep(1)
         await bot.close()
 
