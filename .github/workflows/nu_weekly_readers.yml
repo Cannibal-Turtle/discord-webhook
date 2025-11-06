@@ -36,7 +36,7 @@ jobs:
 
       - name: Install deps
         run: |
-          pip install requests
+          pip install requests cloudscraper
           pip install --upgrade git+https://github.com/Cannibal-Turtle/rss-feed.git@main
 
       - name: Run NU Weekly Readers
