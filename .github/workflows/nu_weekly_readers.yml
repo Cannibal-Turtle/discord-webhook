@@ -49,10 +49,10 @@ jobs:
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git pull --rebase origin $GITHUB_REF_NAME || true
-          git add state_rss.json
+          git add state.json
           if git diff --cached --quiet; then
             echo "No state changes to commit."
           else
-            git commit -m "ci: update state_rss.json"
+            git commit -m "ci: update state.json"
             git push origin $GITHUB_REF_NAME
           fi
