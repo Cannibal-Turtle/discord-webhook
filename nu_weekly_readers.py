@@ -69,7 +69,7 @@ CHANNEL_DEFAULT = os.environ.get("DISCORD_MOD_CHANNEL_ID", "").strip()
 
 TITLE_BOX = (
     "╔══.·:·.☽✧    ✦    ✧☾.·:·.══╗\n"
-    "             **weekly NU report**\n"
+    "           **weekly NU report**\n"
     "╚══.·:·.☽✧    ✦    ✧☾.·:·.══╝"
 )
 
