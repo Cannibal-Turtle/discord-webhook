@@ -61,6 +61,7 @@ except Exception as e:
 # ---------------------------- constants --------------------------------
 AUTHOR_NAME = "Novel Updates"
 AUTHOR_ICON = "https://www.novelupdates.com/appicon.png"
+EMBED_COLOR_HEX = os.environ.get("EMBED_COLOR", "2d3f51")
 
 # Default thread/channel to post into if no env/CLI provided (user-specified)
 CHANNEL_DEFAULT = "1435350071909548162"
@@ -234,6 +235,7 @@ def _build_embed(description: str) -> Dict[str, any]:
         "description": description,
         "footer": {"text": footer_text},
         "timestamp": now_utc.isoformat().replace("+00:00", "Z"),  # Discord localizes
+        "color": int(EMBED_COLOR_HEX, 16),
     }
     return embed
 
