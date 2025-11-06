@@ -64,7 +64,7 @@ AUTHOR_ICON = "https://www.novelupdates.com/appicon.png"
 EMBED_COLOR_HEX = os.environ.get("EMBED_COLOR", "2d3f51")
 
 # Default thread/channel to post into if no env/CLI provided (user-specified)
-CHANNEL_DEFAULT = os.environ.get("DISCORD_CHANNEL_ID", "").strip()
+CHANNEL_DEFAULT = os.environ.get("DISCORD_MOD_CHANNEL_ID", "").strip()
 
 TITLE_BOX = (
     "╔══.·:·.☽✧    ✦    ✧☾.·:·.══╗\n"
