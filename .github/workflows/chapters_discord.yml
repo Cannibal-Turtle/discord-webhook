@@ -30,7 +30,7 @@ jobs:
       - name: Install deps
         run: |
           pip install discord.py feedparser python-dateutil
-          pip install --upgrade "git+https://github.com/Cannibal-Turtle/rss-feed.git@main"
+          
       - name: Run Free Chapters Bot
         timeout-minutes: 5
         env:
@@ -59,7 +59,7 @@ jobs:
       - name: Install deps
         run: |
           pip install discord.py feedparser python-dateutil
-          pip install --upgrade "git+https://github.com/Cannibal-Turtle/rss-feed.git@main"
+
       - name: Run Paid Chapters Bot
         timeout-minutes: 5
         env:
