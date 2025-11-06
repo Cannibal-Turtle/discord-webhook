@@ -212,13 +212,19 @@ def _release_lock(fd: Optional[int], lock_path: str) -> None:
 # --------------------------- state handling -----------------------------
 
 def _load_state(path: str) -> Dict[str, any]:
-    if not os.path.exists(path):
-        return {"last_updated": None, "counts": {}}
-    try:
-        with open(path, "r", encoding="utf-8") as f:
-            return json.load(f)
-    except Exception:
-        return {"last_updated": None, "counts": {}}
+   if not os.path.exists(path):
+       return {}
+   try:
+       with open(path, "r", encoding="utf-8") as f:
+           return json.load(f)
+   except Exception as e:
+       # keep the broken file for inspection
+       try:
+           os.replace(path, path + ".bad")
+           print(f"[warn] {path} was invalid JSON; moved to {path}.bad ({e})")
+       except Exception:
+           print(f"[warn] {path} invalid JSON; could not backup ({e})")
+       return {}
 
 
 def _save_state(path: str, data: Dict[str, any]) -> None:
@@ -346,7 +352,8 @@ def main(argv: Optional[List[str]] = None) -> int:
         return 0
 
     state = _load_state(state_path)
-    prev_counts: Dict[str, Dict[str, any]] = state.get("counts", {})
+    nu = state.get("nu_readers", {}) if isinstance(state, dict) else {}
+    prev_counts: Dict[str, Dict[str, any]] = nu.get("counts", {})
 
     results: List[Tuple[str, int, Optional[int]]] = []  # (role_mention, current, delta)
     new_counts: Dict[str, Dict[str, any]] = dict(prev_counts)  # copy
@@ -378,8 +385,9 @@ def main(argv: Optional[List[str]] = None) -> int:
     embed = _build_embed(description)
 
     # Persist state (with lock)
-    state["last_updated"] = dt.datetime.utcnow().isoformat() + "Z"
-    state["counts"] = new_counts
+    nu["last_updated"] = dt.datetime.utcnow().isoformat() + "Z"
+    nu["counts"] = new_counts
+    state["nu_readers"] = nu
     _save_state(state_path, state)
     _release_lock(lock_fd, state_path + ".lock")
     print(f"[ok] State saved: {state_path}")
