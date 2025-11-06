@@ -7,7 +7,8 @@ from datetime import datetime, timezone
 from dateutil import parser as dateparser
 import html
 from urllib.parse import urlsplit, urlunsplit
-
+import aiohttp
+from io import BytesIO
 import discord
 from discord import Embed
 from discord.ui import View, Button
@@ -82,6 +83,22 @@ def _build_chapter_mention(series_role: str, novel_title: str, global_mention: s
     # order changed: series → nsfw? → global
     return _join_role_mentions(series_role, nsfw_tail, global_mention)
 
+async def spoiler_attachment_from_url(sess: aiohttp.ClientSession, url: str, fallback_name: str = "image.jpg"):
+    if not url:
+        return None, None
+    name = fallback_name.rsplit("/", 1)[-1]
+    if "." not in name:
+        name += ".jpg"
+    attach_name = f"SPOILER_{name}"
+    try:
+        async with sess.get(url, timeout=20) as r:
+            if r.status != 200:
+                return None, None
+            b = await r.read()
+        return discord.File(BytesIO(b), filename=attach_name), attach_name
+    except Exception:
+        return None, None
+        
 def normalize_guid(entry):
     host = (entry.get("host") or "").strip().lower()
     raw  = (entry.get("guid") or entry.get("id") or "").strip()
@@ -141,6 +158,18 @@ async def send_new_entries():
 
         new_last = last
 
+@bot.event
+async def on_ready():
+    channel = bot.get_channel(CHANNEL_ID)
+    if channel is None:
+        print(f"❌ Cannot find channel {CHANNEL_ID}")
+        await bot.close()
+        return
+
+    new_last = last
+
+    # --- reuse one HTTP session for all spoiler downloads ---
+    async with aiohttp.ClientSession() as sess:
         for entry in to_send:
             guid = entry.get("guid") or entry.get("id")
 
@@ -177,7 +206,7 @@ async def send_new_entries():
             nameextend  = (entry.get("nameextend") or "").strip()
             link        = (entry.get("link") or "").strip()
             translator  = (entry.get("translator") or "").strip()
-            # featured image shape differs sometimes; try both
+
             fi = entry.get("featuredImage") or entry.get("featuredimage") or {}
             thumb_url   = (fi or {}).get("url")
             hl = entry.get("hostLogo") or entry.get("hostlogo") or {}
@@ -194,14 +223,27 @@ async def send_new_entries():
                 color=int("FFF9BF", 16),
             )
             embed.set_author(name=f"{translator}˙ᵕ˙")
-            if thumb_url:
-                embed.set_thumbnail(url=thumb_url)
+
+            # --- spoiler-aware thumbnail ---
+            files = []
+            if novel_title in get_nsfw_novels():
+                file_obj, attach_name = await spoiler_attachment_from_url(sess, thumb_url, "thumb.jpg")
+                if file_obj:
+                    files.append(file_obj)
+                    embed.set_thumbnail(url=f"attachment://{attach_name}")
+                elif thumb_url:
+                    # fallback (no blur)
+                    embed.set_thumbnail(url=thumb_url)
+            else:
+                if thumb_url:
+                    embed.set_thumbnail(url=thumb_url)
+
             embed.set_footer(text=host, icon_url=host_logo)
 
             # Button & send
             view = View()
             view.add_item(Button(label="Read here", url=link))
-            await channel.send(content=content, embed=embed, view=view)
+            await channel.send(content=content, embed=embed, view=view, files=files or None)
 
             print(f"📨 Sent: {chaptername} / {guid}")
 
@@ -214,13 +256,13 @@ async def send_new_entries():
 
             new_last = guid
 
-        if new_last and new_last != state.get(FEED_KEY):
-            state[FEED_KEY] = new_last
-            save_state(state)
-            print(f"💾 Updated {STATE_FILE}[\"{FEED_KEY}\"] → {new_last}")
+    if new_last and new_last != state.get(FEED_KEY):
+        state[FEED_KEY] = new_last
+        save_state(state)
+        print(f"💾 Updated {STATE_FILE}[\"{FEED_KEY}\"] → {new_last}")
 
-        await asyncio.sleep(1)
-        await bot.close()
+    await asyncio.sleep(1)
+    await bot.close()
 
     await bot.start(TOKEN)
 
