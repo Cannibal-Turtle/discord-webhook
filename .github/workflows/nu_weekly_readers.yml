@@ -3,6 +3,7 @@ name: Weekly NU Readers
 on:
   schedule:
     - cron: '0 13 * * 0'   # Sunday 13:00 UTC == Sunday 21:00 UTC+8
+  workflow_dispatch:
 
 concurrency:
   group: nu-weekly-readers
@@ -32,12 +33,15 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.x'
-
+          cache: 'pip'
+          cache-dependency-path: requirements/nu_weekly.txt
+      
       - name: Install deps
         run: |
-          pip install requests cloudscraper
-          pip install --upgrade git+https://github.com/Cannibal-Turtle/rss-feed.git@main
-
+          python -m pip install --upgrade pip
+          pip install -r requirements/nu_weekly.txt
+          pip install -e ext/rss-feed
+    
       - name: Run NU Weekly Readers
         timeout-minutes: 5
         env:
