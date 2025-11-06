@@ -1,2 +1,3 @@
 requests~=2.32
 cloudscraper~=1.2
+git+https://github.com/Cannibal-Turtle/rss-feed.git@main
