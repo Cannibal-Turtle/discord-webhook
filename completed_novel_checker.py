@@ -23,9 +23,10 @@ import os
 import sys
 import feedparser
 import requests
+import re
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
-from novel_mappings import HOSTING_SITE_DATA
+from novel_mappings import HOSTING_SITE_DATA, get_nsfw_novels
 
 # ─── CONFIG ────────────────────────────────────────────────────────────────────
 STATE_PATH     = "state.json"
@@ -33,6 +34,7 @@ BOT_TOKEN_ENV  = "DISCORD_BOT_TOKEN"
 CHANNEL_ID_ENV = "DISCORD_CHANNEL_ID"
 
 COMPLETE_ROLE  = "<@&1329502614110474270>"
+NSFW_ROLE = "<@&1343352825811439616>"
 # ────────────────────────────────────────────────────────────────────────────────
 
 
@@ -141,9 +143,35 @@ def get_duration(start_date_str: str, end_date: datetime) -> str:
 
     return "less than a week"
 
+def join_role_mentions(*parts):
+    """
+    Join role strings that may already contain '|' or spaces, deduping in order.
+    Output uses ' | ' as your house style here.
+    """
+    seen, out = set(), []
+    for p in parts:
+        if not p:
+            continue
+        # split on pipes or spaces so bundles like "A | B C" are handled
+        for seg in (x.strip() for x in re.split(r"[| ]+", p) if x.strip()):
+            if seg not in seen:
+                seen.add(seg)
+                out.append(seg)
+    return " | ".join(out)
+
+def build_completion_mention(novel: dict) -> str:
+    """
+    Compose: <novel role> [ + NSFW if needed ] + COMPLETE_ROLE
+    NSFW is appended last, mirroring new_novel_checker’s visual.
+    """
+    base_role = (novel.get("role_mention") or "").strip()
+    nsfw_tail = NSFW_ROLE if novel.get("novel_title") in get_nsfw_novels() else None
+    # COMPLETE_ROLE goes in the same line, deduped
+    return join_role_mentions(base_role, COMPLETE_ROLE, nsfw_tail)
+
 
 def build_paid_completion(novel, chap_field, chap_link, duration: str):
-    role        = novel.get("role_mention", "").strip()
+    mention     = build_completion_mention(novel)
     title       = novel.get("novel_title", "")
     link        = novel.get("novel_link", "")
     host        = novel.get("host", "")
@@ -156,7 +184,7 @@ def build_paid_completion(novel, chap_field, chap_link, duration: str):
     chap_text = chap_field.replace("\u00A0", " ")
 
     return (
-        f"{role} | {comp_role} <a:HappyCloud:1365575487333859398>\n"
+        f"{mention} <a:HappyCloud:1365575487333859398>\n"
         "## ꧁ᐟᐟ ◌ೄ⟢  Completion Announcement  :blueberries: ˚. ᵎᵎ˖ˎˊ-\n"
         f"{divider_line}\n"
         f"***<a:kikilts_bracket:1365693072138174525>[{title}]({link})"
@@ -176,7 +204,7 @@ def build_paid_completion(novel, chap_field, chap_link, duration: str):
 
 
 def build_free_completion(novel, chap_field, chap_link):
-    role        = novel.get("role_mention", "").strip()
+    mention     = build_completion_mention(novel)
     title       = novel.get("novel_title", "")
     link        = novel.get("novel_link", "")
     host        = novel.get("host", "")
@@ -189,7 +217,7 @@ def build_free_completion(novel, chap_field, chap_link):
     chap_text = chap_field.replace("\u00A0", " ")
 
     return (
-        f"{role} | {comp_role} <a:HappyCloud:1365575487333859398>\n"
+        f"{mention} <a:HappyCloud:1365575487333859398>\n"
         "## 𐔌  Announcing: Complete Series Unlocked ,, :cherries: — 𝝑𝝔  ꒱\n"
         f"{divider_line}\n"
         f"***<a:kikilts_bracket:1365693072138174525>[{title}]({link})"
@@ -207,7 +235,7 @@ def build_free_completion(novel, chap_field, chap_link):
 
 
 def build_only_free_completion(novel, chap_field, chap_link, duration):
-    role        = novel.get("role_mention", "").strip()
+    mention     = build_completion_mention(novel)
     comp_role   = COMPLETE_ROLE
     title       = novel.get("novel_title", "")
     link        = novel.get("novel_link", "")
@@ -220,7 +248,7 @@ def build_only_free_completion(novel, chap_field, chap_link, duration):
     chap_text = chap_field.replace("\u00A0", " ")
 
     return (
-        f"{role} | {comp_role} <a:HappyCloud:1365575487333859398>\n"
+        f"{mention} <a:HappyCloud:1365575487333859398>\n"
         "## ⁺‧ ༻•┈๑☽₊˚ ⌞Completion Announcement⋆ཋྀ ˚₊‧⁺ :kiwi: ∗༉‧₊˚\n"
         f"{divider_line}\n"
         f"***<a:kikilts_bracket:1365693072138174525>[{title}]({link})"
