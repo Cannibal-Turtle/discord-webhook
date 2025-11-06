@@ -12,8 +12,6 @@ import discord
 from discord import Embed
 from discord.ui import View, Button
 
-from novel_mappings import HOSTING_SITE_DATA, get_nsfw_novels
-
 # ─── CONFIG ────────────────────────────────────────────────────────────────
 TOKEN      = os.environ["DISCORD_BOT_TOKEN"]
 CHANNEL_ID = int(os.environ["DISCORD_ADVANCE_CHAPTERS_CHANNEL"])
@@ -66,6 +64,13 @@ def save_state(state):
     with open(STATE_FILE, "w", encoding="utf-8") as f:
         json.dump(state, f, indent=2, ensure_ascii=False)
 
+def is_nsfw(entry) -> bool:
+    cat = (entry.get("category") or "").strip().upper()
+    return cat == "NSFW"
+
+def get_series_role(entry) -> str:
+    return (entry.get("discord_role_id") or "").strip()
+
 def _join_role_mentions(*parts) -> str:
     """Join pieces with ' | ', split/trim on pipes/spaces, and dedupe in order."""
     seen, out = set(), []
@@ -78,13 +83,8 @@ def _join_role_mentions(*parts) -> str:
                 out.append(seg)
     return " | ".join(out)
 
-def _build_chapter_mention(series_role: str, novel_title: str, global_mention: str) -> str:
-    """
-    Compose: <series role> [| <NSFW>] | <GLOBAL_MENTION>
-    If series_role is empty, you’ll just get: <GLOBAL_MENTION>.
-    """
-    nsfw_tail = NSFW_ROLE if novel_title in get_nsfw_novels() else None
-    # order changed: series → nsfw? → global
+def _build_chapter_mention(series_role: str, nsfw: bool, global_mention: str) -> str:
+    nsfw_tail = NSFW_ROLE if nsfw else None
     return _join_role_mentions(series_role, nsfw_tail, global_mention)
 
 def normalize_guid(entry):
@@ -144,79 +144,40 @@ def parse_custom_emoji(e: str):
     return None
 
 
-def get_coin_button_parts(host: str,
-                          novel_title: str,
-                          fallback_price: str,
-                          fallback_emoji: str = None):
+def get_coin_button_parts_from_feed(coin_text: str):
     """
-    Decide what the paid button should show.
-
-    We try to pull data from HOSTING_SITE_DATA, but we ALSO try to parse
-    the <coin> field from the feed itself as a backup.
-
-    Returns (label_text, emoji_for_button)
-
-    - label_text -> string that becomes Button(label=...)
-                    (ex: "5" or "Read here")
-    - emoji_for_button -> PartialEmoji | unicode | None
-                          (goes to Button(emoji=...))
+    Parse <coin> like:
+      "<:mistmint_currency:143...> 5", "🔥 5", "🔥5", "5"
+    Return (label_text, emoji_obj_or_unicode).
     """
+    s = (coin_text or "").strip()
+    label_text = ""
+    emoji_obj = None
 
-    # ----- 1. Start with completely empty defaults
-    label_text   = ""
-    emoji_obj    = None
+    if not s:
+        return "Read here", None
 
-    # ----- 2. Try mapping first (preferred)
-    try:
-        host_block = HOSTING_SITE_DATA.get(host, {})
-        novels     = host_block.get("novels", {})
-        details    = novels.get(novel_title, {})
+    # 1) Try a leading custom emoji
+    m = re.match(r"^\s*(<a?:[A-Za-z0-9_]+:\d+>)", s)
+    if m:
+        emoji_obj = parse_custom_emoji(m.group(1))
+        s = s[m.end():]  # consume it
+    else:
+        # 2) Try a leading token as possible unicode emoji (🔥, etc.)
+        m2 = re.match(r"^\s*(\S+)", s)
+        if m2:
+            tok = m2.group(1)
+            maybe = parse_custom_emoji(tok)
+            if maybe:
+                emoji_obj = maybe
+                s = s[m2.end():]  # consume it
 
-        # coin_price from mapping (ex: 5)
-        mapped_price = details.get("coin_price")
-        if mapped_price is not None:
-            label_text = str(mapped_price).strip()
+    # 3) Find the first integer anywhere in the remaining string
+    mnum = re.search(r"\d+", s)
+    if mnum:
+        label_text = mnum.group(0)
 
-        # coin_emoji priority: per-novel > per-host
-        mapped_emoji_raw = (
-            details.get("coin_emoji")
-            or host_block.get("coin_emoji")
-            or fallback_emoji
-            or ""
-        )
-        emoji_obj = parse_custom_emoji(mapped_emoji_raw)
-    except Exception:
-        # if HOSTING_SITE_DATA wasn't imported or something exploded,
-        # we silently fall back to feed parsing next
-        pass
-
-    # ----- 3. If still missing either emoji or price, try to steal it from the RSS <coin> text
-    # fallback_price is literally entry.get("coin") from the feed,
-    # which might look like "<:mint:12345> 5" all in one string.
-    coin_text = (fallback_price or "").strip()
-
-    if coin_text:
-        # try to grab an emoji and/or number from that string
-        # pattern: optional custom emoji + optional number
-        # e.g. "<:mistmint_currency:1433046707121422487> 5"
-        m = re.match(
-            r"^(?P<emoji><a?:[A-Za-z0-9_]+:\d+>)?\s*(?P<num>\d+)?",
-            coin_text
-        )
-        if m:
-            # only fill fields we *don't* already have
-            if not emoji_obj:
-                emoji_raw_from_feed = (m.group("emoji") or "").strip()
-                emoji_obj = parse_custom_emoji(emoji_raw_from_feed)
-
-            if not label_text:
-                num = (m.group("num") or "").strip()
-                if num:
-                    label_text = num
-
-    # ----- 4. Absolute last safety net
     if not label_text and not emoji_obj:
-        # we have literally nothing -> generic fallback
         label_text = "Read here"
 
     return label_text, emoji_obj
@@ -264,18 +225,9 @@ async def send_new_paid_entries():
             guid = entry.get("guid") or entry.get("id")
 
             # --- pull metadata from the RSS entry ---
-            novel_title = entry.get("novel_title", "").strip()
             host        = entry.get("host", "").strip()
-
-            series_role = (entry.get("discord_role_id") or "").strip()
-            if not series_role:
-                series_role = (
-                    HOSTING_SITE_DATA.get(host, {})
-                                     .get("novels", {})
-                                     .get(novel_title, {})
-                                     .get("discord_role_id", "")
-                    or ""
-                ).strip()
+            series_role = get_series_role(entry)
+            nsfw_flag   = is_nsfw(entry)
             title_text  = entry.get("title","").strip()
 
             chaptername = entry.get("chaptername","").strip()
@@ -296,9 +248,9 @@ async def send_new_paid_entries():
             
             mention_line = _build_chapter_mention(
                 series_role=series_role,
-                novel_title=novel_title,
+                nsfw=nsfw_flag,
                 global_mention=GLOBAL_MENTION,
-            )
+             )
             
             # --- top text with pings ---
             content = (
@@ -320,13 +272,8 @@ async def send_new_paid_entries():
             embed.set_footer(text=host, icon_url=host_logo)
 
             # --- build the button row ---
-            label_text, emoji_obj = get_coin_button_parts(
-                host=host,
-                novel_title=novel_title,
-                fallback_price=coin_label_raw,
-                fallback_emoji=None,
-            )
-
+            label_text, emoji_obj = get_coin_button_parts_from_feed(coin_label_raw)
+            
             if not label_text and not emoji_obj:
                 label_text = "Read here"
 
