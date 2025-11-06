@@ -114,14 +114,12 @@ def _slug_from_series_url(series_url: str) -> str:
 
 
 def _novel_key(novel_title: str, nd: Dict[str, any], series_url: str) -> str:
-    # Prefer explicitly provided short_code if present; else NU slug; else normalized title
-    sc = (nd.get("short_code") or "").strip()
-    if sc:
-        return sc.upper()
-    slug = _slug_from_series_url(series_url)
-    if slug:
-        return slug.replace("-", "_").upper()
-    return re.sub(r"\W+", "_", novel_title).strip("_").upper()
+    # 1) explicit override wins
+    sk = (nd.get("state_key") or "").strip()
+    if sk:
+        return sk.upper()
+    # 2) default to mapping title (normalized)
+    return re.sub(r"\W+", "_", str(novel_title)).strip("_").upper()
 
 
 def _normalize_role_mention(raw: str) -> str:
