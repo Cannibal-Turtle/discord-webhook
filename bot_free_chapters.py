@@ -158,111 +158,100 @@ async def send_new_entries():
 
         new_last = last
 
-@bot.event
-async def on_ready():
-    channel = bot.get_channel(CHANNEL_ID)
-    if channel is None:
-        print(f"❌ Cannot find channel {CHANNEL_ID}")
-        await bot.close()
-        return
+        # Reuse one HTTP session for all spoiler downloads
+        async with aiohttp.ClientSession() as sess:
+            for entry in to_send:
+                guid = entry.get("guid") or entry.get("id")
 
-    new_last = last
+                # Source fields
+                novel_title = (entry.get("novel_title") or "").strip()
+                host        = (entry.get("host") or "").strip()
 
-    # --- reuse one HTTP session for all spoiler downloads ---
-    async with aiohttp.ClientSession() as sess:
-        for entry in to_send:
-            guid = entry.get("guid") or entry.get("id")
+                # Series role (RSS → mapping fallback)
+                series_role = (entry.get("discord_role_id") or "").strip()
+                if not series_role:
+                    series_role = (
+                        HOSTING_SITE_DATA.get(host, {})
+                                         .get("novels", {})
+                                         .get(novel_title, {})
+                                         .get("discord_role_id", "")
+                        or ""
+                    ).strip()
 
-            # Pull source fields first
-            novel_title = (entry.get("novel_title") or "").strip()
-            host        = (entry.get("host") or "").strip()
+                # Mention line
+                mention_line = _build_chapter_mention(
+                    series_role=series_role,
+                    novel_title=novel_title,
+                    global_mention=GLOBAL_MENTION,
+                )
 
-            # Resolve series_role (RSS first, then mapping fallback)
-            series_role = (entry.get("discord_role_id") or "").strip()
-            if not series_role:
-                series_role = (
-                    HOSTING_SITE_DATA.get(host, {})
-                                     .get("novels", {})
-                                     .get(novel_title, {})
-                                     .get("discord_role_id", "")
-                    or ""
-                ).strip()
+                title   = (entry.get("title") or "").strip()
+                content = (
+                    f"{mention_line} <a:TurtleDance:1365253970435510293>\n"
+                    f"<a:5037sweetpianoyay:1368138418487427102> **{title}** <:pink_unlock:1368266307824255026>"
+                )
 
-            # Build mention line *before* content
-            mention_line = _build_chapter_mention(
-                series_role=series_role,
-                novel_title=novel_title,
-                global_mention=GLOBAL_MENTION,
-            )
+                # Embed fields
+                chaptername = (entry.get("chaptername") or "").strip() or "New Chapter"
+                nameextend  = (entry.get("nameextend") or "").strip()
+                link        = (entry.get("link") or "").strip()
+                translator  = (entry.get("translator") or "").strip()
 
-            title   = (entry.get("title") or "").strip()
-            content = (
-                f"{mention_line} <a:TurtleDance:1365253970435510293>\n"
-                f"<a:5037sweetpianoyay:1368138418487427102> **{title}** <:pink_unlock:1368266307824255026>"
-            )
+                fi = entry.get("featuredImage") or entry.get("featuredimage") or {}
+                thumb_url = (fi or {}).get("url")
+                hl = entry.get("hostLogo") or entry.get("hostlogo") or {}
+                host_logo = (hl or {}).get("url")
 
-            # Embed fields
-            chaptername = (entry.get("chaptername") or "").strip() or "New Chapter"
-            nameextend  = (entry.get("nameextend") or "").strip()
-            link        = (entry.get("link") or "").strip()
-            translator  = (entry.get("translator") or "").strip()
+                pubdate_raw = getattr(entry, "published", None)
+                timestamp   = dateparser.parse(pubdate_raw) if pubdate_raw else None
 
-            fi = entry.get("featuredImage") or entry.get("featuredimage") or {}
-            thumb_url   = (fi or {}).get("url")
-            hl = entry.get("hostLogo") or entry.get("hostlogo") or {}
-            host_logo   = (hl or {}).get("url")
+                embed = Embed(
+                    title=f"<a:moonandstars:1365569468629123184>**{chaptername}**",
+                    url=link,
+                    description=nameextend or discord.Embed.Empty,
+                    timestamp=timestamp,
+                    color=int("FFF9BF", 16),
+                )
+                embed.set_author(name=f"{translator}˙ᵕ˙")
 
-            pubdate_raw = getattr(entry, "published", None)
-            timestamp   = dateparser.parse(pubdate_raw) if pubdate_raw else None
+                # Spoiler-aware thumbnail
+                files = []
+                if novel_title in get_nsfw_novels():
+                    file_obj, attach_name = await spoiler_attachment_from_url(sess, thumb_url, "thumb.jpg")
+                    if file_obj:
+                        files.append(file_obj)
+                        embed.set_thumbnail(url=f"attachment://{attach_name}")
+                    elif thumb_url:
+                        embed.set_thumbnail(url=thumb_url)  # fallback (no blur)
+                else:
+                    if thumb_url:
+                        embed.set_thumbnail(url=thumb_url)
 
-            embed = Embed(
-                title=f"<a:moonandstars:1365569468629123184>**{chaptername}**",
-                url=link,
-                description=nameextend or discord.Embed.Empty,
-                timestamp=timestamp,
-                color=int("FFF9BF", 16),
-            )
-            embed.set_author(name=f"{translator}˙ᵕ˙")
+                embed.set_footer(text=host, icon_url=host_logo)
 
-            # --- spoiler-aware thumbnail ---
-            files = []
-            if novel_title in get_nsfw_novels():
-                file_obj, attach_name = await spoiler_attachment_from_url(sess, thumb_url, "thumb.jpg")
-                if file_obj:
-                    files.append(file_obj)
-                    embed.set_thumbnail(url=f"attachment://{attach_name}")
-                elif thumb_url:
-                    # fallback (no blur)
-                    embed.set_thumbnail(url=thumb_url)
-            else:
-                if thumb_url:
-                    embed.set_thumbnail(url=thumb_url)
+                # Button & send
+                view = View()
+                view.add_item(Button(label="Read here", url=link))
+                await channel.send(content=content, embed=embed, view=view, files=files or None)
 
-            embed.set_footer(text=host, icon_url=host_logo)
+                print(f"📨 Sent: {chaptername} / {guid}")
 
-            # Button & send
-            view = View()
-            view.add_item(Button(label="Read here", url=link))
-            await channel.send(content=content, embed=embed, view=view, files=files or None)
+                # mark seen + bump time
+                norm = normalize_guid(entry)
+                state[SEEN_KEY].append(norm)
+                dt = parse_pub_iso(entry) or datetime.now(timezone.utc)
+                state[LAST_POST_TIME] = dt.isoformat()
+                save_state(state)
 
-            print(f"📨 Sent: {chaptername} / {guid}")
+                new_last = guid
 
-            # mark as seen and bump time (timezone-aware)
-            norm = normalize_guid(entry)
-            state[SEEN_KEY].append(norm)
-            dt = parse_pub_iso(entry) or datetime.now(timezone.utc)
-            state[LAST_POST_TIME] = dt.isoformat()
+        if new_last and new_last != state.get(FEED_KEY):
+            state[FEED_KEY] = new_last
             save_state(state)
+            print(f"💾 Updated {STATE_FILE}[\"{FEED_KEY}\"] → {new_last}")
 
-            new_last = guid
-
-    if new_last and new_last != state.get(FEED_KEY):
-        state[FEED_KEY] = new_last
-        save_state(state)
-        print(f"💾 Updated {STATE_FILE}[\"{FEED_KEY}\"] → {new_last}")
-
-    await asyncio.sleep(1)
-    await bot.close()
+        await asyncio.sleep(1)
+        await bot.close()
 
     await bot.start(TOKEN)
 
