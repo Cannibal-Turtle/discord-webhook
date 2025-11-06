@@ -67,9 +67,9 @@ EMBED_COLOR_HEX = os.environ.get("EMBED_COLOR", "2d3f51")
 CHANNEL_DEFAULT = "1435350071909548162"
 
 TITLE_BOX = (
-    "╔═══.·:·.☽✧    ✦    ✧☾.·:·.═══╗\n"
-    "              **weekly NU report**\n"
-    "╚═══.·:·.☽✧    ✦    ✧☾.·:·.═══╝"
+    "╔══.·:·.☽✧    ✦    ✧☾.·:·.══╗\n"
+    "             **weekly NU report**\n"
+    "╚══.·:·.☽✧    ✦    ✧☾.·:·.══╝"
 )
 
 DEFAULT_STATE_PATH = os.environ.get("NU_STATE_PATH", "state.json")
