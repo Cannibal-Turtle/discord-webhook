@@ -68,7 +68,7 @@ CHANNEL_DEFAULT = "1435350071909548162"
 
 TITLE_BOX = (
     "╔═══*.·:·.☽✧    ✦    ✧☾.·:·.*═══╗\n"
-    "        **weekly NU report**\n"
+    "              **weekly NU report**\n"
     "╚═══*.·:·.☽✧    ✦    ✧☾.·:·.*═══╝"
 )
 
