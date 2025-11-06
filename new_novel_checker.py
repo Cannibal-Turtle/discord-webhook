@@ -34,8 +34,6 @@ import feedparser
 import requests
 from datetime import datetime, timezone
 import subprocess
-import mimetypes
-from urllib.parse import urlparse
 from novel_mappings import (
     HOSTING_SITE_DATA,
     get_nsfw_novels,
@@ -83,97 +81,6 @@ def save_state(state, path=STATE_PATH):
     with open(path, "w", encoding="utf-8") as f:
         json.dump(state, f, indent=2, ensure_ascii=False)
 
-def _guess_filename_and_mime(url: str, default_name="cover.jpg"):
-    """
-    Derive a sane filename and mime from the URL path/extension.
-    """
-    if not url:
-        return default_name, "image/jpeg"
-    path = urlparse(url).path
-    name = os.path.basename(path) or default_name
-    # ensure there's an extension
-    if "." not in name:
-        name += ".jpg"
-    mime = mimetypes.guess_type(name)[0] or "image/jpeg"
-    return name, mime
-
-def download_bytes(url: str, timeout=20):
-    """
-    Return (bytes, filename, mime) or (None, None, None) if failed.
-    """
-    if not url:
-        return None, None, None
-    try:
-        r = requests.get(url, timeout=timeout, stream=True)
-        if r.status_code != 200:
-            return None, None, None
-        data = r.content
-        fname, mime = _guess_filename_and_mime(url)
-        return data, fname, mime
-    except Exception:
-        return None, None, None
-
-def send_bot_message_embed_with_optional_spoiler_image(
-    bot_token: str,
-    channel_id: str,
-    content: str,
-    embed: dict,
-    image_url: str | None,
-    blur_as_spoiler: bool,
-):
-    """
-    If blur_as_spoiler is True and image_url is present:
-      - download image
-      - attach as SPOILER_*.ext
-      - set embed['image']['url'] = 'attachment://SPOILER_*.ext'
-      - POST as multipart with payload_json + files[0]
-
-    Else:
-      - fall back to normal JSON send (embed image can be a remote URL)
-    """
-    base_url = f"https://discord.com/api/v10/channels/{channel_id}/messages"
-    allowed_mentions = {"parse": ["roles"]}  # roles-only pings
-
-    if blur_as_spoiler and image_url:
-        data_bytes, fname, mime = download_bytes(image_url)
-        if data_bytes:
-            attach_name = f"SPOILER_{fname}"
-            # ensure embed.image points to the attachment
-            embed = dict(embed)  # shallow copy
-            img = dict(embed.get("image") or {})
-            img["url"] = f"attachment://{attach_name}"
-            embed["image"] = img
-
-            payload = {
-                "content": content,
-                "embeds": [embed],
-                "allowed_mentions": allowed_mentions,
-            }
-            files = {
-                "files[0]": (attach_name, data_bytes, mime),
-            }
-            headers = {"Authorization": f"Bot {bot_token}"}
-            r = requests.post(
-                base_url,
-                headers=headers,
-                data={"payload_json": json.dumps(payload, ensure_ascii=False)},
-                files=files,
-            )
-            r.raise_for_status()
-            return
-
-    # Fallback path: plain JSON (no spoiler or download failed)
-    headers = {
-        "Authorization": f"Bot {bot_token}",
-        "Content-Type": "application/json",
-    }
-    payload = {
-        "content": content,
-        "embeds": [embed],
-        "allowed_mentions": allowed_mentions,
-    }
-    r = requests.post(base_url, headers=headers, json=payload)
-    r.raise_for_status()
 
 def parsed_time_to_aware(struct_t, fallback_now):
     """
@@ -607,25 +514,13 @@ def main():
                 f"({len(content_msg)} chars content + 1 embed)"
             )
 
-            # Decide if this novel is NSFW (blur cover) and what image URL to use
-            is_nsfw = novel_title in get_nsfw_novels()
-            cover_url = novel.get("featured_image", "")  # same as you fed into build_launch_embed
-            
-            try:
-                send_bot_message_embed_with_optional_spoiler_image(
-                    bot_token=bot_token,
-                    channel_id=channel_id,
-                    content=content_msg,
-                    embed=embed_obj,
-                    image_url=cover_url,
-                    blur_as_spoiler=is_nsfw,
-                )
-                ok = True
-            except requests.RequestException as e:
-                status = e.response.status_code if e.response else "?"
-                body   = e.response.text       if e.response else ""
-                print(f"⚠️ Bot send failed ({status}):\n{body}", file=sys.stderr)
-                ok = False
+            # Send to Discord
+            ok = safe_send_bot_embed(
+                bot_token=bot_token,
+                channel_id=channel_id,
+                content=content_msg,
+                embed=embed_obj
+            )
 
             if ok:
                 print(f"✔️ Sent launch announcement for {novel_title}")
