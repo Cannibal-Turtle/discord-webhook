@@ -249,7 +249,7 @@ def _build_description(lines: List[Tuple[str, int, Optional[int]]]) -> str:
     for role, count, delta in lines:
         role_txt = role or "(no-role)"
         parts.append(f"{role_txt} ༺♡༻ {_format_delta(delta)}\n> <:23286kawaiiaccents:1435916448890617948> ̟ !! ***{count} total readers***")
-    return "\n\n".join(parts)
+    return "\n".join(parts)
 
 
 def _build_embed(description: str) -> Dict[str, any]:
