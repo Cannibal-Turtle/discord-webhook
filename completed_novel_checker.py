@@ -347,7 +347,11 @@ def main():
 
         # look for the last_chapter marker in feed entries
         for entry in feed.entries:
-            # Combine chaptername/chapter with nameextend for matching
+            # Skip entries for other novels in the aggregated feed
+            entry_title = (entry.get("title") or "").strip()
+            if entry_title and entry_title != novel_id:
+                continue
+        
             base = entry.get("chaptername") or entry.get("chapter", "") or ""
             ext  = entry.get("nameextend") or ""
             chap_field = f"{base} {ext}".strip()
