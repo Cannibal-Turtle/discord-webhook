@@ -347,17 +347,22 @@ def main():
 
         # look for the last_chapter marker in feed entries
         for entry in feed.entries:
-            # Skip entries for other novels in the aggregated feed
+            # (optional) guard by novel title if using shared feed
             entry_title = (entry.get("title") or "").strip()
             if entry_title and entry_title != novel_id:
                 continue
         
             base = entry.get("chaptername") or entry.get("chapter", "") or ""
             ext  = entry.get("nameextend") or ""
-            chap_field = f"{base} {ext}".strip()
         
-            if last_chap not in chap_field:
+            # 1) use combined string only for matching
+            chap_match = f"{base} {ext}".strip()
+        
+            if last_chap not in chap_match:
                 continue
+        
+            # 2) use a clean title for display (prefer base)
+            chap_field = base.strip()
 
             # --- ONLY-FREE CASE (series with no paid feed at all) ---
             if feed_type == "free" and not novel.get("paid_feed"):
