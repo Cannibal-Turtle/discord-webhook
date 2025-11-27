@@ -462,7 +462,7 @@ def process_arc(novel):
     # Only build embed_unlocked if there's actually at least one unlocked arc
     if has_unlocked:
         embed_unlocked = {
-            "description": unlocked_md,
+            "description": f"||{unlocked_md}||",
             "color": 0xFFF9BF
         }
     else:
