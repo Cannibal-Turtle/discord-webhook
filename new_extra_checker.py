@@ -81,7 +81,14 @@ def process_extras(novel):
     state    = load_state()
     novel_id = novel["novel_id"]
     meta     = state.setdefault(novel_id, {})
-    if meta.get("paid") or meta.get("free") or meta.get("only_free"):
+    if any(
+        meta.get(k)
+        for k in (
+            "paid_completion",
+            "free_completion",
+            "only_free_completion",
+        )
+    ):
         print(f"→ skipping extras for {novel_id} — already completed (state.json)")
         return
 
