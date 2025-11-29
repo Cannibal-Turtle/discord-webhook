@@ -125,14 +125,6 @@ def deduplicate(lst):
             result.append(x)
     return result
 
-def nsfw_detected(feed_entries, novel_title):
-    """Checks if NSFW category exists for this novel."""
-    for entry in feed_entries:
-        if novel_title.lower() in entry.get("title", "").lower() and "nsfw" in entry.get("category","").lower():
-            print(f"⚠️ NSFW detected in entry: {entry.get('title')}")
-            return True
-    return False
-
 def extract_arc_title(nameextend):
     """Strips trailing ' 001', '(1)', or '.1' from the raw nameextend."""
     # Remove leading/trailing stars
@@ -207,7 +199,6 @@ def process_arc(novel):
     # 1. NSFW check
     is_nsfw = (
         novel["novel_title"] in get_nsfw_novels()
-        or nsfw_detected(free_feed.entries + paid_feed.entries, novel["novel_title"])
     )
     print(f"🕵️ is_nsfw={is_nsfw} for {novel['novel_title']}")
 
