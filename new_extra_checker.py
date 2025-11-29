@@ -42,14 +42,6 @@ def save_state(state, path=STATE_PATH):
     with open(path, "w", encoding="utf-8") as f:
         json.dump(state, f, indent=2, ensure_ascii=False)
 
-def nsfw_detected(feed_entries, novel_title):
-    """Checks if NSFW category exists for this novel."""
-    for entry in feed_entries:
-        if novel_title.lower() in entry.get("title", "").lower() and "nsfw" in entry.get("category","").lower():
-            print(f"⚠️ NSFW detected in entry: {entry.get('title')}")
-            return True
-    return False
-
 def find_released_extras(paid_feed, raw_kw):
     if not raw_kw:
         return set()
@@ -85,7 +77,6 @@ def process_extras(novel):
     entries = paid_feed.entries
     is_nsfw = (
         novel["novel_title"] in get_nsfw_novels()
-        or nsfw_detected(entries, novel["novel_title"])
     )
     print(f"🕵️ is_nsfw={is_nsfw} for {novel['novel_title']}")
     base_mention = novel["role_mention"] + (f" | {NSFW_ROLE_ID}" if is_nsfw else "")
