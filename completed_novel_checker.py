@@ -86,56 +86,39 @@ def safe_send_bot(bot_token: str, channel_id: str, content: str):
 def get_duration(start_date_str: str, end_date: datetime) -> str:
     """
     Converts a start date (DD/MM/YYYY) to a human-readable duration vs end_date.
-    Produces phrases like:
-      "a year and 2 months"
-      "more than 3 weeks"
-      "less than a week"
+    Returns "" if no valid start_date_str was provided.
     """
-    day, month, year = map(int, start_date_str.split("/"))
-    start = datetime(year, month, day)
+    if not start_date_str:
+        return ""
+
+    try:
+        day, month, year = map(int, start_date_str.split("/"))
+        start = datetime(year, month, day)
+    except Exception:
+        # invalid format → give up on duration entirely
+        return ""
+
     delta = relativedelta(end_date, start)
 
     years = delta.years
     months = delta.months
     days = delta.days
 
-    # Handle year and month logic
     if years > 0:
         if months > 0:
-            if days > 0:
-                return (
-                    f"more than "
-                    f"{'a' if years == 1 else years} year{'s' if years > 1 else ''} "
-                    f"and {'a' if months == 1 else months} month{'s' if months > 1 else ''}"
-                )
             return (
                 f"{'a' if years == 1 else years} year{'s' if years > 1 else ''} "
                 f"and {'a' if months == 1 else months} month{'s' if months > 1 else ''}"
             )
-        else:
-            if days > 0:
-                return (
-                    f"more than "
-                    f"{'a' if years == 1 else years} year{'s' if years > 1 else ''}"
-                )
-            return f"{'a' if years == 1 else years} year{'s' if years > 1 else ''}"
+        return f"{'a' if years == 1 else years} year{'s' if years > 1 else ''}"
 
-    # Handle month logic (no full years)
     if months > 0:
-        if days > 0:
-            return (
-                f"more than "
-                f"{'a' if months == 1 else months} month{'s' if months > 1 else ''}"
-            )
         return f"{'a' if months == 1 else months} month{'s' if months > 1 else ''}"
 
-    # Handle durations under a month
     weeks = days // 7
     remaining_days = days % 7
 
     if weeks > 0:
-        if remaining_days > 0:
-            return f"more than {weeks} week{'s' if weeks != 1 else ''}"
         return f"{weeks} week{'s' if weeks != 1 else ''}"
 
     if remaining_days > 0:
@@ -177,11 +160,27 @@ def build_paid_completion(novel, chap_field, chap_link, duration: str):
     host        = novel.get("host", "")
     discord_url = novel.get("discord_role_url", "")
     count       = novel.get("chapter_count", "the entire series")
-    comp_role   = COMPLETE_ROLE
     DIV         = "<:purple_divider1:1365652778957144165>"
     divider_line = DIV * 10
 
     chap_text = chap_field.replace("\u00A0", " ")
+
+    if duration:
+        mid_line = (
+            f"After {duration} of updates, {title} is now fully translated with "
+            f"{count}! Thank you for coming on this journey and for your continued "
+            f"support <:turtle_plead:1365223487274352670> You can now visit {host} "
+            f"to binge all advance releases~*<a:Heart:1365575427724283944>"
+            f"<a:Paws:1365676154865979453>\n"
+        )
+    else:
+        mid_line = (
+            f"{title} is now fully translated with {count}! Thank you for coming "
+            f"on this journey and for your continued support "
+            f"<:turtle_plead:1365223487274352670> You can now visit {host} "
+            f"to binge all advance releases~*<a:Heart:1365575427724283944>"
+            f"<a:Paws:1365676154865979453>\n"
+        )
 
     return (
         f"{mention} <a:HappyCloud:1365575487333859398>\n"
@@ -192,11 +191,7 @@ def build_paid_completion(novel, chap_field, chap_link, duration: str):
         f"<a:cowiggle:1368136766791483472><a:whitesparkles:1365569806966853664>\n\n"
         f"*The last chapter, [{chap_text}]({chap_link}), has now been released. "
         f"<a:turtle_hyper:1365223449827737630>\n"
-        f"After {duration} of updates, {title} is now fully translated with "
-        f"{count}! Thank you for coming on this journey and for your continued "
-        f"support <:turtle_plead:1365223487274352670> You can now visit {host} "
-        f"to binge all advance releases~*<a:Heart:1365575427724283944>"
-        f"<a:Paws:1365676154865979453>\n"
+        f"{mid_line}"
         f"{'<:FF_Divider_Pink:1365575626194681936>' * 5}\n"
         f"-# Check out other translated projects at {discord_url} and react "
         f"to get the latest updates <a:LoveLetter:1365575475841339435>"
@@ -234,9 +229,8 @@ def build_free_completion(novel, chap_field, chap_link):
     )
 
 
-def build_only_free_completion(novel, chap_field, chap_link, duration):
+def build_only_free_completion(novel, chap_field, chap_link, duration: str):
     mention     = build_completion_mention(novel)
-    comp_role   = COMPLETE_ROLE
     title       = novel.get("novel_title", "")
     link        = novel.get("novel_link", "")
     host        = novel.get("host", "")
@@ -247,6 +241,23 @@ def build_only_free_completion(novel, chap_field, chap_link, duration):
 
     chap_text = chap_field.replace("\u00A0", " ")
 
+    if duration:
+        mid_line = (
+            f"After {duration} of updates, {title} is now fully translated with "
+            f"{count}! Thank you for coming on this journey and for your continued "
+            f"support <:luv_turtle:365263712549736448> You can now visit {host} "
+            f"to binge on all the releases~*<a:Heart:1365575427724283944>"
+            f"<a:Paws:1365676154865979453>\n"
+        )
+    else:
+        mid_line = (
+            f"{title} is now fully translated with {count}! Thank you for coming "
+            f"on this journey and for your continued support "
+            f"<:luv_turtle:365263712549736448> You can now visit {host} "
+            f"to binge on all the releases~*<a:Heart:1365575427724283944>"
+            f"<a:Paws:1365676154865979453>\n"
+        )
+
     return (
         f"{mention} <a:HappyCloud:1365575487333859398>\n"
         "## ⁺‧ ༻•┈๑☽₊˚ ⌞Completion Announcement⋆ཋྀ ˚₊‧⁺ :kiwi: ∗༉‧₊˚\n"
@@ -256,16 +267,11 @@ def build_only_free_completion(novel, chap_field, chap_link, duration):
         f"<a:cowiggle:1368136766791483472><a:whitesparkles:1365569806966853664>\n\n"
         f"*The last chapter, [{chap_text}]({chap_link}), has now been released. "
         f"<a:turtle_hyper:1365223449827737630>\n"
-        f"After {duration} of updates, {title} is now fully translated with "
-        f"{count}! Thank you for coming on this journey and for your continued "
-        f"support <:luv_turtle:365263712549736448> You can now visit {host} "
-        f"to binge on all the releases~*<a:Heart:1365575427724283944>"
-        f"<a:Paws:1365676154865979453>\n"
+        f"{mid_line}"
         f"{'<:FF_Divider_Pink:1365575626194681936>' * 5}\n"
         f"-# Check out other translated projects at {discord_url} and react "
         f"to get the latest updates <a:LoveLetter:1365575475841339435>"
     )
-
 
 def load_novels():
     """
