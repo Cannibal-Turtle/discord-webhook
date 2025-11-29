@@ -23,7 +23,7 @@ def send_bot_message(bot_token: str, channel_id: str, content: str):
     }
     payload = {
         "content": content,
-        "allowed_mentions": {"parse": ["roles"]},
+        "allowed_mentions": {"parse": []},
         "flags": 4
     }
     resp = requests.post(url, headers=headers, json=payload)
@@ -486,7 +486,7 @@ def process_arc(novel):
             },
             json={
                 "content": content_header,
-                "allowed_mentions": {"parse": ["roles"]},
+                "allowed_mentions": {"parse": []},
                 "flags": 4
             }
         )
@@ -509,7 +509,7 @@ def process_arc(novel):
                 json={
                     "content": "<a:5693pinkwings:1368138669004820500> `Unlocked 🔓` <a:5046_bounce_pink:1368138460027813888>",
                     "embeds": [embed_unlocked],
-                    "allowed_mentions": {"parse": ["roles"]},
+                    "allowed_mentions": {"parse": []},
                 }
             ).raise_for_status()
             print(f"✅ Unlocked embed sent for: {new_full}")
@@ -529,7 +529,7 @@ def process_arc(novel):
             json={
                 "content": "<a:5693pinkwings:1368138669004820500> `Locked 🔐` <a:5046_bounce_pink:1368138460027813888>",
                 "embeds": [embed_locked],
-                "allowed_mentions": {"parse": ["roles"]},
+                "allowed_mentions": {"parse": []},
             }
         ).raise_for_status()
         print(f"✅ Locked embed sent for: {new_full}")
@@ -546,7 +546,7 @@ def process_arc(novel):
             },
             json={
                 "content": footer_and_react,
-                "allowed_mentions": {"parse": ["roles"]},
+                "allowed_mentions": {"parse": []},
                 "flags": 4
             }
         ).raise_for_status()
