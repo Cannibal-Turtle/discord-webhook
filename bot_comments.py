@@ -120,7 +120,9 @@ async def main():
         for entry in to_send:
             guid        = entry.get("guid") or entry.get("id")
             title       = entry.get("title", "").strip()
-            role_id     = entry.get("discord_role_id", "").strip()
+            role_id     = ""
+            if "discord_role_id" in entry:
+                role_id = entry["discord_role_id"].get("value", "").strip()
             author      = entry.get("author") or entry.get("dc_creator", "")
             chapter     = entry.get("chapter", "").strip()
             comment_txt = entry.get("description", "").strip()
