@@ -5,10 +5,8 @@ concurrency:
   cancel-in-progress: false
 
 on:
-  schedule:
-    - cron: '0 15 * * *'
-  repository_dispatch:
-    types: [trigger-discord-notify]
+  #repository_dispatch:
+    #types: [trigger-discord-notify]
   workflow_dispatch:
 
 permissions:
