@@ -21,7 +21,7 @@ FEED_KEY   = "paid_last_guid"
 SEEN_KEY        = "seen_guids_paid"
 LAST_POST_TIME  = "last_post_time_paid"
 SEEN_CAP        = 500
-TIME_BACKSTOP   = False
+TIME_BACKSTOP   = True
 
 RSS_URL    = "https://raw.githubusercontent.com/Cannibal-Turtle/rss-feed/main/paid_chapters_feed.xml"
 
