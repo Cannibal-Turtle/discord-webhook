@@ -1,0 +1,28 @@
+name: Discord Re-entry Test (ONE-OFF)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install discord.py
+        run: |
+          python -m pip install --upgrade pip
+          pip install discord.py
+
+      - name: Run re-entry test (DO NOT RETRY)
+        env:
+          DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+        run: python test_send.py
