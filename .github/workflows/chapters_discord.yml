@@ -5,8 +5,8 @@ concurrency:
   cancel-in-progress: false
 
 on:
-  repository_dispatch:
-    types: [trigger-discord-notify]
+  #repository_dispatch:
+    #types: [trigger-discord-notify]
   workflow_dispatch:
 
 permissions:
