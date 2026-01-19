@@ -49,15 +49,15 @@ jobs:
           DISCORD_MOD_CHANNEL_ID: ${{ secrets.DISCORD_MOD_CHANNEL_ID }}
         run: python nu_weekly_readers.py
 
-      - name: Commit updated state file
+      - name: Commit updated nu readers file
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git pull --rebase origin $GITHUB_REF_NAME || true
-          git add state.json
+          git add nu_readers.json
           if git diff --cached --quiet; then
             echo "No state changes to commit."
           else
-            git commit -m "ci: update state.json"
+            git commit -m "ci: update nu_readers.json"
             git push origin $GITHUB_REF_NAME
           fi
