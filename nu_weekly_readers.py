@@ -73,7 +73,7 @@ TITLE_BOX = (
     "╚══.·:·.☽✧    ✦    ✧☾.·:·.══╝"
 )
 
-DEFAULT_STATE_PATH = os.environ.get("NU_STATE_PATH", "state.json")
+DEFAULT_STATE_PATH = os.environ.get("NU_STATE_PATH", "nu_readers.json")
 # Timestamp in embeds will use UTC so Discord localizes it per user; TZ env not needed.
 DEFAULT_TZ = "UTC"
 
