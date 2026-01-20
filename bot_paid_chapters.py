@@ -193,10 +193,10 @@ def get_coin_button_parts_from_feed(coin_text: str):
 
 
 async def send_new_paid_entries():
-    state = load_state()
-    last  = state.get(FEED_KEY)
+    state   = load_state()
+    last    = state.get(FEED_KEY)
 
-    feed = feedparser.parse(RSS_URL)
+    feed    = feedparser.parse(RSS_URL)
     entries = list(reversed(feed.entries))  # oldest → newest
 
     seen = set(state.get(SEEN_KEY, []))
@@ -213,12 +213,10 @@ async def send_new_paid_entries():
         norm = normalize_guid(e)
         if norm in seen:
             continue
-
         if last_post_dt is not None:
             dt = parse_pub_iso(e)
             if dt and dt <= last_post_dt:
                 continue
-
         to_send.append(e)
 
     if not to_send:
@@ -226,7 +224,7 @@ async def send_new_paid_entries():
         return
 
     intents = discord.Intents.default()
-    bot = discord.Client(intents=intents)
+    bot     = discord.Client(intents=intents)
 
     @bot.event
     async def on_ready():
@@ -236,21 +234,23 @@ async def send_new_paid_entries():
             await bot.close()
             return
 
-        new_last = last
-        max_dt = last_post_dt
+        sent_norms = []
+        new_last   = last
+        newest_dt  = last_post_dt
 
         for entry in to_send:
             guid = entry.get("guid") or entry.get("id")
 
-            host = entry.get("host", "").strip()
+            host        = entry.get("host", "").strip()
             series_role = get_series_role(entry)
-            nsfw_flag = is_nsfw(entry)
+            nsfw_flag   = is_nsfw(entry)
+            title_text  = entry.get("title","").strip()
 
-            title_text = entry.get("title", "").strip()
-            chaptername = entry.get("chaptername", "").strip()
-            nameextend = entry.get("nameextend", "").strip()
-            link = entry.get("link", "").strip()
-            translator = entry.get("translator", "").strip()
+            chaptername = entry.get("chaptername","").strip()
+            nameextend  = entry.get("nameextend","").strip()
+
+            link        = entry.get("link","").strip()
+            translator  = entry.get("translator","").strip()
 
             thumb_url = (
                 (entry.get("featuredImage") or {}).get("url")
@@ -262,9 +262,9 @@ async def send_new_paid_entries():
             )
 
             pubdate_raw = getattr(entry, "published", None)
-            timestamp = dateparser.parse(pubdate_raw) if pubdate_raw else None
+            timestamp   = dateparser.parse(pubdate_raw) if pubdate_raw else None
 
-            coin_label_raw = entry.get("coin", "").strip()
+            coin_label_raw = entry.get("coin","").strip()
 
             mention_line = _build_chapter_mention(
                 series_role=series_role,
@@ -287,10 +287,8 @@ async def send_new_paid_entries():
             )
 
             embed.set_author(name=f"{translator}˙ᵕ˙")
-
             if thumb_url:
                 embed.set_thumbnail(url=thumb_url)
-
             embed.set_footer(text=host, icon_url=host_logo)
 
             label_text, emoji_obj = get_coin_button_parts_from_feed(coin_label_raw)
@@ -307,33 +305,34 @@ async def send_new_paid_entries():
             view.add_item(btn)
 
             await channel.send(content=content, embed=embed, view=view)
-
             print(f"📨 Sent paid: {chaptername} / {guid}")
 
             norm = normalize_guid(entry)
-            state[SEEN_KEY].append(norm)
-
-            dt = parse_pub_iso(entry)
-            if dt and (not max_dt or dt > max_dt):
-                max_dt = dt
-
+            sent_norms.append(norm)
             new_last = guid
 
-        # ─── COMMIT STATE ONCE ───
-        if max_dt:
-            state[LAST_POST_TIME] = max_dt.isoformat()
+            dt = parse_pub_iso(entry)
+            if dt and (newest_dt is None or dt > newest_dt):
+                newest_dt = dt
+
+            await asyncio.sleep(1)
+
+        # ── ATOMIC STATE COMMIT (ONCE) ──
+        state[SEEN_KEY].extend(sent_norms)
+        state[SEEN_KEY] = state[SEEN_KEY][-SEEN_CAP:]
+
+        if newest_dt:
+            state[LAST_POST_TIME] = newest_dt.isoformat()
 
         if new_last and new_last != state.get(FEED_KEY):
             state[FEED_KEY] = new_last
 
         save_state(state)
-        print(f"💾 Updated {STATE_FILE}")
+        print(f"💾 State committed. Last GUID → {new_last}")
 
-        await asyncio.sleep(1)
         await bot.close()
 
     await bot.start(TOKEN)
-
 
 if __name__ == "__main__":
     asyncio.run(send_new_paid_entries())
