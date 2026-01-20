@@ -79,13 +79,10 @@
     "mistmint haven::5ddbf5fe-7a68-4e4b-bb30-8b51a49842af",
     "mistmint haven::d8f40ccb-c141-4052-9219-c87806cbee2d",
     "mistmint haven::28f969fb-e145-481f-b228-bfc3ea66d311",
-    "mistmint haven::ce48cda9-7b7d-415c-b2d3-c75fa2dec5fa",
-    "mistmint haven::ce65f48d-a790-4767-8091-ba6a5d9d539d",
-    "mistmint haven::a317807f-5ec0-44b0-9436-bc08f2097742",
-    "mistmint haven::8be320a1-789b-4384-8ff5-bf5190ad9e23"
+    "mistmint haven::ce48cda9-7b7d-415c-b2d3-c75fa2dec5fa"
   ],
-  "last_post_time_free": "2026-01-20T05:00:00+00:00",
-  "free_last_guid": "8be320a1-789b-4384-8ff5-bf5190ad9e23",
+  "last_post_time_free": "2026-01-18T05:00:00+00:00",
+  "free_last_guid": "ce48cda9-7b7d-415c-b2d3-c75fa2dec5fa",
   "seen_guids_paid": [
     "mistmint haven::e82609b0-6c66-45fb-a3e0-5715b327e978",
     "mistmint haven::0a5fdb29-faf4-4f5c-a47c-fc543311e233",
@@ -437,10 +434,15 @@
     "mistmint haven::e621fcca-f56d-426c-a175-5b95c8335b41",
     "mistmint haven::62aca035-b24f-420b-9718-fa26ff1d6d78",
     "mistmint haven::21eb8b07-a0ce-431f-9441-bbf04b877c5c",
-    "mistmint haven::36f40db6-1932-4096-a552-1e363531529a"
+    "mistmint haven::36f40db6-1932-4096-a552-1e363531529a",
+    "mistmint haven::c7696114-1f9b-48c7-a5eb-5bae2feebbfe",
+    "mistmint haven::c495dcc9-daec-428c-a9ac-29ad7412c359",
+    "mistmint haven::61d7ac29-29ed-4b42-93e5-65a7303f3afd",
+    "mistmint haven::bf7e9434-4baf-4588-877b-362af2bc9874",
+    "mistmint haven::f14e120b-4394-4e7c-a7bc-efba1164d67f"
   ],
-  "last_post_time_paid": null,
-  "paid_last_guid": null,
+  "last_post_time_paid": "2026-01-20T09:24:33+00:00",
+  "paid_last_guid": "f14e120b-4394-4e7c-a7bc-efba1164d67f",
   "seen_guids": [
     "novel updates::https://www.novelupdates.com/?post_type=seriesplans&p=88639#comment-434808",
     "novel updates::https://www.novelupdates.com/?post_type=seriesplans&p=88639#comment-439240",
@@ -451,9 +453,8 @@
     "novel updates::https://www.novelupdates.com/?post_type=seriesplans&p=88639#comment-512964",
     "mistmint haven::dd73bb22-960c-4446-b2f2-02f4f369521b",
     "mistmint haven::1d9e0ad0-d817-4b01-8eed-93fa38f0c063",
-    "mistmint haven::40d4437a-eaf2-4e1e-bc1b-d70c1e4d1473",
-    "mistmint haven::7f8bd4b7-708c-44d9-bb84-d7d4257ed4c8"
+    "mistmint haven::40d4437a-eaf2-4e1e-bc1b-d70c1e4d1473"
   ],
-  "last_post_time": "2026-01-19T21:08:51+00:00",
-  "comments_last_guid": "7f8bd4b7-708c-44d9-bb84-d7d4257ed4c8"
+  "last_post_time": "2026-01-17T12:01:14+00:00",
+  "comments_last_guid": "40d4437a-eaf2-4e1e-bc1b-d70c1e4d1473"
 }
