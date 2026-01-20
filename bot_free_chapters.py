@@ -185,10 +185,13 @@ async def send_new_entries():
             embed = Embed(
                 title=f"<a:moonandstars:1365569468629123184>**{chaptername}**",
                 url=link,
-                description=nameextend or discord.Embed.Empty,
                 timestamp=timestamp,
                 color=int("FFF9BF", 16),
             )
+            
+            if nameextend:
+                embed.description = nameextend
+
             embed.set_author(name=f"{translator}˙ᵕ˙")
             if thumb_url:
                 embed.set_thumbnail(url=thumb_url)
