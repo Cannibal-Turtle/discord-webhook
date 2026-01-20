@@ -88,16 +88,28 @@ def _build_chapter_mention(series_role: str, nsfw: bool, global_mention: str) ->
     return _join_role_mentions(series_role, nsfw_tail, global_mention)
 
 def normalize_guid(entry):
-    # host::guid  (guid unescaped, URL host lowercased if URL-like)
     host = (entry.get("host") or "").strip().lower()
-    raw  = (entry.get("guid") or entry.get("id") or "").strip()
-    raw  = html.unescape(raw)
+
+    raw = None
+    if hasattr(entry, "guid") and entry.guid:
+        raw = entry.guid
+    elif hasattr(entry, "id") and entry.id:
+        raw = entry.id
+    else:
+        raw = ""
+
+    raw = html.unescape(raw).strip()
+
+    # Normalize URLs only if it's actually a URL
     try:
         p = urlsplit(raw)
         if p.scheme and p.netloc:
-            raw = urlunsplit((p.scheme, p.netloc.lower(), p.path, p.query, p.fragment))
+            raw = urlunsplit(
+                (p.scheme, p.netloc.lower(), p.path, p.query, p.fragment)
+            )
     except Exception:
         pass
+
     return f"{host}::{raw}"
 
 def parse_pub_iso(entry):
