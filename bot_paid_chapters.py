@@ -25,100 +25,129 @@ TIME_BACKSTOP = True
 
 RSS_URL = "https://raw.githubusercontent.com/Cannibal-Turtle/rss-feed/main/paid_chapters_feed.xml"
 
-GLOBAL_MENTION = "<@&1342484466043453511>"
-NSFW_ROLE      = "<@&1343352825811439616>"
+GLOBAL_MENTION = "<@&1342484466043453511>"  # the always-ping role
+NSFW_ROLE = "<@&1343352825811439616>"
 # ──────────────────────────────────────────────────────────────────────────
 
 
-# ─── STATE ────────────────────────────────────────────────────────────────
 def load_state():
     try:
-        with open(STATE_FILE, encoding="utf-8") as f:
-            st = json.load(f)
+        st = json.load(open(STATE_FILE, encoding="utf-8"))
     except (FileNotFoundError, json.JSONDecodeError):
-        st = {}
+        # first run / corrupted file -> seed with all keys, including the new ones
+        st = {
+            "free_last_guid":     None,
+            "paid_last_guid":     None,
+            "comments_last_guid": None,
+            SEEN_KEY:             [],
+            LAST_POST_TIME:       None,
+        }
+        with open(STATE_FILE, "w", encoding="utf-8") as f:
+            json.dump(st, f, indent=2, ensure_ascii=False)
+        return st
 
-    st.setdefault(FEED_KEY, None)
-    st.setdefault(SEEN_KEY, [])
-    st.setdefault(LAST_POST_TIME, None)
-
+    # ── put the migration block HERE (existing state on disk) ──
+    changed = False
+    if SEEN_KEY not in st:
+        st[SEEN_KEY] = []
+        changed = True
+    if LAST_POST_TIME not in st:
+        st[LAST_POST_TIME] = None
+        changed = True
+    if changed:
+        with open(STATE_FILE, "w", encoding="utf-8") as f:
+            json.dump(st, f, indent=2, ensure_ascii=False)
     return st
 
 
 def save_state(state):
-    if len(state[SEEN_KEY]) > SEEN_CAP:
+    if isinstance(state.get(SEEN_KEY), list) and len(state[SEEN_KEY]) > SEEN_CAP:
         state[SEEN_KEY] = state[SEEN_KEY][-SEEN_CAP:]
-
     with open(STATE_FILE, "w", encoding="utf-8") as f:
         json.dump(state, f, indent=2, ensure_ascii=False)
 
 
-# ─── HELPERS ──────────────────────────────────────────────────────────────
+def is_nsfw(entry) -> bool:
+    cat = (entry.get("category") or "").strip().upper()
+    return cat == "NSFW"
+
+
+def get_series_role(entry) -> str:
+    return (entry.get("discord_role_id") or "").strip()
+
+
+def _join_role_mentions(*parts) -> str:
+    """Join pieces with ' | ', split/trim on pipes/spaces, and dedupe in order."""
+    seen, out = set(), []
+    for p in parts:
+        if not p:
+            continue
+        for seg in (x.strip() for x in re.split(r"[| ]+", p) if x.strip()):
+            if seg not in seen:
+                seen.add(seg)
+                out.append(seg)
+    return " | ".join(out)
+
+
+def _build_chapter_mention(series_role: str, nsfw: bool, global_mention: str) -> str:
+    nsfw_tail = NSFW_ROLE if nsfw else None
+    return _join_role_mentions(series_role, nsfw_tail, global_mention)
+
+
 def normalize_guid(entry):
+    # host::guid (guid unescaped, URL host lowercased if URL-like)
     host = (entry.get("host") or "").strip().lower()
-
-    if getattr(entry, "guid", None):
-        raw = entry.guid
-    elif getattr(entry, "id", None):
-        raw = entry.id
-    else:
-        raw = ""
-
-    raw = html.unescape(raw).strip()
+    raw = (entry.get("guid") or entry.get("id") or "").strip()
+    raw = html.unescape(raw)
 
     try:
         p = urlsplit(raw)
         if p.scheme and p.netloc:
-            raw = urlunsplit((p.scheme, p.netloc.lower(), p.path, p.query, p.fragment))
+            raw = urlunsplit(
+                (p.scheme, p.netloc.lower(), p.path, p.query, p.fragment)
+            )
     except Exception:
         pass
 
     return f"{host}::{raw}"
 
 
-def parse_pub_dt(entry):
-    raw = getattr(entry, "published", None)
-    if not raw:
+def parse_pub_iso(entry):
+    pub_raw = getattr(entry, "published", None)
+    if not pub_raw:
         return None
     try:
-        return dateparser.parse(raw)
+        return dateparser.parse(pub_raw)
     except Exception:
         return None
 
 
-def is_nsfw(entry):
-    return (entry.get("category") or "").strip().upper() == "NSFW"
+def parse_custom_emoji(e: str):
+    """
+    Try to turn something like "<:mistmint_currency:1433046707121422487>"
+    or "<a:dance:1234567890>" into a PartialEmoji that can be passed as
+    Button(emoji=...).
 
-
-def get_series_role(entry):
-    return (entry.get("discord_role_id") or "").strip()
-
-
-def join_mentions(*parts):
-    seen = set()
-    out = []
-    for p in parts:
-        if not p:
-            continue
-        for seg in re.split(r"[| ]+", p):
-            seg = seg.strip()
-            if seg and seg not in seen:
-                seen.add(seg)
-                out.append(seg)
-    return " | ".join(out)
-
-
-def parse_custom_emoji(s):
-    if not s:
+    If it's plain unicode like "🔥", return the unicode string.
+    If it's junk / empty, return None.
+    """
+    if not e:
         return None
 
-    s = s.strip()
-    m = re.match(r"^<(?P<a>a?):(?P<n>[A-Za-z0-9_]+):(?P<i>\d+)>$", s)
+    s = e.strip()
+
+    m = re.match(
+        r"^<(?P<anim>a?):(?P<name>[A-Za-z0-9_]+):(?P<id>\d+)>$",
+        s
+    )
     if m:
+        animated = bool(m.group("anim"))
+        name     = m.group("name")
+        emoji_id = int(m.group("id"))
         return discord.PartialEmoji(
-            name=m.group("n"),
-            id=int(m.group("i")),
-            animated=bool(m.group("a")),
+            name=name,
+            id=emoji_id,
+            animated=animated,
         )
 
     if "<" not in s and ">" not in s and ":" not in s and len(s) <= 8:
@@ -127,56 +156,70 @@ def parse_custom_emoji(s):
     return None
 
 
-def parse_coin(coin_text):
-    if not coin_text:
+def get_coin_button_parts_from_feed(coin_text: str):
+    """
+    Parse <coin> like:
+      "<:mistmint_currency:143...> 5", "🔥 5", "🔥5", "5"
+    Return (label_text, emoji_obj_or_unicode).
+    """
+    s = (coin_text or "").strip()
+    label_text = ""
+    emoji_obj = None
+
+    if not s:
         return "Read here", None
 
-    coin_text = coin_text.strip()
-    emoji = None
-
-    m = re.match(r"^\s*(<a?:[A-Za-z0-9_]+:\d+>)", coin_text)
+    m = re.match(r"^\s*(<a?:[A-Za-z0-9_]+:\d+>)", s)
     if m:
-        emoji = parse_custom_emoji(m.group(1))
-        coin_text = coin_text[m.end():]
+        emoji_obj = parse_custom_emoji(m.group(1))
+        s = s[m.end():]
     else:
-        tok = coin_text.split()[0]
-        maybe = parse_custom_emoji(tok)
-        if maybe:
-            emoji = maybe
-            coin_text = coin_text[len(tok):]
+        m2 = re.match(r"^\s*(\S+)", s)
+        if m2:
+            tok = m2.group(1)
+            maybe = parse_custom_emoji(tok)
+            if maybe:
+                emoji_obj = maybe
+                s = s[m2.end():]
 
-    num = re.search(r"\d+", coin_text)
-    label = num.group(0) if num else "Read here"
+    mnum = re.search(r"\d+", s)
+    if mnum:
+        label_text = mnum.group(0)
 
-    return label, emoji
+    if not label_text and not emoji_obj:
+        label_text = "Read here"
+
+    return label_text, emoji_obj
 
 
-# ─── MAIN ─────────────────────────────────────────────────────────────────
 async def send_new_paid_entries():
     state = load_state()
-    seen  = set(state[SEEN_KEY])
-
-    last_post_dt = None
-    if TIME_BACKSTOP and state[LAST_POST_TIME]:
-        last_post_dt = dateparser.parse(state[LAST_POST_TIME])
+    last = state.get(FEED_KEY)
 
     feed = feedparser.parse(RSS_URL)
-    entries = list(reversed(feed.entries))  # oldest → newest
+    entries = list(reversed(feed.entries))  # oldest → newest order
+
+    seen = set(state.get(SEEN_KEY, []))
+    last_post_time = state.get(LAST_POST_TIME)
+    last_post_dt = (
+        dateparser.parse(last_post_time)
+        if (TIME_BACKSTOP and last_post_time)
+        else None
+    )
 
     to_send = []
     for e in entries:
         norm = normalize_guid(e)
         if norm in seen:
             continue
-
-        dt = parse_pub_dt(e)
-        if last_post_dt and dt and dt <= last_post_dt:
-            continue
-
+        if last_post_dt is not None:
+            dt = parse_pub_iso(e)
+            if dt and dt <= last_post_dt:
+                continue
         to_send.append(e)
 
     if not to_send:
-        print("🛑 No new paid chapters.")
+        print("🛑 No new paid chapters—skipping Discord login.")
         return
 
     intents = discord.Intents.default()
@@ -186,75 +229,96 @@ async def send_new_paid_entries():
     async def on_ready():
         channel = bot.get_channel(CHANNEL_ID)
         if not channel:
-            print("❌ Channel not found")
+            print(f"❌ Cannot find channel {CHANNEL_ID}")
             await bot.close()
             return
 
-        max_dt = last_post_dt
-        last_guid = state.get(FEED_KEY)
+        new_last = last
 
         for entry in to_send:
-            title = entry.get("title", "").strip()
-            chapter = entry.get("chaptername", "").strip()
-            nameextend = entry.get("nameextend", "").strip()
-            link = entry.get("link", "").strip()
-            translator = entry.get("translator", "").strip()
-            host = entry.get("host", "").strip()
+            guid = entry.get("guid") or entry.get("id")
 
-            mention = join_mentions(
-                get_series_role(entry),
-                NSFW_ROLE if is_nsfw(entry) else None,
-                GLOBAL_MENTION,
+            host        = entry.get("host", "").strip()
+            series_role = get_series_role(entry)
+            nsfw_flag   = is_nsfw(entry)
+            title_text  = entry.get("title","").strip()
+
+            chaptername = entry.get("chaptername","").strip()
+            nameextend  = entry.get("nameextend","").strip()
+
+            link        = entry.get("link","").strip()
+            translator  = entry.get("translator","").strip()
+
+            thumb_url = (
+                (entry.get("featuredImage") or {}).get("url")
+                or (entry.get("featuredimage") or {}).get("url")
+            )
+            host_logo = (
+                (entry.get("hostLogo") or {}).get("url")
+                or (entry.get("hostlogo") or {}).get("url")
+            )
+
+            pubdate_raw = getattr(entry, "published", None)
+            timestamp = dateparser.parse(pubdate_raw) if pubdate_raw else None
+
+            coin_label_raw = entry.get("coin","").strip()
+
+            mention_line = _build_chapter_mention(
+                series_role=series_role,
+                nsfw=nsfw_flag,
+                global_mention=GLOBAL_MENTION,
             )
 
             content = (
-                f"{mention}\n"
-                f"**{title}**"
+                f"{mention_line} <a:TurtleDance:1365253970435510293>\n"
+                f"<a:1366_sweetpiano_happy:1368136820965249034> "
+                f"**{title_text}** <:pink_lock:1368266294855733291>"
             )
 
             embed = Embed(
-                title=chapter,
+                title=f"<a:moonandstars:1365569468629123184>**{chaptername}**",
                 url=link,
                 description=nameextend or discord.Embed.Empty,
+                timestamp=timestamp,
                 color=int("A87676", 16),
             )
-
-            dt = parse_pub_dt(entry)
-            if dt:
-                embed.timestamp = dt
-                if not max_dt or dt > max_dt:
-                    max_dt = dt
-
             embed.set_author(name=f"{translator}˙ᵕ˙")
+            if thumb_url:
+                embed.set_thumbnail(url=thumb_url)
+            embed.set_footer(text=host, icon_url=host_logo)
 
-            thumb = (entry.get("featuredImage") or {}).get("url")
-            if thumb:
-                embed.set_thumbnail(url=thumb)
-
-            embed.set_footer(
-                text=host,
-                icon_url=(entry.get("hostLogo") or {}).get("url"),
+            label_text, emoji_obj = get_coin_button_parts_from_feed(
+                coin_label_raw
             )
 
-            label, emoji = parse_coin(entry.get("coin", ""))
+            btn = Button(
+                label=label_text,
+                url=link,
+                emoji=emoji_obj,
+            )
             view = View()
-            view.add_item(Button(label=label, url=link, emoji=emoji))
+            view.add_item(btn)
 
             await channel.send(content=content, embed=embed, view=view)
+            print(f"📨 Sent paid: {chaptername} / {guid}")
 
             norm = normalize_guid(entry)
-            seen.add(norm)
             state[SEEN_KEY].append(norm)
-            last_guid = entry.get("guid") or entry.get("id")
 
-        # ── COMMIT STATE ONCE ──
-        if max_dt:
-            state[LAST_POST_TIME] = max_dt.isoformat()
-        state[FEED_KEY] = last_guid
+            dt = parse_pub_iso(entry) or datetime.now(timezone.utc)
+            state[LAST_POST_TIME] = dt.isoformat()
 
-        save_state(state)
-        print(f"✅ Posted {len(to_send)} paid chapters")
+            save_state(state)
+            new_last = guid
 
+        if new_last and new_last != state.get(FEED_KEY):
+            state[FEED_KEY] = new_last
+            save_state(state)
+            print(
+                f"💾 Updated {STATE_FILE}[\"{FEED_KEY}\"] → {new_last}"
+            )
+
+        await asyncio.sleep(1)
         await bot.close()
 
     await bot.start(TOKEN)
