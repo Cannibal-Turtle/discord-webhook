@@ -193,14 +193,13 @@ def get_coin_button_parts_from_feed(coin_text: str):
 
 
 async def send_new_paid_entries():
-    state   = load_state()
-    last    = state.get(FEED_KEY)
+    state = load_state()
+    last = state.get(FEED_KEY)
 
-    feed    = feedparser.parse(RSS_URL)
-    entries = list(reversed(feed.entries))  # oldest → newest
+    feed = feedparser.parse(RSS_URL)
+    entries = list(reversed(feed.entries))  # oldest → newest order
 
     seen = set(state.get(SEEN_KEY, []))
-
     last_post_time = state.get(LAST_POST_TIME)
     last_post_dt = (
         dateparser.parse(last_post_time)
@@ -224,7 +223,7 @@ async def send_new_paid_entries():
         return
 
     intents = discord.Intents.default()
-    bot     = discord.Client(intents=intents)
+    bot = discord.Client(intents=intents)
 
     @bot.event
     async def on_ready():
@@ -234,9 +233,7 @@ async def send_new_paid_entries():
             await bot.close()
             return
 
-        sent_norms = []
-        new_last   = last
-        newest_dt  = last_post_dt
+        new_last = last
 
         for entry in to_send:
             guid = entry.get("guid") or entry.get("id")
@@ -262,7 +259,7 @@ async def send_new_paid_entries():
             )
 
             pubdate_raw = getattr(entry, "published", None)
-            timestamp   = dateparser.parse(pubdate_raw) if pubdate_raw else None
+            timestamp = dateparser.parse(pubdate_raw) if pubdate_raw else None
 
             coin_label_raw = entry.get("coin","").strip()
 
@@ -281,26 +278,27 @@ async def send_new_paid_entries():
             embed = Embed(
                 title=f"<a:moonandstars:1365569468629123184>**{chaptername}**",
                 url=link,
-                description=nameextend or discord.Embed.Empty,
                 timestamp=timestamp,
                 color=int("A87676", 16),
             )
-
+            
+            if nameextend:
+                embed.description = nameextend
+            
             embed.set_author(name=f"{translator}˙ᵕ˙")
             if thumb_url:
                 embed.set_thumbnail(url=thumb_url)
             embed.set_footer(text=host, icon_url=host_logo)
 
-            label_text, emoji_obj = get_coin_button_parts_from_feed(coin_label_raw)
-            if not label_text and not emoji_obj:
-                label_text = "Read here"
+            label_text, emoji_obj = get_coin_button_parts_from_feed(
+                coin_label_raw
+            )
 
             btn = Button(
                 label=label_text,
                 url=link,
                 emoji=emoji_obj,
             )
-
             view = View()
             view.add_item(btn)
 
@@ -308,31 +306,26 @@ async def send_new_paid_entries():
             print(f"📨 Sent paid: {chaptername} / {guid}")
 
             norm = normalize_guid(entry)
-            sent_norms.append(norm)
+            state[SEEN_KEY].append(norm)
+
+            dt = parse_pub_iso(entry) or datetime.now(timezone.utc)
+            state[LAST_POST_TIME] = dt.isoformat()
+
+            save_state(state)
             new_last = guid
-
-            dt = parse_pub_iso(entry)
-            if dt and (newest_dt is None or dt > newest_dt):
-                newest_dt = dt
-
-            await asyncio.sleep(1)
-
-        # ── ATOMIC STATE COMMIT (ONCE) ──
-        state[SEEN_KEY].extend(sent_norms)
-        state[SEEN_KEY] = state[SEEN_KEY][-SEEN_CAP:]
-
-        if newest_dt:
-            state[LAST_POST_TIME] = newest_dt.isoformat()
 
         if new_last and new_last != state.get(FEED_KEY):
             state[FEED_KEY] = new_last
+            save_state(state)
+            print(
+                f"💾 Updated {STATE_FILE}[\"{FEED_KEY}\"] → {new_last}"
+            )
 
-        save_state(state)
-        print(f"💾 State committed. Last GUID → {new_last}")
-
+        await asyncio.sleep(1)
         await bot.close()
 
     await bot.start(TOKEN)
+
 
 if __name__ == "__main__":
     asyncio.run(send_new_paid_entries())
