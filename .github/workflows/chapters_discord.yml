@@ -37,8 +37,9 @@ jobs:
       - name: Run Free Chapters Bot
         timeout-minutes: 5
         env:
-          DISCORD_BOT_TOKEN:           ${{ secrets.DISCORD_BOT_TOKEN }}
+          DISCORD_BOT_TOKEN:             ${{ secrets.DISCORD_BOT_TOKEN }}
           DISCORD_FREE_CHAPTERS_CHANNEL: ${{ secrets.DISCORD_FREE_CHAPTERS_CHANNEL }}
+          PAT_GITHUB:                    ${{ secrets.PAT_GITHUB }}
         run: python bot_free_chapters.py
       - name: Upload free state
         uses: actions/upload-artifact@v4
