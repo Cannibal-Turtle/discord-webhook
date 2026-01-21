@@ -11,6 +11,7 @@ from urllib.parse import urlsplit, urlunsplit
 import discord
 from discord import Embed
 from discord.ui import View, Button
+import requests
 
 # ─── CONFIG ────────────────────────────────────────────────────────────────────
 TOKEN           = os.environ["DISCORD_BOT_TOKEN"]
@@ -145,6 +146,8 @@ async def send_new_entries():
             await bot.close()
             return
 
+        updated_titles = set()  # (title, host)
+
         new_last = last
 
         for entry in to_send:
@@ -163,6 +166,8 @@ async def send_new_entries():
             )
 
             title   = (entry.get("title") or "").strip()
+            updated_titles.add((title, host))
+
             content = (
                 f"{mention_line} <a:TurtleDance:1365253970435510293>\n"
                 f"<a:5037sweetpianoyay:1368138418487427102> **{title}** <:pink_unlock:1368266307824255026>"
@@ -218,10 +223,34 @@ async def send_new_entries():
             save_state(state)
             print(f"💾 Updated {STATE_FILE}[\"{FEED_KEY}\"] → {new_last}")
 
+        # 🔔 trigger once per novel
+        for title, host in updated_titles:
+            print(f"🔔 Triggering status update for {title} ({host})")
+            trigger_status_update(title, host)
+
         await asyncio.sleep(1)
         await bot.close()
 
     await bot.start(TOKEN)
+
+def trigger_status_update(title: str, host: str):
+    url = "https://api.github.com/repos/Cannibal-Turtle/rss-feed/dispatches"
+    headers = {
+        "Authorization": f"Bearer {os.environ['GITHUB_TOKEN']}",
+        "Accept": "application/vnd.github+json",
+    }
+    payload = {
+        "event_type": "update-novel-status",
+        "client_payload": {
+            "title": title,
+            "host": host,
+            "source": "free_chapter"
+        }
+    }
+
+    r = requests.post(url, headers=headers, json=payload, timeout=10)
+    if r.status_code >= 300:
+        print(f"❌ Dispatch failed for {title}: {r.status_code} {r.text}")
 
 if __name__ == "__main__":
     asyncio.run(send_new_entries())
