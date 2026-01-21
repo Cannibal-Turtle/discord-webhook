@@ -236,7 +236,7 @@ async def send_new_entries():
 def trigger_status_update(title: str, host: str):
     url = "https://api.github.com/repos/Cannibal-Turtle/rss-feed/dispatches"
     headers = {
-        "Authorization": f"Bearer {os.environ['GITHUB_TOKEN']}",
+        "Authorization": f"Bearer {os.environ['PAT_GITHUB']}",
         "Accept": "application/vnd.github+json",
     }
     payload = {
