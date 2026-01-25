@@ -361,16 +361,21 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     for key, title, role, url in targets:
         curr = _fetch_reading_lists_count(url)
+        print(f"[debug] key={key} curr={curr}")
+
         if curr is None:
             prev_entry = prev_counts.get(key)
             prev_val = (prev_entry or {}).get("count")
+            print(f"[debug] fetch_failed key={key} prev_val={prev_val}")
             if prev_val is None:
                 print(f"[skip] No data for {title} ({url})")
                 continue
-            results.append((role, prev_val, None))  # first-run/unknown delta
+            results.append((role, prev_val, None))
             continue
 
         prev_entry = prev_counts.get(key)
+        print(f"[debug] key={key} prev_entry={prev_entry}")
+
         delta: Optional[int]
         if prev_entry is None:
             delta = None
