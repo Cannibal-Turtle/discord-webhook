@@ -240,12 +240,9 @@ def _save_state(path: str, data: Dict[str, any]) -> None:
 def _format_delta(delta: Optional[int]) -> str:
     if delta is None:
         return "*first run*"
-    sign = "+" if delta >= 0 else ""
-    # Use different wording for negatives to match the user's example
     if delta < 0:
-        return f"*{sign}{delta} readers*"  # e.g. *-20 readers*
-    else:
-        return f"*{sign}{delta} new readers*"  # e.g. *+10 new readers* or *+0 new readers*
+        return f"*{delta} readers*"
+    return f"*+{delta} new readers*"
 
 
 def _build_description(lines: List[Tuple[str, int, Optional[int]]]) -> str:
@@ -358,6 +355,7 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     results: List[Tuple[str, int, Optional[int]]] = []  # (role_mention, current, delta)
     new_counts: Dict[str, Dict[str, any]] = dict(prev_counts)  # copy
+    had_success = False
 
     for key, title, role, url in targets:
         curr = _fetch_reading_lists_count(url)
@@ -365,25 +363,34 @@ def main(argv: Optional[List[str]] = None) -> int:
 
         if curr is None:
             prev_entry = prev_counts.get(key)
-            prev_val = (prev_entry or {}).get("count")
-            print(f"[debug] fetch_failed key={key} prev_val={prev_val}")
-            if prev_val is None:
-                print(f"[skip] No data for {title} ({url})")
+            if prev_entry is None:
+                # first-ever run but NU failed → nothing reliable to show
                 continue
-            results.append((role, prev_val, None))
+            else:
+                # NU failed, but we have a baseline → +0 new readers
+                results.append((role, prev_entry["count"], 0))
             continue
+
+        had_success = True
+
+        if curr is not None:
+            new_counts[key] = {
+                "count": int(curr),
+                "when": dt.datetime.utcnow().isoformat() + "Z"
+            }
 
         prev_entry = prev_counts.get(key)
         print(f"[debug] key={key} prev_entry={prev_entry}")
 
         delta: Optional[int]
         if prev_entry is None:
+            # True first run: we have no baseline yet
             delta = None
         else:
+            # Always compute delta if we have a baseline
             delta = curr - int(prev_entry.get("count", 0))
 
         results.append((role, curr, delta))
-        new_counts[key] = {"count": int(curr), "when": dt.datetime.utcnow().isoformat() + "Z"}
 
     description = _build_description(results)
     if not description.strip():
@@ -391,6 +398,11 @@ def main(argv: Optional[List[str]] = None) -> int:
     embed = _build_embed(description)
 
     # Persist state (with lock)
+    if not had_success:
+        print("[warn] No successful NU fetches; skipping state save")
+        _release_lock(lock_fd, state_path + ".lock")
+        return 0
+    
     nu["last_updated"] = dt.datetime.utcnow().isoformat() + "Z"
     nu["counts"] = new_counts
     state["nu_readers"] = nu
