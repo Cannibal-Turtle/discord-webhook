@@ -3,6 +3,7 @@ name: Weekly NU Readers
 on:
   schedule:
     - cron: '0 13 * * 0'   # Sunday 13:00 UTC == Sunday 21:00 UTC+8
+  workflow_dispatch:
 
 concurrency:
   group: nu-weekly-readers
