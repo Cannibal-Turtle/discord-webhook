@@ -161,10 +161,12 @@
     "mistmint haven::1188bda5-aa0d-412f-832c-f97d6c487c7b",
     "mistmint haven::b1afac8d-15d5-48a4-b352-ab1937327778",
     "mistmint haven::41c40de7-cc99-4c28-8308-42d12cd77ea3",
-    "mistmint haven::81a98b42-ea90-44c6-86a1-8597f9fb5435"
+    "mistmint haven::81a98b42-ea90-44c6-86a1-8597f9fb5435",
+    "mistmint haven::53d31ace-13b7-4ac8-ab6f-80407e7bba09",
+    "mistmint haven::1c06f99c-a8a1-4151-9c49-1c0ffaf23bd6"
   ],
-  "last_post_time_free": "2026-02-28T05:00:00+00:00",
-  "free_last_guid": "81a98b42-ea90-44c6-86a1-8597f9fb5435",
+  "last_post_time_free": "2026-03-01T05:00:00+00:00",
+  "free_last_guid": "1c06f99c-a8a1-4151-9c49-1c0ffaf23bd6",
   "seen_guids_paid": [
     "mistmint haven::e82609b0-6c66-45fb-a3e0-5715b327e978",
     "mistmint haven::0a5fdb29-faf4-4f5c-a47c-fc543311e233",
