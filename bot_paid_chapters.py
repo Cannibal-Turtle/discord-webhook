@@ -95,8 +95,7 @@ def _build_chapter_mention(series_role: str, nsfw: bool, global_mention: str) ->
 
 
 def normalize_guid(entry):
-    # host::guid (guid unescaped, URL host lowercased if URL-like)
-    host = (entry.get("host") or "").strip().lower()
+    host = (entry.get("host") or "").strip()
     raw = (entry.get("guid") or entry.get("id") or "").strip()
     raw = html.unescape(raw)
 
