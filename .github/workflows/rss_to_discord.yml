@@ -85,10 +85,15 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git pull --rebase origin main || echo "nothing to rebase"
+          
           git add state.json
-          git commit -m "ci: update extras state" || echo "No changes"
-          git push
+          git commit -m "ci: update state" || echo "No changes"
+          
+          for i in 1 2 3; do
+            git pull --rebase origin main && git push && break
+            echo "Retry $i..."
+            sleep 2
+          done
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -133,10 +138,15 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git pull --rebase origin main || echo "nothing to rebase"
+          
           git add state.json
-          git commit -m "ci: update completion state" || echo "No changes"
-          git push
+          git commit -m "ci: update state" || echo "No changes"
+          
+          for i in 1 2 3; do
+            git pull --rebase origin main && git push && break
+            echo "Retry $i..."
+            sleep 2
+          done
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -180,10 +190,15 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git pull --rebase origin main || echo "nothing to rebase"
+          
           git add state.json
-          git commit -m "ci: update completion state" || echo "No changes"
-          git push
+          git commit -m "ci: update state" || echo "No changes"
+          
+          for i in 1 2 3; do
+            git pull --rebase origin main && git push && break
+            echo "Retry $i..."
+            sleep 2
+          done
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -227,9 +242,14 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git pull --rebase origin main || echo "nothing to rebase"
+          
           git add state.json
-          git commit -m "ci: update launch state" || echo "No changes"
-          git push
+          git commit -m "ci: update state" || echo "No changes"
+          
+          for i in 1 2 3; do
+            git pull --rebase origin main && git push && break
+            echo "Retry $i..."
+            sleep 2
+          done
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
