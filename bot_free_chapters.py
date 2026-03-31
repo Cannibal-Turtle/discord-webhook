@@ -90,7 +90,7 @@ def _build_chapter_mention(series_role: str, nsfw: bool, global_mention: str) ->
     return _join_role_mentions(series_role, nsfw_tail, global_mention)
 
 def normalize_guid(entry):
-    host = (entry.get("host") or "").strip().lower()
+    host = (entry.get("host") or "").strip()
     raw  = (entry.get("guid") or entry.get("id") or "").strip()
     raw  = html.unescape(raw)
     try:
