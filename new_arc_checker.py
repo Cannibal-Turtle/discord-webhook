@@ -73,6 +73,7 @@ def load_history(history_file):
 
 def save_history(history, history_file):
     """Saves the novel's arc history to JSON file with proper encoding."""
+    os.makedirs(os.path.dirname(history_file), exist_ok=True)
     print(
         f"📂 Saving history to {history_file} "
         f"(unlocked={len(history['unlocked'])}, "
