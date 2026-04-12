@@ -320,7 +320,7 @@ def main():
     state  = load_state()
     novels = load_novels()
 
-    for novel in novels:
+    for novel in reversed(novels):
         novel_id  = novel["novel_title"]
         last_chap = novel.get("last_chapter")
         if not last_chap:
