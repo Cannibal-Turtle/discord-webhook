@@ -213,5 +213,5 @@ if __name__ == "__main__":
                 "novel_link":    d.get("novel_url",""),
                 "role_mention":  d.get("discord_role_id","")
             })
-    for novel in novels:
+    for novel in reversed(novels):
         process_extras(novel)
