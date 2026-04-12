@@ -572,7 +572,8 @@ def process_arc(novel):
 # === LOAD & RUN ===
 if __name__ == "__main__":
     for host, host_data in HOSTING_SITE_DATA.items():
-        for title, d in host_data.get("novels", {}).items():
+        novels_dict = host_data.get("novels", {})
+        for title, d in reversed(list(novels_dict.items())):
             # Only process novels that have both feeds configured
             if not d.get("free_feed") or not d.get("paid_feed"):
                 continue
