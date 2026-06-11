@@ -129,6 +129,8 @@ async def main():
             reply_chain = entry.get("reply_chain", "").strip()
             host        = entry.get("host", "").strip()
             host_logo   = (entry.get("hostLogo") or entry.get("hostlogo") or {}).get("url", "")
+            comment_image_obj = entry.get("commentImage") or entry.get("commentimage") or {}
+            comment_image = comment_image_obj.get("url", "").strip() if isinstance(comment_image_obj, dict) else ""
             link        = entry.get("link", "").strip()
             pubdate_raw = getattr(entry, "published", None)
             timestamp   = dateparser.parse(pubdate_raw).isoformat() if pubdate_raw else None
@@ -167,6 +169,9 @@ async def main():
                     "icon_url": host_logo
                 }
             }
+
+            if comment_image:
+                embed["image"] = {"url": comment_image}
 
             # only include description if reply_chain exists
             if reply_chain:
