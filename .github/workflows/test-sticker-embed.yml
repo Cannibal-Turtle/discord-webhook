@@ -1,0 +1,44 @@
+name: Test Sticker Embed
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send sticker embed test
+        env:
+          DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+        run: |
+          python - <<'PY'
+          import os
+          import requests
+
+          TOKEN = os.environ["DISCORD_BOT_TOKEN"]
+          CHANNEL_ID = "1361685556526055586"
+          API_URL = f"https://discord.com/api/v10/channels/{CHANNEL_ID}/messages"
+
+          image_url = "https://www.mistminthaven.com/_next/image?url=%2Fimages%2Fstickers%2Fshirone_cool.png&w=384&q=75"
+
+          payload = {
+              "content": "Sticker embed image test",
+              "embeds": [
+                  {
+                      "title": "shirone_cool test",
+                      "color": int("F0C7A4", 16),
+                      "image": {"url": image_url}
+                  }
+              ]
+          }
+
+          headers = {
+              "Authorization": f"Bot {TOKEN}",
+              "Content-Type": "application/json",
+          }
+
+          r = requests.post(API_URL, headers=headers, json=payload, timeout=20)
+          print(r.status_code)
+          print(r.text)
+          r.raise_for_status()
+          PY
