@@ -148,8 +148,8 @@ async def main():
                 safe_comment = truncated + ellipsis
             else:
                 safe_comment = comment_txt
-            full_title = f"{start_marker}{safe_comment}{end_marker}"
-
+            full_title = "" if (comment_image and comment_txt == "Sticker comment") else f"{start_marker}{safe_comment}{end_marker}"
+            
             # pick embed color per host
             default_hex = "F0C7A4"
             nu_hex = "2d3f51"
@@ -161,15 +161,17 @@ async def main():
                     "name": f"comment by {author} 🕊️ {chapter}",
                     "url":  link
                 },
-                "title":     full_title,
                 "timestamp": timestamp,
-                "color":     int(color_hex, 16),  # <-- special color for Novel Updates
+                "color":     int("F0C7A4", 16),
                 "footer": {
                     "text":     host,
                     "icon_url": host_logo
                 }
             }
-
+            
+            if full_title:
+                embed["title"] = full_title
+                
             if comment_image:
                 embed["image"] = {"url": comment_image}
 
