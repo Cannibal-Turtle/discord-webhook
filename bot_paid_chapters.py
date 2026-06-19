@@ -275,7 +275,7 @@ async def send_new_paid_entries():
             )
 
             embed = Embed(
-                title=f"<a:moonandstars:1365569468629123184>**{chaptername}**",
+                title=f"<a:sun_clouds:1517425608143933470>**{chaptername}**",
                 url=link,
                 timestamp=timestamp,
                 color=int("A87676", 16),
