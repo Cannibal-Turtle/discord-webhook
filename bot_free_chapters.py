@@ -188,7 +188,7 @@ async def send_new_entries():
             timestamp   = dateparser.parse(pubdate_raw) if pubdate_raw else None
 
             embed = Embed(
-                title=f"<a:moonandstars:1365569468629123184>**{chaptername}**",
+                title=f"<a:sun_clouds:1517425608143933470>**{chaptername}**",
                 url=link,
                 timestamp=timestamp,
                 color=int("FFF9BF", 16),
