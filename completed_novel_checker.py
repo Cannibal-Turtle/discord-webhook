@@ -37,6 +37,35 @@ COMPLETE_ROLE  = "<@&1329502614110474270>"
 NSFW_ROLE = "<@&1343352825811439616>"
 # ────────────────────────────────────────────────────────────────────────────────
 
+NOVEL_ROLE_ID_MAP_PATH = "novel_role_id_map.json"
+
+def load_novel_role_id_map(path=NOVEL_ROLE_ID_MAP_PATH) -> dict:
+    with open(path, encoding="utf-8") as f:
+        raw = json.load(f)
+
+    return {
+        str(short_code).strip().upper(): str(role_id).strip()
+        for short_code, role_id in raw.items()
+        if str(short_code).strip() and str(role_id).strip()
+    }
+
+NOVEL_ROLE_ID_MAP = load_novel_role_id_map()
+
+def role_id_to_mention(role_id: str) -> str:
+    role_id = str(role_id or "").strip()
+
+    if not role_id:
+        return ""
+
+    if role_id.startswith("<@&") and role_id.endswith(">"):
+        return role_id
+
+    return f"<@&{role_id}>"
+
+def get_series_role_from_short_code(short_code: str) -> str:
+    short_code = (short_code or "").strip().upper()
+    role_id = NOVEL_ROLE_ID_MAP.get(short_code, "")
+    return role_id_to_mention(role_id)
 
 def load_state(path=STATE_PATH):
     try:
@@ -294,7 +323,8 @@ def load_novels():
 
             novels.append({
                 "novel_title":      title,
-                "role_mention":     details.get("discord_role_id", ""),
+                "short_code":       (details.get("short_code", "") or "").strip().upper(),
+                "role_mention":     get_series_role_from_short_code(details.get("short_code", "")),
                 "host":             host,
                 "novel_link":       details.get("novel_url", ""),
                 "chapter_count":    details.get("chapter_count", ""),
