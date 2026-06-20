@@ -15,6 +15,50 @@ NSFW_ROLE_ID   = "<@&1343352825811439616>"
 
 # === HELPER FUNCTIONS ===
 
+NOVEL_ROLE_ID_MAP_PATH = "novel_role_id_map.json"
+
+def load_novel_role_id_map(path=NOVEL_ROLE_ID_MAP_PATH) -> dict:
+    with open(path, encoding="utf-8") as f:
+        raw = json.load(f)
+
+    return {
+        str(short_code).strip().upper(): str(role_id).strip()
+        for short_code, role_id in raw.items()
+        if str(short_code).strip() and str(role_id).strip()
+    }
+
+NOVEL_ROLE_ID_MAP = load_novel_role_id_map()
+
+def role_id_to_mention(role_id: str) -> str:
+    role_id = str(role_id or "").strip()
+
+    if not role_id:
+        return ""
+
+    if role_id.startswith("<@&") and role_id.endswith(">"):
+        return role_id
+
+    return f"<@&{role_id}>"
+
+def get_series_role_from_short_code(short_code: str) -> str:
+    short_code = (short_code or "").strip().upper()
+    role_id = NOVEL_ROLE_ID_MAP.get(short_code, "")
+    return role_id_to_mention(role_id)
+
+def join_role_mentions(*parts):
+    seen, out = set(), []
+
+    for p in parts:
+        if not p:
+            continue
+
+        for seg in (x.strip() for x in re.split(r"[| ]+", p) if x.strip()):
+            if seg not in seen:
+                seen.add(seg)
+                out.append(seg)
+
+    return " | ".join(out)
+
 def send_bot_message(bot_token: str, channel_id: str, content: str):
     url = f"https://discord.com/api/v10/channels/{channel_id}/messages"
     headers = {
@@ -203,7 +247,10 @@ def process_arc(novel):
     )
     print(f"🕵️ is_nsfw={is_nsfw} for {novel['novel_title']}")
 
-    base_mention = novel["role_mention"] + (f" | {NSFW_ROLE_ID}" if is_nsfw else "")
+    base_mention = join_role_mentions(
+        novel.get("role_mention", ""),
+        NSFW_ROLE_ID if is_nsfw else None,
+    )
 
     history_file = novel.get("history_file")
     if not history_file:
@@ -579,9 +626,12 @@ if __name__ == "__main__":
             if not d.get("free_feed") or not d.get("paid_feed"):
                 continue
 
+            short_code = (d.get("short_code", "") or "").strip().upper()
+            
             novel = {
                 "novel_title":      title,
-                "role_mention":     d.get("discord_role_id", ""),
+                "short_code":       short_code,
+                "role_mention":     get_series_role_from_short_code(short_code),
                 "host":             host,
                 "free_feed":        d["free_feed"],
                 "paid_feed":        d["paid_feed"],
