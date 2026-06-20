@@ -483,7 +483,7 @@ def process_arc(novel):
     # 7. Build the Discord messages
 
     content_header = (
-        f"{base_mention} | {ONGOING_ROLE} <a:Crown:1365575414550106154>\n"
+        f"{join_role_mentions(base_mention, ONGOING_ROLE)} <a:Crown:1365575414550106154>\n"
         "## <a:announcement:1365566215975731274> NEW ARC ALERT "
         "<a:pinksparkles:1365566023201198161>"
         "<a:Butterfly:1365572264774471700>"
