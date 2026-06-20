@@ -71,9 +71,37 @@ def is_nsfw(entry) -> bool:
     cat = (entry.get("category") or "").strip().upper()
     return cat == "NSFW"
 
+NOVEL_ROLE_ID_MAP_PATH = "novel_role_id_map.json"
+
+def load_novel_role_id_map(path=NOVEL_ROLE_ID_MAP_PATH) -> dict:
+    with open(path, encoding="utf-8") as f:
+        raw = json.load(f)
+
+    return {
+        str(short_code).strip().upper(): str(role_id).strip()
+        for short_code, role_id in raw.items()
+        if str(short_code).strip() and str(role_id).strip()
+    }
+    
+
+NOVEL_ROLE_ID_MAP = load_novel_role_id_map()
+
+def role_id_to_mention(role_id: str) -> str:
+    role_id = str(role_id or "").strip()
+
+    if not role_id:
+        return ""
+
+    if role_id.startswith("<@&") and role_id.endswith(">"):
+        return role_id
+
+    return f"<@&{role_id}>"
+
 
 def get_series_role(entry) -> str:
-    return (entry.get("discord_role_id") or "").strip()
+    short_code = (entry.get("short_code") or "").strip().upper()
+    role_id = NOVEL_ROLE_ID_MAP.get(short_code, "")
+    return role_id_to_mention(role_id)
 
 
 def _join_role_mentions(*parts) -> str:
