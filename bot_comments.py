@@ -81,6 +81,36 @@ def parse_pub_iso(entry):
     except Exception:
         return None
 
+NOVEL_ROLE_ID_MAP_PATH = "novel_role_id_map.json"
+
+def load_novel_role_id_map(path=NOVEL_ROLE_ID_MAP_PATH) -> dict:
+    with open(path, encoding="utf-8") as f:
+        raw = json.load(f)
+
+    return {
+        str(short_code).strip().upper(): str(role_id).strip()
+        for short_code, role_id in raw.items()
+        if str(short_code).strip() and str(role_id).strip()
+    }
+
+NOVEL_ROLE_ID_MAP = load_novel_role_id_map()
+
+def role_id_to_mention(role_id: str) -> str:
+    role_id = str(role_id or "").strip()
+
+    if not role_id:
+        return ""
+
+    if role_id.startswith("<@&") and role_id.endswith(">"):
+        return role_id
+
+    return f"<@&{role_id}>"
+
+def get_series_role(entry) -> str:
+    short_code = (entry.get("short_code") or "").strip().upper()
+    role_id = NOVEL_ROLE_ID_MAP.get(short_code, "")
+    return role_id_to_mention(role_id)
+
 async def main():
     state   = load_state()
     feed    = feedparser.parse(RSS_URL)
@@ -120,9 +150,7 @@ async def main():
         for entry in to_send:
             guid        = entry.get("guid") or entry.get("id")
             title       = entry.get("title", "").strip()
-            role_id     = ""
-            if "discord_role_id" in entry:
-                role_id = entry.get("discord_role_id", "").strip()
+            role_id     = get_series_role(entry)
             author      = entry.get("author") or entry.get("dc_creator", "")
             chapter     = entry.get("chapter", "").strip()
             comment_txt = entry.get("description", "").strip()
@@ -179,8 +207,10 @@ async def main():
             if reply_chain:
                 embed["description"] = reply_chain
 
+            role_tail = f" {role_id}" if role_id else ""
+            
             payload = {
-                "content": f"<a:7977heartslike:1368146209981857792> New comment for **{title}** <a:flowersandpetals:1444260426182295623> {role_id}",
+                "content": f"<a:7977heartslike:1368146209981857792> New comment for **{title}** <a:flowersandpetals:1444260426182295623>{role_tail}",
                 "embeds":  [embed]
             }
 
