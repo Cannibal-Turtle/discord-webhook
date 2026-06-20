@@ -34,6 +34,7 @@ import feedparser
 import requests
 from datetime import datetime, timezone
 import subprocess
+
 from novel_mappings import (
     HOSTING_SITE_DATA,
     get_nsfw_novels,
@@ -215,39 +216,88 @@ def clean_feed_description(raw_html: str) -> str:
     return text
 
 
-def build_ping_roles(novel_title: str,
-                     extra_ping_roles_value: str) -> str:
+TAG_ROLE_MAP_PATH = "tag_roles.json"
+
+
+def normalize_tag(tag: str) -> str:
+    """Normalize tags so 'BL', ' bl ', and 'Bl' all match 'bl'."""
+    return re.sub(r"\s+", " ", str(tag).strip().casefold())
+
+
+def load_tag_role_map(path=TAG_ROLE_MAP_PATH) -> dict:
+    """Load tag -> bare Discord role ID mapping."""
+    with open(path, encoding="utf-8") as f:
+        raw = json.load(f)
+
+    return {
+        normalize_tag(tag): str(role_id).strip()
+        for tag, role_id in raw.items()
+    }
+
+
+def role_id_to_mention(role_id: str) -> str:
+    """Convert a bare Discord role ID into a Discord role mention."""
+    role_id = str(role_id).strip()
+
+    if role_id.startswith("<@&") and role_id.endswith(">"):
+        return role_id
+
+    return f"<@&{role_id}>"
+
+
+TAG_ROLE_MAP = load_tag_role_map()
+
+
+def build_ping_roles(novel_title: str, tags: list[str] | None = None) -> str:
     """
     Build the ping line that shows on top of the announcement.
 
-    Desired final shape:
-      @new novels @Quick Transmigration @CN dao @Yaoi [@NSFW if needed]
-
-    We do:
-    - GLOBAL_ROLE first (that's your global "@new novels" role)
-    - then extra_ping_roles (which you already set in mapping per novel,
-      e.g. "@Quick Transmigration @CN dao @Yaoi")
-    - then, IF the novel title is in get_nsfw_novels(), append NSFW_ROLE
-      at the very end
-
-    Order matters because you explicitly want NSFW last.
+    Order:
+      1. global @new novels role
+      2. tag roles from tag_roles.json
+      3. NSFW role last, if applicable
     """
     parts = []
 
-    # 1. global ping role for all new launches
     if GLOBAL_ROLE:
         parts.append(GLOBAL_ROLE.strip())
 
-    # 2. all per-novel + genre roles in the exact order you wrote them
-    if extra_ping_roles_value:
-        parts.append(extra_ping_roles_value.strip())
+    if not tags:
+        raise ValueError(f"No tags set for {novel_title}")
 
-    # 3. if this novel is NSFW, tack on the NSFW role at the end
+    unknown_tags = []
+
+    for tag in tags:
+        key = normalize_tag(tag)
+        role_id = TAG_ROLE_MAP.get(key)
+
+        if not role_id:
+            unknown_tags.append(tag)
+            continue
+
+        parts.append(role_id_to_mention(role_id))
+
+    if unknown_tags:
+        raise ValueError(
+            f"Unknown tag(s) for {novel_title}: {unknown_tags}. "
+            f"Add them to {TAG_ROLE_MAP_PATH} or fix the spelling."
+        )
+
     if novel_title in get_nsfw_novels():
         parts.append(NSFW_ROLE)
 
-    # Join with spaces
-    return " ".join(p for p in parts if p)
+    # Dedupe while preserving order.
+    seen = set()
+    clean_parts = []
+
+    for part in parts:
+        if not part or part in seen:
+            continue
+
+        seen.add(part)
+        clean_parts.append(part)
+
+    return " ".join(clean_parts)
 
 
 def build_launch_content(ping_line: str,
@@ -362,7 +412,7 @@ def load_novels_from_mapping():
       - translator        (host-level)
       - host_logo         (host-level)
       - discord_role_id   (per novel)     -- used by get_novel_discord_role()
-      - extra_ping_roles  (per novel)     -- NEW: for @CN dao @Yaoi etc
+      - tags              (per novel)     -- resolved through tag_roles.json
       - novel_url, featured_image, custom_emoji, discord_role_url, etc.
     """
     novels = []
@@ -391,8 +441,7 @@ def load_novels_from_mapping():
                 "custom_emoji":     details.get("custom_emoji", ""),
                 "discord_role_url": details.get("discord_role_url", ""),
 
-                # optional: per-novel bundle like "@CN dao @Yaoi"
-                "extra_ping_roles": details.get("extra_ping_roles", ""),
+                "tags": details.get("tags", []),
             })
 
     return novels
@@ -477,14 +526,13 @@ def main():
             )
 
             # Build ping roles line:
-            # - global launch role(s)
-            # - novel role (+ nsfw if in get_nsfw_novels)
-            # - any per-novel extra pings (like @CN dao, @Yaoi)
+            # - global launch role
+            # - tag roles from tag_roles.json
+            # - NSFW role if in get_nsfw_novels
             ping_line = build_ping_roles(
-                novel_title,
-                novel.get("extra_ping_roles", "")
+                novel_title=novel_title,
+                tags=novel.get("tags", [])
             )
-
             # Build user-facing text content
             content_msg = build_launch_content(
                 ping_line=ping_line,
