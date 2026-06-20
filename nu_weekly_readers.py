@@ -64,6 +64,8 @@ AUTHOR_ICON = "https://www.novelupdates.com/appicon.png"
 EMBED_COLOR_HEX = os.environ.get("EMBED_COLOR", "2d3f51")
 GLOBAL_MENTION  = "||<@&1329392448798982214>||"
 
+NOVEL_ROLE_ID_MAP_PATH = os.environ.get("NOVEL_ROLE_ID_MAP_PATH", "novel_role_id_map.json")
+
 # Default thread/channel to post into if no env/CLI provided (user-specified)
 CHANNEL_DEFAULT = os.environ.get("DISCORD_MOD_CHANNEL_ID", "").strip()
 
@@ -128,6 +130,25 @@ def _normalize_role_mention(raw: str) -> str:
         return ""
     m = _ROLE_RE.match(raw)
     return f"<@&{m.group(1)}>" if m else raw.strip()
+
+def _load_novel_role_id_map(path: str = NOVEL_ROLE_ID_MAP_PATH) -> Dict[str, str]:
+    with open(path, encoding="utf-8") as f:
+        raw = json.load(f)
+
+    return {
+        str(short_code).strip().upper(): str(role_id).strip()
+        for short_code, role_id in raw.items()
+        if str(short_code).strip() and str(role_id).strip()
+    }
+
+
+NOVEL_ROLE_ID_MAP = _load_novel_role_id_map()
+
+
+def _role_from_short_code(short_code: str) -> str:
+    short_code = (short_code or "").strip().upper()
+    role_id = NOVEL_ROLE_ID_MAP.get(short_code, "")
+    return _normalize_role_mention(role_id)
 
 
 def _fetch_reading_lists_count(series_url: str, timeout: int = 30) -> Optional[int]:
@@ -324,7 +345,8 @@ def collect_targets() -> List[Tuple[str, str, str, str]]:
             if not series_url:
                 continue
             key = _novel_key(novel_title, nd, series_url)
-            role = _normalize_role_mention(nd.get("discord_role_id", ""))
+            short_code = (nd.get("short_code") or "").strip().upper()
+            role = _role_from_short_code(short_code)
             out.append((key, novel_title, role, series_url))
     return out
 
