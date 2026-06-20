@@ -411,7 +411,6 @@ def load_novels_from_mapping():
     We also pull:
       - translator        (host-level)
       - host_logo         (host-level)
-      - discord_role_id   (per novel)     -- used by get_novel_discord_role()
       - tags              (per novel)     -- resolved through tag_roles.json
       - novel_url, featured_image, custom_emoji, discord_role_url, etc.
     """
