@@ -59,14 +59,32 @@ except Exception as e:
     raise
 
 # ---------------------------- constants --------------------------------
+from config_loader import (
+    require_embed_value,
+    require_file_value,
+    require_role_value,
+    load_short_code_role_map,
+)
+
 AUTHOR_NAME = "Novel Updates"
 AUTHOR_ICON = "https://www.novelupdates.com/appicon.png"
-EMBED_COLOR_HEX = os.environ.get("EMBED_COLOR", "2d3f51")
-GLOBAL_MENTION  = "||<@&1329392448798982214>||"
 
-NOVEL_ROLE_ID_MAP_PATH = os.environ.get("NOVEL_ROLE_ID_MAP_PATH", "novel_role_id_map.json")
+EMBED_COLOR_HEX = (
+    os.environ.get("EMBED_COLOR", "").strip()
+    or require_embed_value("nu_embed_color")
+)
 
-# Default thread/channel to post into if no env/CLI provided (user-specified)
+GLOBAL_MENTION = (
+    os.environ.get("NU_GLOBAL_MENTION", "").strip()
+    or require_role_value("admin")
+)
+
+NOVEL_ROLE_ID_MAP_PATH = os.environ.get(
+    "NOVEL_ROLE_ID_MAP_PATH",
+    require_file_value("novel_role_id_map_file")
+)
+
+# Default thread/channel to post into if no env/CLI provided.
 CHANNEL_DEFAULT = os.environ.get("DISCORD_MOD_CHANNEL_ID", "").strip()
 
 TITLE_BOX = (
@@ -75,18 +93,13 @@ TITLE_BOX = (
     "╚══.·:·.☽✧    ✦    ✧☾.·:·.══╝"
 )
 
-DEFAULT_STATE_PATH = os.environ.get("NU_STATE_PATH", "nu_readers.json")
-# Timestamp in embeds will use UTC so Discord localizes it per user; TZ env not needed.
-DEFAULT_TZ = "UTC"
-
-# tolerant of tiny NU changes; allows singular/plural
-_RLIST_RE = re.compile(
-    r"On\s*<b[^>]*class=[\"']?rlist[\"']?[^>]*>\s*([\d,]+)\s*</b>\s*Reading\s+Lists?",
-    re.IGNORECASE | re.DOTALL,
+DEFAULT_STATE_PATH = os.environ.get(
+    "NU_STATE_PATH",
+    require_file_value("nu_readers_path")
 )
 
-# Accept "12345" or "<@&12345>" and normalize to "<@&12345>"
-_ROLE_RE = re.compile(r"^\s*(?:<@&)?(\d+)>?\s*$")
+# Timestamp in embeds will use UTC so Discord localizes it per user; TZ env not needed.
+DEFAULT_TZ = "UTC"
 
 # ---------------------------- helpers ----------------------------------
 
@@ -116,19 +129,9 @@ def _normalize_role_mention(raw: str) -> str:
         return ""
     m = _ROLE_RE.match(raw)
     return f"<@&{m.group(1)}>" if m else raw.strip()
+  
 
-def _load_novel_role_id_map(path: str = NOVEL_ROLE_ID_MAP_PATH) -> Dict[str, str]:
-    with open(path, encoding="utf-8") as f:
-        raw = json.load(f)
-
-    return {
-        str(short_code).strip().upper(): str(role_id).strip()
-        for short_code, role_id in raw.items()
-        if str(short_code).strip() and str(role_id).strip()
-    }
-
-
-NOVEL_ROLE_ID_MAP = _load_novel_role_id_map()
+NOVEL_ROLE_ID_MAP = load_short_code_role_map(NOVEL_ROLE_ID_MAP_PATH)
 
 
 def _role_from_short_code(short_code: str) -> str:
