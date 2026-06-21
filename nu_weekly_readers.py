@@ -64,6 +64,7 @@ from config_loader import (
     require_file_value,
     require_role_value,
     load_short_code_role_map,
+    role_id_to_mention,
 )
 
 AUTHOR_NAME = "Novel Updates"
@@ -74,9 +75,11 @@ EMBED_COLOR_HEX = (
     or require_embed_value("nu_embed_color")
 )
 
+ADMIN_MENTION = role_id_to_mention(require_role_value("admin"))
+
 GLOBAL_MENTION = (
     os.environ.get("NU_GLOBAL_MENTION", "").strip()
-    or require_role_value("admin")
+    or f"||{ADMIN_MENTION}||"
 )
 
 NOVEL_ROLE_ID_MAP_PATH = os.environ.get(
