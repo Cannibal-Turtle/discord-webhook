@@ -92,7 +92,7 @@ def find_released_extras(paid_feed, raw_kw):
     pattern = re.compile(rf"(?i)\b{raw_kw}s?\b.*?(\d+)")
     seen = set()
     for e in paid_feed.entries:
-        for field in ("chaptername","nameextend","volume"):
+        for field in ("chapter","chaptername","volume"):
             val = e.get(field,"") or ""
             m = pattern.search(val)
             if m:
@@ -116,7 +116,7 @@ def process_extras(novel):
 
     last_chap = novel.get("last_chapter", "")
     for e in paid_feed.entries:
-        chap = (e.get("chaptername") or "") + (e.get("nameextend") or "")
+        chap = (e.get("chapter") or "") + (e.get("chaptername") or "")
         if last_chap and last_chap in chap:
             print(f"→ skipping extras for {novel['novel_id']} — full series complete on feed")
             return
