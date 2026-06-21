@@ -7,38 +7,20 @@ import sys
 from novel_mappings import HOSTING_SITE_DATA, get_nsfw_novels
 
 # ─── CONFIG ────────────────────────────────────────────────────────────────────
-BOT_TOKEN      = os.environ["DISCORD_BOT_TOKEN"]
-CHANNEL_ID     = os.environ["DISCORD_CHANNEL_ID"]
-ONGOING_ROLE   = "<@&1329502951764525187>"
-NSFW_ROLE_ID   = "<@&1343352825811439616>"
+from config_loader import (
+    NOVEL_ROLE_ID_MAP,
+    require_role_value,
+    role_id_to_mention,
+)
+
+BOT_TOKEN  = os.environ["DISCORD_BOT_TOKEN"]
+CHANNEL_ID = os.environ["DISCORD_CHANNEL_ID"]
+
+ONGOING_ROLE = require_role_value("ongoing")
+NSFW_ROLE_ID = require_role_value("nsfw")
 # ────────────────────────────────────────────────────────────────────────────────
 
 # === HELPER FUNCTIONS ===
-
-NOVEL_ROLE_ID_MAP_PATH = "novel_role_id_map.json"
-
-def load_novel_role_id_map(path=NOVEL_ROLE_ID_MAP_PATH) -> dict:
-    with open(path, encoding="utf-8") as f:
-        raw = json.load(f)
-
-    return {
-        str(short_code).strip().upper(): str(role_id).strip()
-        for short_code, role_id in raw.items()
-        if str(short_code).strip() and str(role_id).strip()
-    }
-
-NOVEL_ROLE_ID_MAP = load_novel_role_id_map()
-
-def role_id_to_mention(role_id: str) -> str:
-    role_id = str(role_id or "").strip()
-
-    if not role_id:
-        return ""
-
-    if role_id.startswith("<@&") and role_id.endswith(">"):
-        return role_id
-
-    return f"<@&{role_id}>"
 
 def get_series_role_from_short_code(short_code: str) -> str:
     short_code = (short_code or "").strip().upper()
