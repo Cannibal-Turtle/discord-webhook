@@ -17,7 +17,7 @@ from config_loader import (
 STATE_PATH = require_file_value("state_path")
 
 ONGOING_ROLE = role_id_to_mention(require_role_value("ongoing"))
-NSFW_ROLE_ID = role_id_to_mention(require_role_value("nsfw"))
+NSFW_ROLE = role_id_to_mention(require_role_value("nsfw"))
 
 BOT_TOKEN_ENV  = "DISCORD_BOT_TOKEN"
 CHANNEL_ID_ENV = "DISCORD_CHANNEL_ID"
@@ -129,7 +129,7 @@ def process_extras(novel):
     
     base_mention = join_role_mentions(
         novel.get("role_mention", ""),
-        NSFW_ROLE_ID if is_nsfw else None,
+        NSFW_ROLE if is_nsfw else None,
     )
 
     # 4) see what’s actually dropped in the feed
