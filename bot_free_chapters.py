@@ -200,8 +200,8 @@ async def send_new_entries():
             )
 
             # Embed fields
-            chaptername = (entry.get("chaptername") or "").strip() or "New Chapter"
-            nameextend  = (entry.get("nameextend") or "").strip()
+            chapter = (entry.get("chapter") or "").strip() or "New Chapter"
+            chaptername  = (entry.get("chaptername") or "").strip()
             link        = (entry.get("link") or "").strip()
             translator  = (entry.get("translator") or "").strip()
             # featured image shape differs sometimes; try both
@@ -214,14 +214,14 @@ async def send_new_entries():
             timestamp   = dateparser.parse(pubdate_raw) if pubdate_raw else None
 
             embed = Embed(
-                title=f"<a:sun_clouds:1517425608143933470>**{chaptername}**",
+                title=f"<a:sun_clouds:1517425608143933470>**{chapter}**",
                 url=link,
                 timestamp=timestamp,
                 color=int("FFF9BF", 16),
             )
             
-            if nameextend:
-                embed.description = nameextend
+            if chaptername:
+                embed.description = chaptername
 
             embed.set_author(name=f"{translator}˙ᵕ˙")
             if thumb_url:
@@ -233,7 +233,7 @@ async def send_new_entries():
             view.add_item(Button(label="Read here", url=link))
             await channel.send(content=content, embed=embed, view=view)
 
-            print(f"📨 Sent: {chaptername} / {guid}")
+            print(f"📨 Sent: {chapter} / {guid}")
 
             # mark as seen and bump time (timezone-aware)
             norm = normalize_guid(entry)
