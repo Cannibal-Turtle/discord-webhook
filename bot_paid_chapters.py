@@ -270,8 +270,8 @@ async def send_new_paid_entries():
             nsfw_flag   = is_nsfw(entry)
             title_text  = entry.get("title","").strip()
 
-            chaptername = entry.get("chaptername","").strip()
-            nameextend  = entry.get("nameextend","").strip()
+            chapter = entry.get("chapter","").strip()
+            chaptername  = entry.get("chaptername","").strip()
 
             link        = entry.get("link","").strip()
             translator  = entry.get("translator","").strip()
@@ -303,14 +303,14 @@ async def send_new_paid_entries():
             )
 
             embed = Embed(
-                title=f"<a:moonandstars:1365569468629123184>**{chaptername}**",
+                title=f"<a:moonandstars:1365569468629123184>**{chapter}**",
                 url=link,
                 timestamp=timestamp,
                 color=int("A87676", 16),
             )
             
-            if nameextend:
-                embed.description = nameextend
+            if chaptername:
+                embed.description = chaptername
             
             embed.set_author(name=f"{translator}˙ᵕ˙")
             if thumb_url:
@@ -330,7 +330,7 @@ async def send_new_paid_entries():
             view.add_item(btn)
 
             await channel.send(content=content, embed=embed, view=view)
-            print(f"📨 Sent paid: {chaptername} / {guid}")
+            print(f"📨 Sent paid: {chapter} / {guid}")
 
             norm = normalize_guid(entry)
             state[SEEN_KEY].append(norm)
