@@ -14,20 +14,32 @@ from discord.ui import View, Button
 import requests
 
 # ─── CONFIG ────────────────────────────────────────────────────────────────────
-TOKEN           = os.environ["DISCORD_BOT_TOKEN"]
-CHANNEL_ID      = int(os.environ["DISCORD_FREE_CHAPTERS_CHANNEL"])
-STATE_FILE      = "state_rss.json"
-FEED_KEY        = "free_last_guid"
-RSS_URL         = "https://raw.githubusercontent.com/Cannibal-Turtle/rss-feed/main/free_chapters_feed.xml"
-SEEN_KEY        = "seen_guids_free"
-LAST_POST_TIME  = "last_post_time_free"
-SEEN_CAP        = 500
-TIME_BACKSTOP   = True
+from config_loader import (
+    NOVEL_ROLE_ID_MAP,
+    embed_value,
+    require_feed_value,
+    require_feeds_value,
+    require_file_value,
+    require_role_value,
+    role_id_to_mention,
+)
 
-GLOBAL_MENTION  = "<@&1342483851338846288>"   # always-mention role
-NSFW_ROLE       = "<@&1343352825811439616>"
+TOKEN      = os.environ["DISCORD_BOT_TOKEN"]
+CHANNEL_ID = int(os.environ["DISCORD_FREE_CHAPTERS_CHANNEL"])
 
-AUTHOR_URL = ""
+STATE_FILE = require_file_value("rss_state_path")
+FEED_KEY   = require_feed_value("free", "last_guid_key")
+RSS_URL    = require_feed_value("free", "url")
+
+SEEN_KEY       = require_feed_value("free", "seen_key")
+LAST_POST_TIME = require_feed_value("free", "last_post_time_key")
+SEEN_CAP       = int(require_feeds_value("seen_cap"))
+TIME_BACKSTOP  = bool(require_feeds_value("time_backstop"))
+
+GLOBAL_MENTION = require_role_value("free_global")
+NSFW_ROLE      = require_role_value("nsfw")
+
+AUTHOR_URL = str(embed_value("chapter_author_url", "")).strip()
 # ────────────────────────────────────────────────────────────────────────────────
 
 def load_state():
@@ -66,31 +78,6 @@ def save_state(state):
 def is_nsfw(entry) -> bool:
     cat = (entry.get("category") or "").strip().upper()
     return cat == "NSFW"
-
-NOVEL_ROLE_ID_MAP_PATH = "novel_role_id_map.json"
-
-def load_novel_role_id_map(path=NOVEL_ROLE_ID_MAP_PATH) -> dict:
-    with open(path, encoding="utf-8") as f:
-        raw = json.load(f)
-
-    return {
-        str(short_code).strip().upper(): str(role_id).strip()
-        for short_code, role_id in raw.items()
-        if str(short_code).strip() and str(role_id).strip()
-    }
-
-NOVEL_ROLE_ID_MAP = load_novel_role_id_map()
-
-def role_id_to_mention(role_id: str) -> str:
-    role_id = str(role_id or "").strip()
-
-    if not role_id:
-        return ""
-
-    if role_id.startswith("<@&") and role_id.endswith(">"):
-        return role_id
-
-    return f"<@&{role_id}>"
 
 def get_series_role(entry) -> str:
     short_code = (entry.get("short_code") or "").strip().upper()
