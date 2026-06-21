@@ -41,14 +41,21 @@ from novel_mappings import (
 )
 
 # ─── CONFIG ────────────────────────────────────────────────────────────────────
+from config_loader import (
+    TAG_ROLE_MAP,
+    require_file_value,
+    require_role_value,
+    role_id_to_mention,
+)
 
-STATE_PATH     = "state.json"
+STATE_PATH     = require_file_value("state_path")
 BOT_TOKEN_ENV  = "DISCORD_BOT_TOKEN"
 CHANNEL_ID_ENV = "DISCORD_CHANNEL_ID"
 
-GLOBAL_ROLE = "<@&1329502873503006842>"
-NSFW_ROLE = "<@&1343352825811439616>"
+GLOBAL_ROLE = require_role_value("new")
+NSFW_ROLE   = require_role_value("nsfw")
 
+TAG_ROLE_MAP_PATH = require_file_value("tag_role_map_file")
 # ───────────────────────────────────────────────────────────────────────────────
 
 def commit_state_update(path=STATE_PATH):
@@ -214,39 +221,10 @@ def clean_feed_description(raw_html: str) -> str:
         text = text[:4000].rstrip() + "…"
 
     return text
-
-
-TAG_ROLE_MAP_PATH = "tag_roles.json"
-
-
+  
 def normalize_tag(tag: str) -> str:
     """Normalize tags so 'BL', ' bl ', and 'Bl' all match 'bl'."""
     return re.sub(r"\s+", " ", str(tag).strip().casefold())
-
-
-def load_tag_role_map(path=TAG_ROLE_MAP_PATH) -> dict:
-    """Load tag -> bare Discord role ID mapping."""
-    with open(path, encoding="utf-8") as f:
-        raw = json.load(f)
-
-    return {
-        normalize_tag(tag): str(role_id).strip()
-        for tag, role_id in raw.items()
-    }
-
-
-def role_id_to_mention(role_id: str) -> str:
-    """Convert a bare Discord role ID into a Discord role mention."""
-    role_id = str(role_id).strip()
-
-    if role_id.startswith("<@&") and role_id.endswith(">"):
-        return role_id
-
-    return f"<@&{role_id}>"
-
-
-TAG_ROLE_MAP = load_tag_role_map()
-
 
 def build_ping_roles(novel_title: str, tags: list[str] | None = None) -> str:
     """
