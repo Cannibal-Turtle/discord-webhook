@@ -8,16 +8,26 @@ import html
 from urllib.parse import urlsplit, urlunsplit
 
 # ─── CONFIG ────────────────────────────────────────────────────────────────────
-TOKEN       = os.environ["DISCORD_BOT_TOKEN"]
-CHANNEL_ID  = os.environ["DISCORD_COMMENTS_CHANNEL"]
-STATE_FILE  = "state_rss.json"
-FEED_KEY    = "comments_last_guid"
-RSS_URL     = "https://raw.githubusercontent.com/Cannibal-Turtle/rss-feed/main/aggregated_comments_feed.xml"
-API_URL     = f"https://discord.com/api/v10/channels/{CHANNEL_ID}/messages"
-SEEN_KEY       = "seen_guids"       # bounded history of posted items
-LAST_POST_TIME = "last_post_time"   # ISO string of last successful post time
-SEEN_CAP       = 500                # keep the last 500 GUIDs
-TIME_BACKSTOP  = True               # also require pubDate > last_post_time
+from config_loader import (
+    NOVEL_ROLE_ID_MAP,
+    require_feed_value,
+    require_feeds_value,
+    require_file_value,
+    role_id_to_mention,
+)
+
+TOKEN      = os.environ["DISCORD_BOT_TOKEN"]
+CHANNEL_ID = os.environ["DISCORD_COMMENTS_CHANNEL"]
+
+STATE_FILE = require_file_value("rss_state_path")
+FEED_KEY   = require_feed_value("comments", "last_guid_key")
+RSS_URL    = require_feed_value("comments", "url")
+API_URL    = f"https://discord.com/api/v10/channels/{CHANNEL_ID}/messages"
+
+SEEN_KEY       = require_feed_value("comments", "seen_key")
+LAST_POST_TIME = require_feed_value("comments", "last_post_time_key")
+SEEN_CAP       = int(require_feeds_value("seen_cap"))
+TIME_BACKSTOP  = bool(require_feeds_value("time_backstop"))
 # ────────────────────────────────────────────────────────────────────────────────
 
 def load_state():
@@ -80,31 +90,6 @@ def parse_pub_iso(entry):
         return dateparser.parse(pubdate_raw)
     except Exception:
         return None
-
-NOVEL_ROLE_ID_MAP_PATH = "novel_role_id_map.json"
-
-def load_novel_role_id_map(path=NOVEL_ROLE_ID_MAP_PATH) -> dict:
-    with open(path, encoding="utf-8") as f:
-        raw = json.load(f)
-
-    return {
-        str(short_code).strip().upper(): str(role_id).strip()
-        for short_code, role_id in raw.items()
-        if str(short_code).strip() and str(role_id).strip()
-    }
-
-NOVEL_ROLE_ID_MAP = load_novel_role_id_map()
-
-def role_id_to_mention(role_id: str) -> str:
-    role_id = str(role_id or "").strip()
-
-    if not role_id:
-        return ""
-
-    if role_id.startswith("<@&") and role_id.endswith(">"):
-        return role_id
-
-    return f"<@&{role_id}>"
 
 def get_series_role(entry) -> str:
     short_code = (entry.get("short_code") or "").strip().upper()
