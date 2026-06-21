@@ -4,13 +4,13 @@
 nu_weekly_readers.py
 
 Fetches Novel Updates "Reading Lists" counts for any novels that declare
-`novelupdates_feed_url` in your local `novel_mappings.py`, computes deltas
+`novelupdates_url` in your local `novel_mappings.py`, computes deltas
 vs. the last saved run, and (optionally) posts/edits a Discord message with
 an embed-only weekly report.
 
 How it works
 ------------
-- For each novel in HOSTING_SITE_DATA with a `novelupdates_feed_url`,
+- For each novel in HOSTING_SITE_DATA with a `novelupdates_url`,
   derive the NU series page URL (strip trailing "/feed/") and request it.
 - Parse the HTML for the snippet:  `On <b class="rlist">N</b> Reading Lists`.
 - Compare to the previously saved count in a JSON state file
@@ -53,7 +53,7 @@ import requests
 
 # Import your mapping from the repo
 try:
-    from novel_mappings import HOSTING_SITE_DATA
+    from novel_mappings import HOSTING_SITE_DATA, get_novelupdates_url
 except Exception as e:
     print("[fatal] Could not import novel_mappings.HOSTING_SITE_DATA:", e, file=sys.stderr)
     raise
@@ -93,20 +93,6 @@ _ROLE_RE = re.compile(r"^\s*(?:<@&)?(\d+)>?\s*$")
 def _now_tz(tz_name: str) -> dt.datetime:
     # Kept for compatibility, but we always post UTC timestamps in the embed.
     return dt.datetime.now(dt.timezone.utc)
-
-
-def _series_url_from_feed(feed_url: str) -> Optional[str]:
-    if not feed_url:
-        return None
-    u = feed_url.strip()
-    if not u:
-        return None
-    # NU series feeds are .../series/<slug>/feed/ ; strip the trailing 'feed' bit
-    if "/feed" in u:
-        base = u.split("/feed")[0].rstrip("/")
-        return base + "/"
-    # If someone passed series URL already, just return it normalized
-    return u if u.endswith("/") else (u + "/")
 
 
 def _slug_from_series_url(series_url: str) -> str:
@@ -332,16 +318,13 @@ def _send_or_edit_discord_embed(
 def collect_targets() -> List[Tuple[str, str, str, str]]:
     """
     Return list of (key, novel_title, role_mention, series_url)
-    for all novels that have `novelupdates_feed_url`.
+    for all novels that have `novelupdates_url`.
     """
     out: List[Tuple[str, str, str, str]] = []
     for host, cfg in (HOSTING_SITE_DATA or {}).items():
         novels = (cfg.get("novels") or {})
         for novel_title, nd in novels.items():
-            nu_feed = (nd.get("novelupdates_feed_url") or "").strip()
-            if not nu_feed:
-                continue
-            series_url = _series_url_from_feed(nu_feed)
+            series_url = get_novelupdates_url(nd)
             if not series_url:
                 continue
             key = _novel_key(novel_title, nd, series_url)
@@ -367,7 +350,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     for _, title, role, url in targets:
         print(f"[info]  • {title}  {role or '(no-role)'}  -> {url}")
     if not targets:
-        print("[info] No novels with novelupdates_feed_url found in mappings.")
+        print("[info] No novels with novelupdates_url found in mappings.")
         _release_lock(lock_fd, state_path + ".lock")
         return 0
 
