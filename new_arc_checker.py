@@ -16,8 +16,8 @@ from config_loader import (
 BOT_TOKEN  = os.environ["DISCORD_BOT_TOKEN"]
 CHANNEL_ID = os.environ["DISCORD_CHANNEL_ID"]
 
-ONGOING_ROLE = require_role_value("ongoing")
-NSFW_ROLE_ID = require_role_value("nsfw")
+ONGOING_ROLE = role_id_to_mention(require_role_value("ongoing"))
+NSFW_ROLE_ID = role_id_to_mention(require_role_value("nsfw"))
 # ────────────────────────────────────────────────────────────────────────────────
 
 # === HELPER FUNCTIONS ===
