@@ -1,5 +1,5 @@
 {
-  "seen_guids_free": [
+  "free_seen_guids": [
     "Dragonholic::10905",
     "Mistmint Haven::c1312635-0026-491a-8cb0-13aeb7a925cd",
     "Dragonholic::10906",
@@ -439,7 +439,7 @@
   ],
   "last_post_time_free": "2026-06-21T05:00:00+00:00",
   "free_last_guid": "38cb219e-679e-4152-b03e-8c1c26d59ba0",
-  "seen_guids_paid": [
+  "paid_seen_guids": [
     "Mistmint Haven::e82609b0-6c66-45fb-a3e0-5715b327e978",
     "Mistmint Haven::0a5fdb29-faf4-4f5c-a47c-fc543311e233",
     "Mistmint Haven::da8a6fdd-2edd-4e6e-a548-bf719f6a29c2",
@@ -1764,7 +1764,7 @@
   ],
   "last_post_time_paid": "2026-06-21T16:18:27+00:00",
   "paid_last_guid": "232040cb-2b4c-479d-9e7a-63223e0c06c7",
-  "seen_guids": [
+  "comments_seen_guids": [
     "novel updates::https://www.novelupdates.com/?post_type=seriesplans&p=88639#comment-434808",
     "novel updates::https://www.novelupdates.com/?post_type=seriesplans&p=88639#comment-439240",
     "novel updates::https://www.novelupdates.com/?post_type=seriesplans&p=88639#comment-445067",
@@ -1904,6 +1904,6 @@
     "mistmint haven::bb147fce-0265-416e-96e8-1b98014b27fa",
     "mistmint haven::5d2a47fc-5704-42c6-b83a-908d8cd5adea"
   ],
-  "last_post_time": "2026-06-21T19:12:16+00:00",
+  "last_post_time_comments": "2026-06-21T19:12:16+00:00",
   "comments_last_guid": "5d2a47fc-5704-42c6-b83a-908d8cd5adea"
 }
