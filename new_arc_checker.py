@@ -17,7 +17,7 @@ BOT_TOKEN  = os.environ["DISCORD_BOT_TOKEN"]
 CHANNEL_ID = os.environ["DISCORD_CHANNEL_ID"]
 
 ONGOING_ROLE = role_id_to_mention(require_role_value("ongoing"))
-NSFW_ROLE_ID = role_id_to_mention(require_role_value("nsfw"))
+NSFW_ROLE = role_id_to_mention(require_role_value("nsfw"))
 # ────────────────────────────────────────────────────────────────────────────────
 
 # === HELPER FUNCTIONS ===
@@ -231,7 +231,7 @@ def process_arc(novel):
 
     base_mention = join_role_mentions(
         novel.get("role_mention", ""),
-        NSFW_ROLE_ID if is_nsfw else None,
+        NSFW_ROLE if is_nsfw else None,
     )
 
     history_file = novel.get("history_file")
