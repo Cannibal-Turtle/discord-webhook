@@ -21,9 +21,9 @@ jobs:
       github.event_name == 'workflow_dispatch' ||
       (github.event_name == 'repository_dispatch' && (github.event.client_payload.feed == 'free' || github.event.client_payload.feed == 'both'))
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with: { fetch-depth: 0 }
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.x'
           cache: 'pip'
@@ -56,9 +56,9 @@ jobs:
       github.event_name == 'workflow_dispatch' ||
       (github.event_name == 'repository_dispatch' && (github.event.client_payload.feed == 'paid' || github.event.client_payload.feed == 'both'))
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with: { fetch-depth: 0 }
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.x'
           cache: 'pip'
@@ -88,7 +88,7 @@ jobs:
     if: ${{ always() && (needs.free_bot.result == 'success' || needs.paid_bot.result == 'success') }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with: { fetch-depth: 0 }
   
       # only try to pull free artifact if free_bot ran & succeeded
