@@ -26,6 +26,8 @@ TIME_BACKSTOP   = True
 
 GLOBAL_MENTION  = "<@&1342483851338846288>"   # always-mention role
 NSFW_ROLE       = "<@&1343352825811439616>"
+
+AUTHOR_URL = ""
 # ────────────────────────────────────────────────────────────────────────────────
 
 def load_state():
@@ -223,9 +225,20 @@ async def send_new_entries():
             if chaptername:
                 embed.description = chaptername
 
-            embed.set_author(name=f"{translator}˙ᵕ˙")
+            author_kwargs = {
+                "name": f"{translator}˙ᵕ˙"
+            }
+            
+            author_url = globals().get("AUTHOR_URL", "").strip()
+            
+            if author_url:
+                author_kwargs["url"] = author_url
+            
+            embed.set_author(**author_kwargs)
+            
             if thumb_url:
                 embed.set_thumbnail(url=thumb_url)
+    
             embed.set_footer(text=host, icon_url=host_logo)
 
             # Button & send
