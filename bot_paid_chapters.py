@@ -27,6 +27,8 @@ RSS_URL = "https://raw.githubusercontent.com/Cannibal-Turtle/rss-feed/main/paid_
 
 GLOBAL_MENTION = "<@&1342484466043453511>"  # the always-ping role
 NSFW_ROLE = "<@&1343352825811439616>"
+
+AUTHOR_URL = ""
 # ──────────────────────────────────────────────────────────────────────────
 
 
@@ -312,9 +314,20 @@ async def send_new_paid_entries():
             if chaptername:
                 embed.description = chaptername
             
-            embed.set_author(name=f"{translator}˙ᵕ˙")
+            author_kwargs = {
+                "name": f"{translator}˙ᵕ˙"
+            }
+            
+            author_url = globals().get("AUTHOR_URL", "").strip()
+            
+            if author_url:
+                author_kwargs["url"] = author_url
+            
+            embed.set_author(**author_kwargs)
+
             if thumb_url:
                 embed.set_thumbnail(url=thumb_url)
+                
             embed.set_footer(text=host, icon_url=host_logo)
 
             label_text, emoji_obj = get_coin_button_parts_from_feed(
