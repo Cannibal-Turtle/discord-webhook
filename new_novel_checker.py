@@ -498,11 +498,8 @@ def main():
                 continue
 
             # Chapter name (e.g. "Chapter 1", "Prologue", "1.1")
-            chap_field = (
-                entry.get("chaptername")
-                or entry.get("chapter")
-                or ""
-            )
+            chap_field = entry.get("chapter") or ""
+
             if not is_first_chapter_name(chap_field):
                 continue
 
