@@ -1,0 +1,22 @@
+{
+  "free": {
+    "url": "https://raw.githubusercontent.com/Cannibal-Turtle/rss-feed/main/free_chapters_feed.xml",
+    "last_guid_key": "free_last_guid",
+    "seen_key": "seen_guids_free",
+    "last_post_time_key": "last_post_time_free"
+  },
+  "paid": {
+    "url": "https://raw.githubusercontent.com/Cannibal-Turtle/rss-feed/main/paid_chapters_feed.xml",
+    "last_guid_key": "paid_last_guid",
+    "seen_key": "seen_guids_paid",
+    "last_post_time_key": "last_post_time_paid"
+  },
+  "comments": {
+    "url": "https://raw.githubusercontent.com/Cannibal-Turtle/rss-feed/main/aggregated_comments_feed.xml",
+    "last_guid_key": "comments_last_guid",
+    "seen_key": "seen_guids",
+    "last_post_time_key": "last_post_time"
+  },
+  "seen_cap": 500,
+  "time_backstop": true
+}
