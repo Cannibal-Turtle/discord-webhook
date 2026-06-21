@@ -157,8 +157,8 @@ Each `<item>` in the feed is expected to look like this:
 <item>
   <title>Quick Transmigration: The Villain Is Too Pampered and Alluring</title>
   <volume/>
-  <chaptername>Chapter 377</chaptername>
-  <nameextend>***My Fiancé Is Definitely Not a Little Pitiful Person 039***</nameextend>
+  <chapter>Chapter 377</chapter>
+  <chaptername>***My Fiancé Is Definitely Not a Little Pitiful Person 039***</chaptername>
   <link>https://dragonholic.com/novel/.../chapter-377/</link>
   <description><![CDATA[ ... HTML summary ... ]]></description>
   <category>SFW</category>
@@ -175,12 +175,12 @@ The scripts rely on a few specific fields:
 
 | Tag           | Purpose                                             |
 |---------------|-----------------------------------------------------|
-| `<chaptername>` | Contains the chapter label (e.g. “Chapter 5”, “Extra 8”) — used to detect paid & free completions   |
+| `<chapter>` | Contains the chapter label (e.g. “Chapter 5”, “Extra 8”) — used to detect paid & free completions   |
 | `<link>`        | URL to the chapter page — used to construct message links                                    |
-| `<nameextend>`  | Used for arc detection (looks for markers like “001”, “(1)”, “.1”) when generating New Arc Alerts |
+| `<chaptername>`  | Used for arc detection (looks for markers like “001”, “(1)”, “.1”) when generating New Arc Alerts |
 | `<volume>`      | Optional alternative base name for arcs if present                                           |
 
-> Only `<chaptername>` and `<link>` are strictly required for completion checks. Arc alerts also use `<nameextend>` or `<volume>`.
+> Only `<chapter>` and `<link>` are strictly required for completion checks. Arc alerts also use `<chaptername>` or `<volume>`.
 
 ---
 
