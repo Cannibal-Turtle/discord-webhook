@@ -35,8 +35,8 @@ LAST_POST_TIME = require_feed_value("paid", "last_post_time_key")
 SEEN_CAP       = int(require_feeds_value("seen_cap"))
 TIME_BACKSTOP  = bool(require_feeds_value("time_backstop"))
 
-GLOBAL_MENTION = require_role_value("paid_global")
-NSFW_ROLE      = require_role_value("nsfw")
+GLOBAL_MENTION = role_id_to_mention(require_role_value("paid_global"))
+NSFW_ROLE      = role_id_to_mention(require_role_value("nsfw"))
 
 AUTHOR_URL = str(embed_value("chapter_author_url", "")).strip()
 # ──────────────────────────────────────────────────────────────────────────
