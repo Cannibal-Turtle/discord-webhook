@@ -388,8 +388,8 @@ def main():
             if entry_title and entry_title != novel_id:
                 continue
         
-            base = entry.get("chaptername") or entry.get("chapter", "") or ""
-            ext  = entry.get("nameextend") or ""
+            base = entry.get("chapter") or entry.get("chapter", "") or ""
+            ext  = entry.get("chaptername") or ""
         
             # 1) use combined string only for matching
             chap_match = f"{base} {ext}".strip()
