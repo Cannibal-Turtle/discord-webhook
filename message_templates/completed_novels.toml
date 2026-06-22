@@ -1,0 +1,37 @@
+[paid]
+content = '''
+{completion_mention} <a:HappyCloud:1365575487333859398>
+## ꧁ᐟᐟ ◌ೄ⟢  Completion Announcement  :blueberries: ˚. ᵎᵎ˖ˎˊ-
+{purple_divider_line}
+***<a:kikilts_bracket:1365693072138174525>[{novel_title}]({novel_link})<a:lalalts_bracket:1365693058905014313> — officially completed!*** <a:cowiggle:1368136766791483472><a:whitesparkles:1365569806966853664>
+
+*The last chapter, [{chapter_text}]({chapter_link}), has now been released. <a:turtle_hyper:1365223449827737630>
+{completion_mid_line}{pink_divider_line}
+-# Check out other translated projects at {discord_role_url} and react to get the latest updates <a:LoveLetter:1365575475841339435>
+'''
+
+[free]
+content = '''
+{completion_mention} <a:HappyCloud:1365575487333859398>
+## 𐔌  Announcing: Complete Series Unlocked ,, :cherries: — 𝝑𝝔  ꒱
+{purple_divider_line}
+***<a:kikilts_bracket:1365693072138174525>[{novel_title}]({novel_link})<a:lalalts_bracket:1365693058905014313>— complete access granted!*** <a:cowiggle:1368136766791483472><a:whitesparkles:1365569806966853664>
+
+*All {chapter_count} has been unlocked and ready for you to binge—completely free!
+Thank you all for your amazing support   <:green_turtle_heart:1365264636064305203>
+Head over to {host} to dive straight in~*<a:Heart:1365575427724283944><a:Paws:1365676154865979453>
+{pink_divider_line}
+-# Check out other translated projects at {discord_role_url} and react to get the latest updates <a:LoveLetter:1365575475841339435>
+'''
+
+[only_free]
+content = '''
+{completion_mention} <a:HappyCloud:1365575487333859398>
+## ⁺‧ ༻•┈๑☽₊˚ ⌞Completion Announcement⋆ཋྀ ˚₊‧⁺ :kiwi: ∗༉‧₊˚
+{purple_divider_line}
+***<a:kikilts_bracket:1365693072138174525>[{novel_title}]({novel_link})<a:lalalts_bracket:1365693058905014313> — officially completed!*** <a:cowiggle:1368136766791483472><a:whitesparkles:1365569806966853664>
+
+*The last chapter, [{chapter_text}]({chapter_link}), has now been released. <a:turtle_hyper:1365223449827737630>
+{completion_mid_line}{pink_divider_line}
+-# Check out other translated projects at {discord_role_url} and react to get the latest updates <a:LoveLetter:1365575475841339435>
+'''
