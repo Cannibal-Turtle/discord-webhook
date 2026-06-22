@@ -83,7 +83,7 @@ discord-webhook/
 └─ README.md
 ```
 
-Optional future template folder:
+Newly added feature - template folder:
 
 ```text
 discord-webhook/
