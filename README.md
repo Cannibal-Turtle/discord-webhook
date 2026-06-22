@@ -59,6 +59,8 @@ Important files and folders:
 
 ```text
 discord-webhook/
+├─ .github/
+│  └─ workflows/
 ├─ config/
 │  ├─ embeds.json
 │  ├─ feeds.json
@@ -67,15 +69,23 @@ discord-webhook/
 │  ├─ roles.json
 │  └─ tag_roles.json
 ├─ arc_history/
-│  ├─ tvitpa_history.json
+│  ├─ amlwc_history.json
+│  ├─ hiaflg_history.json
 │  ├─ tdlbkgc_history.json
-│  └─ ...
+│  └─ tvitpa_history.json
 ├─ message_templates/
-│  ├─ free_chapter.toml
-│  ├─ paid_chapter.toml
 │  ├─ comments.toml
-│  ├─ new_novel.toml
-│  └─ completed_novel.toml
+│  ├─ completed_novels.toml
+│  ├─ free_chapters.toml
+│  ├─ new_arcs.toml
+│  ├─ new_extras.toml
+│  ├─ new_novels.toml
+│  └─ paid_chapters.toml
+├─ requirements/
+│  ├─ chapters.txt
+│  ├─ comments.txt
+│  ├─ nu_weekly.txt
+│  └─ rss_dispatch.txt
 ├─ bot_free_chapters.py
 ├─ bot_paid_chapters.py
 ├─ bot_comments.py
@@ -85,8 +95,14 @@ discord-webhook/
 ├─ completed_novel_checker.py
 ├─ nu_weekly_readers.py
 ├─ config_loader.py
-├─ host_mistmint.py
-└─ README.md
+├─ message_context.py
+├─ message_renderer.py
+├─ state.json
+├─ state_rss.json
+├─ nu_readers.json
+├─ README.md
+├─ PRIVACY.md
+└─ TERMS.md
 
 ---
 
