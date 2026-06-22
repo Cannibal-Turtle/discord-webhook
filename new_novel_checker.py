@@ -35,6 +35,8 @@ import requests
 from datetime import datetime, timezone
 import subprocess
 
+from message_renderer import render_message, to_discord_api_payload
+
 from novel_mappings import (
     HOSTING_SITE_DATA,
     get_nsfw_novels,
@@ -43,7 +45,6 @@ from novel_mappings import (
 # ─── CONFIG ────────────────────────────────────────────────────────────────────
 from config_loader import (
     TAG_ROLE_MAP,
-    embed_color,
     get_novel_custom_emoji,
     get_novel_role_url,
     require_file_value,
@@ -115,38 +116,33 @@ def parsed_time_to_aware(struct_t, fallback_now):
     except Exception:
         return fallback_now
 
-
-def send_bot_message_embed(bot_token: str, channel_id: str, content: str, embed: dict):
+def send_bot_payload(bot_token: str, channel_id: str, message_payload: dict):
     """
-    Send a Discord message containing both a normal text block (`content`)
-    and a rich embed (`embed`).
-    We allow role mentions by specifying allowed_mentions.parse=["roles"].
+    Send rendered TOML payload to Discord via raw API.
     """
     url = f"https://discord.com/api/v10/channels/{channel_id}/messages"
     headers = {
         "Authorization": f"Bot {bot_token}",
-        "Content-Type":  "application/json"
-    }
-    payload = {
-        "content": content,
-        "embeds": [embed],
-        "allowed_mentions": {"parse": ["roles"]},
+        "Content-Type":  "application/json",
     }
 
-    r = requests.post(url, headers=headers, json=payload)
+    payload = to_discord_api_payload(message_payload)
+
+    r = requests.post(url, headers=headers, json=payload, timeout=20)
     r.raise_for_status()
+    return r
 
 
-def safe_send_bot_embed(bot_token: str, channel_id: str, content: str, embed: dict):
+def safe_send_bot_payload(bot_token: str, channel_id: str, message_payload: dict) -> bool:
     """
-    Try to send to Discord. If it fails, just print and continue without crashing.
+    Try to send to Discord. If it fails, print and continue without crashing.
     """
     try:
-        send_bot_message_embed(bot_token, channel_id, content, embed)
+        send_bot_payload(bot_token, channel_id, message_payload)
         return True
     except requests.RequestException as e:
         status = e.response.status_code if e.response else "?"
-        body   = e.response.text       if e.response else ""
+        body   = e.response.text if e.response else ""
         print(f"⚠️ Bot send failed ({status}):\n{body}", file=sys.stderr)
         return False
 
@@ -281,43 +277,6 @@ def build_ping_roles(novel_title: str, tags: list[str] | None = None) -> str:
     return " ".join(clean_parts)
 
 
-def build_launch_content(ping_line: str,
-                         title: str,
-                         novel_url: str,
-                         chap_name: str,
-                         chap_link: str,
-                         host: str,
-                         role_thread_url: str,
-                         custom_emoji: str) -> str:
-    """
-    Build the normal text content (outside the embed).
-    Matches your style:
-
-    @new novels @CN dao @Quick Transmigration @Yaoi
-    ## ꉂ`:fish_cake: ...
-    ***『[Title](novel_url)』*** — now officially ...
-    [Chapter 1](chap_link), is out on Host. ...
-    ✎﹏...
-    -# To get pings...
-    """
-    # normalize NBSP etc.
-    chap_display = chap_name.replace("\u00A0", " ").strip()
-
-    # inline emojis exactly as text (no constants)
-    return (
-        f"{ping_line} <a:Bow:1365575505171976246>\n"
-        "## ꉂ`:fish_cake: ･ﾟ✧ New Series Launch ִֶָ. ..𓂃 ࣪ ִֶָ<a:1678whalepink:1368136879857205308>་༘࿐\n"
-        f"**<a:kikilts_bracket:1365693072138174525>[{title}]({novel_url})<a:lalalts_bracket:1365693058905014313>** — now officially added to cannibal turtle's lineup! <a:1620cupcakepink:1368136855903801404><a:Stars:1365568624466722816> \n\n"
-        f"***[{chap_display}]({chap_link})***, is out on {host}. "
-        "Please give lots of love to our new baby and welcome it to the server "
-        "<a:hellokittydance:1365566988826705960>\n"
-        "Updates will continue regularly, so hop in early and start reading now <a:2713pandaroll:1368137698212184136> \n"
-        f"{'<a:6535_flower_border:1368146360871948321>' * 10}\n"
-        f"-# To get pings for new chapters, head to {role_thread_url}"
-        f"and react for the role {custom_emoji}"
-    )
-
-
 def shorten_description(desc_text: str, max_words: int = 50) -> str:
     """
     Keep only the first `max_words` words of desc_text.
@@ -332,57 +291,6 @@ def shorten_description(desc_text: str, max_words: int = 50) -> str:
 
     preview = " ".join(words[:max_words])
     return preview.rstrip() + "..."
-
-
-def build_launch_embed(
-    translator: str,
-    title: str,
-    novel_url: str,
-    desc_text: str,
-    cover_url: str,
-    host_name: str,
-    host_logo_url: str,
-    chap_dt_local: datetime  # this is the chapter's datetime from the feed
-) -> dict:
-    """
-    Build the embed object:
-    - author.name: translator ⋆. 𐙚
-    - title/url:   clickable series title
-    - description: cleaned summary
-    - image.url:   cover art
-    - footer:      host name + host logo
-    - timestamp:   actual chapter time (Discord will render "Today at HH:MM"
-                   in each viewer's local timezone)
-    - color:       pastel #AEC6CF
-    """
-
-    # Discord expects timestamp in ISO8601, and will auto-localize.
-    # We just make sure chap_dt_local is aware (has tzinfo).
-    iso_timestamp = chap_dt_local.astimezone(timezone.utc).isoformat()
-
-    embed = {
-        "author": {
-            "name": f"{translator} ⋆. 𐙚"
-        },
-        "title": title,
-        "url": novel_url,
-        "description": desc_text,
-        "image": {
-            "url": cover_url
-        },
-        "footer": {
-            "text": host_name,
-            "icon_url": host_logo_url
-        },
-        "color": embed_color(
-            "new_novel",
-            "AEC6CF",
-            short_code=short_code,
-        ),
-        "timestamp": iso_timestamp,
-    }
-
-    return embed
 
 
 def load_novels_from_mapping():
@@ -515,41 +423,40 @@ def main():
                 novel_title=novel_title,
                 tags=novel.get("tags", [])
             )
-            # Build user-facing text content
-            content_msg = build_launch_content(
-                ping_line=ping_line,
-                title=novel_title,
-                novel_url=novel.get("novel_url", ""),
-                chap_name=chap_field,
-                chap_link=chap_link,
-                host=host_name,
-                role_thread_url=novel.get("discord_role_url", ""),
-                custom_emoji=novel.get("custom_emoji", "")
-            )
+          
+            chap_display = chap_field.replace("\u00A0", " ").strip()
+            pub_date_iso = chap_dt_local.astimezone(timezone.utc).isoformat()
 
-            # Build embed object
-            embed_obj = build_launch_embed(
-                translator=novel.get("translator", ""),
-                title=novel_title,
-                novel_url=novel.get("novel_url", ""),
-                desc_text=desc_text,
-                cover_url=novel.get("featured_image", ""),
-                host_name=host_name,
-                host_logo_url=novel.get("host_logo", ""),
-                chap_dt_local=chap_dt_local
-            )
+            ctx = {
+                "ping_line": ping_line,
+                "title": novel_title,
+                "novel_title": novel_title,
+                "novel_url": novel.get("novel_url", ""),
+                "chapter": chap_display,
+                "chapter_link": chap_link,
+                "host": host_name,
+                "translator": novel.get("translator", ""),
+                "description": shorten_description(desc_text),
+                "featured_image_url": novel.get("featured_image", ""),
+                "host_logo_url": novel.get("host_logo", ""),
+                "pub_date_iso": pub_date_iso,
+                "short_code": novel.get("short_code", ""),
+                "custom_emoji": novel.get("custom_emoji", ""),
+                "discord_role_url": novel.get("discord_role_url", ""),
+            }
+
+            message_payload = render_message("new_novels", ctx)
 
             print(
                 f"→ Built launch message for {novel_title} "
-                f"({len(content_msg)} chars content + 1 embed)"
+                f"({len(message_payload.get('content', ''))} chars + "
+                f"{len(message_payload.get('embeds', []))} embed)"
             )
 
-            # Send to Discord
-            ok = safe_send_bot_embed(
+            ok = safe_send_bot_payload(
                 bot_token=bot_token,
                 channel_id=channel_id,
-                content=content_msg,
-                embed=embed_obj
+                message_payload=message_payload,
             )
 
             if ok:
