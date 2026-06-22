@@ -10,7 +10,7 @@ from urllib.parse import urlsplit, urlunsplit
 # ─── CONFIG ────────────────────────────────────────────────────────────────────
 from config_loader import (
     get_novel_role_id,
-    resolve_embed_color,
+    embed_color,
     require_feed_value,
     require_feeds_value,
     require_file_value,
