@@ -10,6 +10,8 @@ from novel_mappings import HOSTING_SITE_DATA, get_nsfw_novels
 from config_loader import (
     get_novel_role_id,
     embed_color,
+    get_novel_custom_emoji,
+    get_novel_role_url,
     require_role_value,
     role_id_to_mention,
 )
@@ -619,8 +621,8 @@ if __name__ == "__main__":
                 "free_feed":        d["free_feed"],
                 "paid_feed":        d["paid_feed"],
                 "novel_link":       d.get("novel_url", ""),
-                "custom_emoji":     d.get("custom_emoji", ""),
-                "discord_role_url": d.get("discord_role_url", ""),
+                "custom_emoji":     get_novel_custom_emoji(short_code),
+                "discord_role_url": get_novel_role_url(short_code),
                 "history_file":     d.get("history_file", "")
             }
             process_arc(novel)
