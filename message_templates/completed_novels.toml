@@ -1,8 +1,8 @@
 [paid_with_duration]
 suppress_embeds = true
 
-[paid_with_duration.allowed_mentions]
-parse = ["roles"]
+[allowed_mentions]
+parse = ["everyone", "users", "roles"]
 
 [paid_with_duration]
 content = '''
