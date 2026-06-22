@@ -119,8 +119,6 @@ Only if you choose not to install the mapping package.
       "paid_feed": "https://your-paid-feed-url.xml",
       "novel_link": "https://your-novel-link/",
       "host": "Your Hosting Site",
-      "custom_emoji": ":EmojiID:",
-      "discord_role_url": "https://discord.com/channels/YOUR_ROLE_URL",
       "history_file": "your_novel_history.json"
     }
   ]
