@@ -12,6 +12,9 @@ import discord
 from discord import Embed
 from discord.ui import View, Button
 
+from message_context import build_feed_context
+from message_renderer import render_message, to_discord_py_kwargs
+
 # ─── CONFIG ────────────────────────────────────────────────────────────────
 from config_loader import (
     get_novel_role_id,
@@ -88,7 +91,7 @@ def is_nsfw(entry) -> bool:
 def get_series_role(entry) -> str:
     short_code = (entry.get("short_code") or "").strip().upper()
     role_id = get_novel_role_id(short_code)
-    return role_id_to_mention(role_id)
+    return role_id_to_mention(role_id) if role_id else ""
 
 
 def _join_role_mentions(*parts) -> str:
@@ -252,86 +255,34 @@ async def send_new_paid_entries():
         for entry in to_send:
             guid = entry.get("guid") or entry.get("id")
 
-            host        = entry.get("host", "").strip()
+            host = (entry.get("host") or "").strip()
             series_role = get_series_role(entry)
-            nsfw_flag   = is_nsfw(entry)
-            title_text  = entry.get("title","").strip()
-
-            chapter = entry.get("chapter","").strip()
-            chaptername  = entry.get("chaptername","").strip()
-
-            link        = entry.get("link","").strip()
-            translator  = entry.get("translator","").strip()
-
-            thumb_url = (
-                (entry.get("featuredImage") or {}).get("url")
-                or (entry.get("featuredimage") or {}).get("url")
-            )
-            host_logo = (
-                (entry.get("hostLogo") or {}).get("url")
-                or (entry.get("hostlogo") or {}).get("url")
-            )
-
-            pubdate_raw = getattr(entry, "published", None)
-            timestamp = dateparser.parse(pubdate_raw) if pubdate_raw else None
-
-            coin_label_raw = entry.get("coin","").strip()
-
+            nsfw_flag = is_nsfw(entry)
+            
             mention_line = _build_chapter_mention(
                 series_role=series_role,
                 nsfw=nsfw_flag,
                 global_mention=GLOBAL_MENTION,
             )
-
-            content = (
-                f"{mention_line} <a:TurtleDance:1365253970435510293>\n"
-                f"<a:1366_sweetpiano_happy:1368136820965249034> "
-                f"**{title_text}** <:pink_lock:1368266294855733291>"
-            )
-
-            embed = Embed(
-                title=f"<a:moonandstars:1365569468629123184>**{chapter}**",
-                url=link,
-                timestamp=timestamp,
-                color=embed_color(
-                    "paid_chapter",
-                    "A87676",
-                    short_code=short_code,
-                ),
-            )
             
-            if chaptername:
-                embed.description = chaptername
+            ctx = build_feed_context(entry)
             
-            author_kwargs = {
-                "name": f"{translator}˙ᵕ˙"
-            }
+            label_text, emoji_obj = get_coin_button_parts_from_feed(ctx["coin"])
             
-            author_url = globals().get("AUTHOR_URL", "").strip()
+            ctx.update({
+                "chapter_mention": mention_line,
+                "global_mention": GLOBAL_MENTION,
+                "chapter_author_url": AUTHOR_URL,
+                "button_label": label_text,
+                "button_emoji": str(emoji_obj or ""),
+            })
             
-            if author_url:
-                author_kwargs["url"] = author_url
+            payload = render_message("paid_chapters", ctx)
+            kwargs = to_discord_py_kwargs(payload)
             
-            embed.set_author(**author_kwargs)
-
-            if thumb_url:
-                embed.set_thumbnail(url=thumb_url)
-                
-            embed.set_footer(text=host, icon_url=host_logo)
-
-            label_text, emoji_obj = get_coin_button_parts_from_feed(
-                coin_label_raw
-            )
-
-            btn = Button(
-                label=label_text,
-                url=link,
-                emoji=emoji_obj,
-            )
-            view = View()
-            view.add_item(btn)
-
-            await channel.send(content=content, embed=embed, view=view)
+            await channel.send(**kwargs)
+            
+            chapter = ctx["chapter"]
             print(f"📨 Sent paid: {chapter} / {guid}")
 
             norm = normalize_guid(entry)
