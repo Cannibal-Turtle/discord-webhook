@@ -10,7 +10,7 @@ from urllib.parse import urlsplit, urlunsplit
 # ─── CONFIG ────────────────────────────────────────────────────────────────────
 from config_loader import (
     get_novel_role_id,
-    embed_color,
+    resolve_embed_color,
     require_feed_value,
     require_feeds_value,
     require_file_value,
@@ -178,7 +178,11 @@ async def main():
                     "url":  link
                 },
                 "timestamp": timestamp,
-                "color":     embed_color(color_key, "F0C7A4"),
+                "color": resolve_embed_color(
+                    color_key,
+                    "F0C7A4",
+                    short_code=short_code,
+                ),
                 "footer": {
                     "text":     host,
                     "icon_url": host_logo
