@@ -2,7 +2,7 @@
   "state_path": "state.json",
   "rss_state_path": "state_rss.json",
   "nu_readers_path": "nu_readers.json",
-  "novel_role_id_map_file": "config/novel_role_id_map.json",
+  "novel_discord_map_file": "config/novel_discord_map.toml",
   "tag_role_map_file": "config/tag_roles.json",
   "arc_history_dir": "arc_history"
 }
