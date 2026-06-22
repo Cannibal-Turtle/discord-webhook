@@ -196,7 +196,7 @@ async def send_new_entries():
                 "chapter_author_url": AUTHOR_URL,
             })
             
-            payload = render_message("free_chapter", ctx)
+            payload = render_message("free_chapters", ctx)
             kwargs = to_discord_py_kwargs(payload)
             
             await channel.send(**kwargs)
