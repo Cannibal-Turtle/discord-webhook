@@ -1,9 +1,9 @@
 mode = "classic"
 
+content = "{chapter_mention} <a:TurtleDance:1365253970435510293>\n<a:5037sweetpianoyay:1368138418487427102> **{title}** <:pink_unlock:1368266307824255026>"
+
 [allowed_mentions]
 parse = ["roles"]
-
-content = "{chapter_mention} <a:TurtleDance:1365253970435510293>\n<a:5037sweetpianoyay:1368138418487427102> **{title}** <:pink_unlock:1368266307824255026>"
 
 [[embeds]]
 title = "<a:sun_clouds:1517425608143933470>**{chapter}**"
