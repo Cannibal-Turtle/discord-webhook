@@ -4,12 +4,14 @@ import os
 import json
 import re
 import sys
+
 from novel_mappings import HOSTING_SITE_DATA, get_nsfw_novels
+from message_renderer import render_message_sequence, to_discord_api_payload
+
 
 # ─── CONFIG ────────────────────────────────────────────────────────────────────
 from config_loader import (
     get_novel_role_id,
-    embed_color,
     get_novel_custom_emoji,
     get_novel_role_url,
     require_role_value,
@@ -28,7 +30,7 @@ NSFW_ROLE = role_id_to_mention(require_role_value("nsfw"))
 def get_series_role_from_short_code(short_code: str) -> str:
     short_code = (short_code or "").strip().upper()
     role_id = get_novel_role_id(short_code)
-    return role_id_to_mention(role_id)
+    return role_id_to_mention(role_id) if role_id else ""
 
 def join_role_mentions(*parts):
     seen, out = set(), []
@@ -44,22 +46,22 @@ def join_role_mentions(*parts):
 
     return " | ".join(out)
 
-def send_bot_message(bot_token: str, channel_id: str, content: str):
+def send_bot_payload(bot_token: str, channel_id: str, message_payload: dict):
     url = f"https://discord.com/api/v10/channels/{channel_id}/messages"
     headers = {
         "Authorization": f"Bot {bot_token}",
-        "Content-Type":  "application/json"
+        "Content-Type":  "application/json",
     }
-    payload = {
-        "content": content,
-        "allowed_mentions": {"parse": ["roles"]},
-        "flags": 4
-    }
-    resp = requests.post(url, headers=headers, json=payload)
+
+    payload = to_discord_api_payload(message_payload)
+
+    resp = requests.post(url, headers=headers, json=payload, timeout=20)
+
     if not resp.ok:
-        # print the Discord error payload so you know exactly why it’s 400
         print(f"⚠️ Bot error {resp.status_code}: {resp.text}")
+
     resp.raise_for_status()
+    return resp
 
 def load_history(history_file):
     """
@@ -465,136 +467,39 @@ def process_arc(novel):
         locked_lines[-1] = f"<a:9410pinkarrow:1368139217556996117>{locked_lines[-1]}"
     locked_md = "\n".join(locked_lines)
 
-    # 7. Build the Discord messages
-
-    content_header = (
-        f"{join_role_mentions(base_mention, ONGOING_ROLE)} <a:Crown:1365575414550106154>\n"
-        "## <a:announcement:1365566215975731274> NEW ARC ALERT "
-        "<a:pinksparkles:1365566023201198161>"
-        "<a:Butterfly:1365572264774471700>"
-        "<a:pinksparkles:1365566023201198161>\n"
-        f"***<:babypinkarrowleft:1365566594503147550>"
-        f"<:world_01:1368202193038999562>"
-        f"<:world_02:1368202204468613162> {world_emoji}"
-        f"<:babypinkarrowright:1365566635838275595>is Live for*** "
-        "<a:pinkloading:1365566815736172637>\n"
-        f"### [{novel['novel_title']}]({novel['novel_link']}) "
-        "<a:Turtle_Police:1365223650466205738>\n"
-        "❀° ┄───────────────────────╮"
-    )
-
-    # Only build embed_unlocked if there's actually at least one unlocked arc
-    if has_unlocked:
-        embed_unlocked = {
-            "description": f"||{unlocked_md}||",
-            "color": embed_color(
-                "arc_unlocked",
-                "FFF9BF",
-                short_code=novel.get("short_code", ""),
-            )
-        }
-    else:
-        embed_unlocked = None  # sentinel
-
-    embed_locked = {
-        "description": f"||{locked_md if locked_md else 'None'}||",
-        "color": embed_color(
-            "arc_locked",
-            "A87676",
-            short_code=novel.get("short_code", ""),
-        )
-        
+    # 7. Build TOML context + rendered Discord message sequence
+    arc_ctx = {
+        "arc_header_mention": join_role_mentions(base_mention, ONGOING_ROLE),
+        "novel_title": novel["novel_title"],
+        "novel_link": novel["novel_link"],
+        "host": novel["host"],
+        "short_code": novel.get("short_code", ""),
+        "world_emoji": world_emoji,
+        "unlocked_md": unlocked_md,
+        "locked_md": locked_md if locked_md else "None",
+        "has_unlocked": has_unlocked,
+        "custom_emoji": novel.get("custom_emoji", ""),
+        "discord_role_url": novel.get("discord_role_url", ""),
     }
 
-    footer_and_react = (
-        "╰───────────────────────┄ °❀\n"
-        f"> *Advance access is ready for you on {novel['host']}! "
-        "<a:holo_diamond:1365566087277711430>*\n"
-        + "<:pinkdiamond_border:1365575603734183936>" * 6 + "\n"
-        "-# React to the "
-        f"{novel['custom_emoji']} @ {novel['discord_role_url']} "
-        "to get notified on updates and announcements "
-        "<a:LoveLetter:1365575475841339435>"
-    )
+    arc_messages = render_message_sequence("new_arcs", arc_ctx)
 
     # 8. Send all Discord messages
     header_ok = False
-    try:
-        r1 = requests.post(
-            f"https://discord.com/api/v10/channels/{CHANNEL_ID}/messages",
-            headers={
-                "Authorization": f"Bot {BOT_TOKEN}",
-                "Content-Type":  "application/json"
-            },
-            json={
-                "content": content_header,
-                "allowed_mentions": {"parse": ["roles"]},
-                "flags": 4
-            }
-        )
-        if r1.ok:
-            header_ok = True
-        r1.raise_for_status()
-        print(f"✅ Header sent for: {new_full}")
-    except requests.RequestException as e:
-        print(f"⚠️ Header send failed: {e}", file=sys.stderr)
 
-    # Send "Unlocked 🔓" block only if we actually have unlocked arcs
-    if has_unlocked and embed_unlocked is not None:
+    for idx, message_payload in enumerate(arc_messages):
+        message_name = message_payload.get("name") or f"message {idx + 1}"
+
         try:
-            requests.post(
-                f"https://discord.com/api/v10/channels/{CHANNEL_ID}/messages",
-                headers={
-                    "Authorization": f"Bot {BOT_TOKEN}",
-                    "Content-Type":  "application/json"
-                },
-                json={
-                    "content": "<a:5693pinkwings:1368138669004820500> `Unlocked 🔓` <a:5046_bounce_pink:1368138460027813888>",
-                    "embeds": [embed_unlocked],
-                    "allowed_mentions": {"parse": ["roles"]},
-                }
-            ).raise_for_status()
-            print(f"✅ Unlocked embed sent for: {new_full}")
+            send_bot_payload(BOT_TOKEN, CHANNEL_ID, message_payload)
+
+            if idx == 0:
+                header_ok = True
+
+            print(f"✅ Arc {message_name} sent for: {new_full}")
+
         except requests.RequestException as e:
-            print(f"⚠️ Unlocked send failed: {e}", file=sys.stderr)
-    else:
-        print("ℹ️ Skipping Unlocked block (no unlocked arcs).")
-
-    # Locked block (always send, because this is the new arc hype)
-    try:
-        requests.post(
-            f"https://discord.com/api/v10/channels/{CHANNEL_ID}/messages",
-            headers={
-                "Authorization": f"Bot {BOT_TOKEN}",
-                "Content-Type":  "application/json"
-            },
-            json={
-                "content": "<a:5693pinkwings:1368138669004820500> `Locked 🔐` <a:5046_bounce_pink:1368138460027813888>",
-                "embeds": [embed_locked],
-                "allowed_mentions": {"parse": ["roles"]},
-            }
-        ).raise_for_status()
-        print(f"✅ Locked embed sent for: {new_full}")
-    except requests.RequestException as e:
-        print(f"⚠️ Locked send failed: {e}", file=sys.stderr)
-
-    # Footer / react block
-    try:
-        requests.post(
-            f"https://discord.com/api/v10/channels/{CHANNEL_ID}/messages",
-            headers={
-                "Authorization": f"Bot {BOT_TOKEN}",
-                "Content-Type":  "application/json"
-            },
-            json={
-                "content": footer_and_react,
-                "allowed_mentions": {"parse": ["roles"]},
-                "flags": 4
-            }
-        ).raise_for_status()
-        print(f"✅ Footer/react sent for: {new_full}")
-    except requests.RequestException as e:
-        print(f"⚠️ Footer/react send failed: {e}", file=sys.stderr)
+            print(f"⚠️ Arc {message_name} send failed: {e}", file=sys.stderr)
 
     # 9. Mark it announced, save, commit.
     if header_ok:
