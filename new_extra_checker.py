@@ -4,6 +4,7 @@ import re
 import requests
 import feedparser
 import sys
+from message_renderer import render_message, to_discord_api_payload
 from novel_mappings import HOSTING_SITE_DATA, get_nsfw_novels
 
 # ─── CONFIG ────────────────────────────────────────────────────────────────────
@@ -26,7 +27,7 @@ CHANNEL_ID_ENV = "DISCORD_CHANNEL_ID"
 def get_series_role_from_short_code(short_code: str) -> str:
     short_code = (short_code or "").strip().upper()
     role_id = get_novel_role_id(short_code)
-    return role_id_to_mention(role_id)
+    return role_id_to_mention(role_id) if role_id else ""
 
 def join_role_mentions(*parts):
     seen, out = set(), []
@@ -41,23 +42,37 @@ def join_role_mentions(*parts):
                 out.append(seg)
 
     return " | ".join(out)
-    
-def send_bot_message(bot_token: str, channel_id: str, content: str):
+
+def send_bot_payload(bot_token: str, channel_id: str, message_payload: dict):
     url = f"https://discord.com/api/v10/channels/{channel_id}/messages"
     headers = {
         "Authorization": f"Bot {bot_token}",
-        "Content-Type":  "application/json"
+        "Content-Type":  "application/json",
     }
-    payload = {"content": content, "allowed_mentions":{"parse":["roles"]}, "flags":4}
-    r = requests.post(url, headers=headers, json=payload)
-    r.raise_for_status()
 
-def safe_send_bot(bot_token: str, channel_id: str, content: str):
+    payload = to_discord_api_payload(message_payload)
+
+    r = requests.post(url, headers=headers, json=payload, timeout=20)
+
+    if not r.ok:
+        print(f"⚠️ Bot error {r.status_code}: {r.text}")
+
+    r.raise_for_status()
+    return r
+
+
+def safe_send_bot_payload(bot_token: str, channel_id: str, message_payload: dict) -> bool:
     try:
-        send_bot_message(bot_token, channel_id, content)
+        send_bot_payload(bot_token, channel_id, message_payload)
         print("✅ Message sent via bot")
-    except Exception as e:
-        print(f"⚠️ Failed to send via bot: {e}", file=sys.stderr)
+        return True
+
+    except requests.RequestException as e:
+        status = e.response.status_code if e.response else "?"
+        body   = e.response.text if e.response else ""
+        print(f"⚠️ Failed to send via bot ({status}):\n{body or e}", file=sys.stderr)
+        return False
+        
 
 def load_state(path=STATE_PATH):
     try:
@@ -206,28 +221,36 @@ def process_extras(novel):
                 f"{base} is at the very end — no extras or side stories left!  <:turtle_cowboy2:1365266375274266695>"
             )
 
-        # — assemble & send the Discord message —
-        msg = (
-            f"{join_role_mentions(base_mention, ONGOING_ROLE)} <a:Heart1:1365676465059794985>\n"
-            f"## :lotus:<a:greensparklingstars:1365569873845157918>NEW {disp_label} JUST DROPPED<a:greensparklingstars:1365569873845157918>:lotus:\n"
-            f"{remaining}\n"
-            f"{cm} in {novel['host']}'s advance access today. "
-            f"Thanks for sticking with this one ‘til the end. It means a lot. "
-            f"Please show your final love and support by leaving comments on the site~ <:turtlelovefamily:1365266991690285156> :heart_hands:"
-        )
-        bot_token   = os.getenv(BOT_TOKEN_ENV)
-        channel_id  = os.getenv(CHANNEL_ID_ENV)
-        
-        if bot_token and channel_id:
-            safe_send_bot(bot_token, channel_id, msg)
-            print(f"✅ Bot sent extras notification for {novel['novel_title']}")
-        else:
-            print("⚠️ Bot token or channel ID missing; skipped bot post")
+        # — render & send the Discord message —
+        ctx = {
+            "extra_mention": join_role_mentions(base_mention, ONGOING_ROLE),
+            "display_label": disp_label,
+            "remaining": remaining,
+            "drop_message": cm,
+            "host": novel["host"],
+            "short_code": novel.get("short_code", ""),
+        }
 
-        # update state
-        meta["last_extra_announced"] = current
-        meta["extra_announced"]      = True   # never fire again
-        save_state(state)
+        message_payload = render_message("new_extras", ctx)
+
+        bot_token  = os.getenv(BOT_TOKEN_ENV)
+        channel_id = os.getenv(CHANNEL_ID_ENV)
+
+        if not (bot_token and channel_id):
+            print("⚠️ Bot token or channel ID missing; skipped bot post")
+            return
+
+        ok = safe_send_bot_payload(bot_token, channel_id, message_payload)
+
+        if ok:
+            print(f"✅ Bot sent extras notification for {novel['novel_title']}")
+
+            # update state
+            meta["last_extra_announced"] = current
+            meta["extra_announced"]      = True   # never fire again
+            save_state(state)
+        else:
+            print("→ Send failed; not updating state.json")
 
 if __name__ == "__main__":
     novels = []
