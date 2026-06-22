@@ -60,7 +60,7 @@ except Exception as e:
 
 # ---------------------------- constants --------------------------------
 from config_loader import (
-    require_embed_value,
+    embed_color_hex,
     require_file_value,
     require_role_value,
     get_novel_role_id,
@@ -71,9 +71,9 @@ AUTHOR_NAME = "Novel Updates"
 AUTHOR_ICON = "https://www.novelupdates.com/appicon.png"
 
 EMBED_COLOR_HEX = (
-    os.environ.get("EMBED_COLOR", "").strip()
-    or require_embed_value("nu_embed_color")
-)
+    os.environ.get("EMBED_COLOR_HEX")
+    or embed_color_hex("nu_weekly", "2d3f51")
+).lstrip("#")
 
 ADMIN_MENTION = role_id_to_mention(require_role_value("admin"))
 
