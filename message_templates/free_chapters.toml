@@ -1,0 +1,35 @@
+mode = "classic"
+
+[allowed_mentions]
+parse = ["roles"]
+
+content = "{chapter_mention} <a:TurtleDance:1365253970435510293>\n<a:5037sweetpianoyay:1368138418487427102> **{title}** <:pink_unlock:1368266307824255026>"
+
+[[embeds]]
+title = "<a:sun_clouds:1517425608143933470>**{chapter}**"
+url = "{link}"
+description = "{chaptername}"
+description_when = "chaptername"
+timestamp = "{pub_date_iso}"
+color = { key = "free_chapter", default = "FFF9BF" }
+
+[embeds.author]
+name = "{translator}˙ᵕ˙"
+url = "{chapter_author_url}"
+url_when = "chapter_author_url"
+
+[embeds.thumbnail]
+url = "{featured_image_url}"
+url_when = "featured_image_url"
+
+[embeds.footer]
+text = "{host}"
+icon_url = "{host_logo_url}"
+icon_url_when = "host_logo_url"
+
+[components]
+[[components.action_rows]]
+[[components.action_rows.buttons]]
+style = "link"
+label = "Read here"
+url = "{link}"
