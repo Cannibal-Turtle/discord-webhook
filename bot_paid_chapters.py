@@ -16,7 +16,7 @@ from discord.ui import View, Button
 from config_loader import (
     get_novel_role_id,
     embed_value,
-    embed_color,
+    resolve_embed_color,
     require_feed_value,
     require_feeds_value,
     require_file_value,
@@ -293,7 +293,11 @@ async def send_new_paid_entries():
                 title=f"<a:moonandstars:1365569468629123184>**{chapter}**",
                 url=link,
                 timestamp=timestamp,
-                color=embed_color("paid_chapter", "A87676"),
+                color=resolve_embed_color(
+                    "paid_chapter",
+                    "A87676",
+                    short_code=short_code,
+                ),
             )
             
             if chaptername:
