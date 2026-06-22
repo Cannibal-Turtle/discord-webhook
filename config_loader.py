@@ -5,12 +5,54 @@ import json
 from pathlib import Path
 from typing import Any
 
+try:
+    import tomllib
+except ModuleNotFoundError:
+    import tomli as tomllib
+
 BASE_DIR = Path(__file__).resolve().parent
 
 
 def repo_path(relative_path: str | Path) -> Path:
     path = Path(relative_path)
     return path if path.is_absolute() else BASE_DIR / path
+
+
+def load_toml(relative_path: str | Path, *, required: bool = True, default: Any = None) -> Any:
+    path = repo_path(relative_path)
+
+    try:
+        return tomllib.loads(path.read_text(encoding="utf-8"))
+    except FileNotFoundError:
+        if required:
+            raise RuntimeError(f"Missing required TOML config file: {relative_path}")
+        return {} if default is None else default
+
+
+def load_novel_discord_map(path: str | Path | None = None) -> dict:
+    path = path or require_file_value("novel_discord_map_file")
+    raw = load_toml(path)
+
+    out = {}
+
+    for short_code, value in raw.items():
+        code = str(short_code).strip().upper()
+
+        if not code:
+            continue
+
+        if not isinstance(value, dict):
+            raise RuntimeError(
+                f"Invalid novel Discord config for {code}: expected table"
+            )
+
+        out[code] = {
+            "role_id": str(value.get("role_id", "")).strip(),
+            "custom_emoji": str(value.get("custom_emoji", "")).strip(),
+            "role_url": str(value.get("role_url", "")).strip(),
+        }
+
+    return out
 
 
 def load_json(relative_path: str | Path, *, required: bool = True, default: Any = None) -> Any:
@@ -84,19 +126,55 @@ def role_id_to_mention(role_id: str) -> str:
     return f"<@&{role_id}>"
 
 
+def load_novel_discord_map(path: str | Path | None = None) -> dict:
+    path = path or require_file_value("novel_discord_map_file")
+    raw = load_toml(path)
+
+    out = {}
+
+    for short_code, value in raw.items():
+        code = str(short_code).strip().upper()
+
+        if not code:
+            continue
+
+        if not isinstance(value, dict):
+            raise RuntimeError(
+                f"Invalid novel Discord config for {code}: expected table"
+            )
+
+        out[code] = {
+            "role_id": str(value.get("role_id", "")).strip(),
+            "custom_emoji": str(value.get("custom_emoji", "")).strip(),
+            "role_url": str(value.get("role_url", "")).strip(),
+        }
+
+    return out
+
+
+def get_novel_discord_config(short_code: str) -> dict:
+    short_code = (short_code or "").strip().upper()
+    return NOVEL_DISCORD_MAP.get(short_code, {})
+
+
+def get_novel_role_id(short_code: str) -> str:
+    return get_novel_discord_config(short_code).get("role_id", "")
+
+
+def get_novel_role_mention(short_code: str) -> str:
+    return role_id_to_mention(get_novel_role_id(short_code))
+
+
+def get_novel_custom_emoji(short_code: str) -> str:
+    return get_novel_discord_config(short_code).get("custom_emoji", "")
+
+
+def get_novel_role_url(short_code: str) -> str:
+    return get_novel_discord_config(short_code).get("role_url", "")
+
+
 def normalize_tag_key(tag: str) -> str:
     return " ".join(str(tag).strip().casefold().split())
-
-
-def load_short_code_role_map(path: str | Path | None = None) -> dict:
-    path = path or require_file_value("novel_role_id_map_file")
-    raw = load_json(path)
-
-    return {
-        str(short_code).strip().upper(): str(role_id).strip()
-        for short_code, role_id in raw.items()
-        if str(short_code).strip() and str(role_id).strip()
-    }
 
 
 def load_tag_role_map(path: str | Path | None = None) -> dict:
@@ -110,5 +188,5 @@ def load_tag_role_map(path: str | Path | None = None) -> dict:
     }
 
 
-NOVEL_ROLE_ID_MAP = load_short_code_role_map()
+NOVEL_DISCORD_MAP = load_novel_discord_map()
 TAG_ROLE_MAP = load_tag_role_map()
