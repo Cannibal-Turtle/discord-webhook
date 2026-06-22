@@ -63,7 +63,7 @@ from config_loader import (
     require_embed_value,
     require_file_value,
     require_role_value,
-    load_short_code_role_map,
+    get_novel_role_id,
     role_id_to_mention,
 )
 
@@ -82,10 +82,6 @@ GLOBAL_MENTION = (
     or f"||{ADMIN_MENTION}||"
 )
 
-NOVEL_ROLE_ID_MAP_PATH = os.environ.get(
-    "NOVEL_ROLE_ID_MAP_PATH",
-    require_file_value("novel_role_id_map_file")
-)
 
 # Default thread/channel to post into if no env/CLI provided.
 CHANNEL_DEFAULT = os.environ.get("DISCORD_MOD_CHANNEL_ID", "").strip()
@@ -134,14 +130,10 @@ def _normalize_role_mention(raw: str) -> str:
     return f"<@&{m.group(1)}>" if m else raw.strip()
   
 
-NOVEL_ROLE_ID_MAP = load_short_code_role_map(NOVEL_ROLE_ID_MAP_PATH)
-
-
 def _role_from_short_code(short_code: str) -> str:
-    short_code = (short_code or "").strip().upper()
-    role_id = NOVEL_ROLE_ID_MAP.get(short_code, "")
+    role_id = get_novel_role_id(short_code)
     return _normalize_role_mention(role_id)
-
+  
 
 def _fetch_reading_lists_count(series_url: str, timeout: int = 30) -> Optional[int]:
     headers = {
