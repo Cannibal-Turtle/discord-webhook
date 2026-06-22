@@ -10,6 +10,7 @@ from urllib.parse import urlsplit, urlunsplit
 # ─── CONFIG ────────────────────────────────────────────────────────────────────
 from config_loader import (
     get_novel_role_id,
+    embed_color,
     require_feed_value,
     require_feeds_value,
     require_file_value,
@@ -164,9 +165,11 @@ async def main():
             full_title = "" if (comment_image and comment_txt == "Sticker comment") else f"{start_marker}{safe_comment}{end_marker}"
             
             # pick embed color per host
-            default_hex = "F0C7A4"
-            nu_hex = "2d3f51"
-            color_hex = nu_hex if host.strip().lower() == "novel updates" else default_hex
+            color_key = (
+                "novel_updates_comments"
+                if host.strip().lower() == "novel updates"
+                else "comments"
+            )
             
             # ─── Build the embed dict (no author icon_url) ────────────────
             embed = {
@@ -175,7 +178,7 @@ async def main():
                     "url":  link
                 },
                 "timestamp": timestamp,
-                "color":     int("F0C7A4", 16),
+                "color":     embed_color(color_key, "F0C7A4"),
                 "footer": {
                     "text":     host,
                     "icon_url": host_logo
