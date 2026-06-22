@@ -44,6 +44,8 @@ from novel_mappings import (
 from config_loader import (
     TAG_ROLE_MAP,
     embed_color,
+    get_novel_custom_emoji,
+    get_novel_role_url,
     require_file_value,
     require_role_value,
     role_id_to_mention,
@@ -404,18 +406,21 @@ def load_novels_from_mapping():
                 # we skip novels that aren't publicly readable yet
                 continue
 
+            short_code = (details.get("short_code", "") or "").strip().upper()
+
             novels.append({
                 "host":             host_name,
                 "translator":       translator,
                 "host_logo":        host_logo,
 
                 "novel_title":      novel_title,
+                "short_code":       short_code,
                 "novel_url":        details.get("novel_url", ""),
                 "featured_image":   details.get("featured_image", ""),
 
                 "free_feed":        free_feed_url,
-                "custom_emoji":     details.get("custom_emoji", ""),
-                "discord_role_url": details.get("discord_role_url", ""),
+                "custom_emoji":     get_novel_custom_emoji(short_code),
+                "discord_role_url": get_novel_role_url(short_code),
 
                 "tags": details.get("tags", []),
             })
