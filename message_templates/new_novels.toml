@@ -12,7 +12,7 @@ Updates will continue regularly, so hop in early and start reading now <a:2713pa
 '''
 
 [allowed_mentions]
-parse = ["roles"]
+parse = ["everyone", "users", "roles"]
 
 [[embeds]]
 title = "{title}"
