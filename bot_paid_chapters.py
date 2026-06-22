@@ -3,14 +3,11 @@ import json
 import asyncio
 import re
 import feedparser
-from dateutil import parser as dateparser
 import html
 from urllib.parse import urlsplit, urlunsplit
 from datetime import datetime, timezone
 
 import discord
-from discord import Embed
-from discord.ui import View, Button
 
 from message_context import build_feed_context
 from message_renderer import render_message, to_discord_py_kwargs
@@ -19,7 +16,6 @@ from message_renderer import render_message, to_discord_py_kwargs
 from config_loader import (
     get_novel_role_id,
     embed_value,
-    embed_color,
     require_feed_value,
     require_feeds_value,
     require_file_value,
