@@ -15,7 +15,7 @@ import requests
 
 # ─── CONFIG ────────────────────────────────────────────────────────────────────
 from config_loader import (
-    NOVEL_ROLE_ID_MAP,
+    get_novel_role_id,
     embed_value,
     require_feed_value,
     require_feeds_value,
@@ -81,7 +81,7 @@ def is_nsfw(entry) -> bool:
 
 def get_series_role(entry) -> str:
     short_code = (entry.get("short_code") or "").strip().upper()
-    role_id = NOVEL_ROLE_ID_MAP.get(short_code, "")
+    role_id = get_novel_role_id(short_code)
     return role_id_to_mention(role_id)
 
 def _join_role_mentions(*parts) -> str:
