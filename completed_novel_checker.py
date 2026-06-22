@@ -50,7 +50,7 @@ NSFW_ROLE     = role_id_to_mention(require_role_value("nsfw"))
 def get_series_role_from_short_code(short_code: str) -> str:
     short_code = (short_code or "").strip().upper()
     role_id = get_novel_role_id(short_code)
-    return role_id_to_mention(role_id)
+    return role_id_to_mention(role_id) if role_id else ""
 
 def load_state(path=STATE_PATH):
     try:
@@ -65,31 +65,29 @@ def save_state(state, path=STATE_PATH):
         json.dump(state, f, indent=2, ensure_ascii=False)
 
 
-def send_bot_message(bot_token: str, channel_id: str, content: str):
+def normalize_message_payload(message: dict) -> dict:
+    return to_discord_api_payload(message)
+
+
+def send_bot_message(bot_token: str, channel_id: str, message_payload: dict):
     """
-    Post the same `content` via your bot account to `channel_id`.
+    Post the rendered TOML payload via your bot account to channel_id.
     """
     url = f"https://discord.com/api/v10/channels/{channel_id}/messages"
     headers = {
         "Authorization": f"Bot {bot_token}",
         "Content-Type":  "application/json"
     }
-    payload = {
-        "content": content,
-        "allowed_mentions": {"parse": ["roles"]},
-        "flags": 4  # suppress embeds for cleaner wall text
-    }
+    payload = normalize_message_payload(message_payload)
     r = requests.post(url, headers=headers, json=payload)
     r.raise_for_status()
 
 
-def safe_send_bot(bot_token: str, channel_id: str, content: str):
-    """
-    Try sending via bot, but catch HTTP errors so the rest of the script continues.
-    """
+def safe_send_bot(bot_token: str, channel_id: str, message_payload: dict):
     try:
-        send_bot_message(bot_token, channel_id, content)
+        send_bot_message(bot_token, channel_id, message_payload)
         return True
+      
     except requests.HTTPError as e:
         status = e.response.status_code if e.response else "?"
         body   = e.response.text       if e.response else ""
@@ -316,7 +314,7 @@ def main():
                 duration = get_duration(novel.get("start_date", ""), chap_date)
 
                 msg = build_only_free_completion(novel, chap_field, entry.link, duration)
-                print(f"→ Built message of {len(msg)} characters")
+                print(f"→ Built message of {len(msg.get('content', ''))} characters")
 
                 success = safe_send_bot(bot_token, channel_id, msg)
                 if success:
@@ -351,7 +349,7 @@ def main():
                 duration = get_duration(novel.get("start_date", ""), chap_date)
 
                 msg = build_paid_completion(novel, chap_field, entry.link, duration)
-                print(f"→ Built message of {len(msg)} characters")
+                print(f"→ Built message of {len(msg.get('content', ''))} characters")
 
                 success = safe_send_bot(bot_token, channel_id, msg)
                 if success:
@@ -376,7 +374,7 @@ def main():
                     break
 
                 msg = build_free_completion(novel, chap_field, entry.link)
-                print(f"→ Built message of {len(msg)} characters")
+                print(f"→ Built message of {len(msg.get('content', ''))} characters")
 
                 success = safe_send_bot(bot_token, channel_id, msg)
                 if success:
