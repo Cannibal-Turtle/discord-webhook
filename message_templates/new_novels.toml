@@ -1,0 +1,34 @@
+mode = "classic"
+
+content = '''
+{ping_line} <a:Bow:1365575505171976246>
+## ꉂ`:fish_cake: ･ﾟ✧ New Series Launch ִֶָ. ..𓂃 ࣪ ִֶָ<a:1678whalepink:1368136879857205308>་༘࿐
+**<a:kikilts_bracket:1365693072138174525>[{title}]({novel_url})<a:lalalts_bracket:1365693058905014313>** — now officially added to cannibal turtle's lineup! <a:1620cupcakepink:1368136855903801404><a:Stars:1365568624466722816> 
+
+***[{chapter}]({chapter_link})***, is out on {host}. Please give lots of love to our new baby and welcome it to the server <a:hellokittydance:1365566988826705960>
+Updates will continue regularly, so hop in early and start reading now <a:2713pandaroll:1368137698212184136> 
+<a:6535_flower_border:1368146360871948321><a:6535_flower_border:1368146360871948321><a:6535_flower_border:1368146360871948321><a:6535_flower_border:1368146360871948321><a:6535_flower_border:1368146360871948321><a:6535_flower_border:1368146360871948321><a:6535_flower_border:1368146360871948321><a:6535_flower_border:1368146360871948321><a:6535_flower_border:1368146360871948321><a:6535_flower_border:1368146360871948321>
+-# To get pings for new chapters, head to {discord_role_url}and react for the role {custom_emoji}
+'''
+
+[allowed_mentions]
+parse = ["roles"]
+
+[[embeds]]
+title = "{title}"
+url = "{novel_url}"
+description = "{description}"
+timestamp = "{pub_date_iso}"
+color = { key = "new_novel", default = "AEC6CF" }
+
+[embeds.author]
+name = "{translator} ⋆. 𐙚"
+
+[embeds.image]
+url = "{featured_image_url}"
+url_when = "featured_image_url"
+
+[embeds.footer]
+text = "{host}"
+icon_url = "{host_logo_url}"
+icon_url_when = "host_logo_url"
