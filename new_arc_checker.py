@@ -8,7 +8,7 @@ from novel_mappings import HOSTING_SITE_DATA, get_nsfw_novels
 
 # ─── CONFIG ────────────────────────────────────────────────────────────────────
 from config_loader import (
-    NOVEL_ROLE_ID_MAP,
+    get_novel_role_id,
     require_role_value,
     role_id_to_mention,
 )
@@ -24,7 +24,7 @@ NSFW_ROLE = role_id_to_mention(require_role_value("nsfw"))
 
 def get_series_role_from_short_code(short_code: str) -> str:
     short_code = (short_code or "").strip().upper()
-    role_id = NOVEL_ROLE_ID_MAP.get(short_code, "")
+    role_id = get_novel_role_id(short_code)
     return role_id_to_mention(role_id)
 
 def join_role_mentions(*parts):
