@@ -84,6 +84,21 @@ def embed_value(key: str, default: Any = None) -> Any:
 def require_embed_value(key: str) -> Any:
     return require_value(EMBEDS, key, "embeds")
 
+def embed_color_hex(key: str, default: str) -> str:
+    colors = EMBEDS.get("colors", {})
+
+    if isinstance(colors, dict):
+        value = colors.get(key)
+    else:
+        value = None
+
+    value = value or EMBEDS.get(key) or default
+    return str(value).strip().lstrip("#")
+
+
+def embed_color(key: str, default: str) -> int:
+    return int(embed_color_hex(key, default), 16)
+
 
 def role_id_to_mention(role_id: str) -> str:
     role_id = str(role_id or "").strip()
