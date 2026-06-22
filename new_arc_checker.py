@@ -492,7 +492,7 @@ def process_arc(novel):
 
     embed_locked = {
         "description": f"||{locked_md if locked_md else 'None'}||",
-        "color": 0xA87676
+        "color": embed_color("arc_locked", "A87676")
     }
 
     footer_and_react = (
