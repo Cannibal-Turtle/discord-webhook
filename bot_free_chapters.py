@@ -13,6 +13,9 @@ from discord import Embed
 from discord.ui import View, Button
 import requests
 
+from message_context import build_feed_context
+from message_renderer import render_message, to_discord_py_kwargs
+
 # ─── CONFIG ────────────────────────────────────────────────────────────────────
 from config_loader import (
     get_novel_role_id,
@@ -181,62 +184,22 @@ async def send_new_entries():
                 global_mention=GLOBAL_MENTION,
             )
 
-            title   = (entry.get("title") or "").strip()
+            ctx = build_feed_context(entry)
+            
+            title = ctx["title"]
+            chapter = ctx["chapter"]
             updated_titles.add((title, host))
-
-            content = (
-                f"{mention_line} <a:TurtleDance:1365253970435510293>\n"
-                f"<a:5037sweetpianoyay:1368138418487427102> **{title}** <:pink_unlock:1368266307824255026>"
-            )
-
-            # Embed fields
-            chapter = (entry.get("chapter") or "").strip() or "New Chapter"
-            chaptername  = (entry.get("chaptername") or "").strip()
-            link        = (entry.get("link") or "").strip()
-            translator  = (entry.get("translator") or "").strip()
-            # featured image shape differs sometimes; try both
-            fi = entry.get("featuredImage") or entry.get("featuredimage") or {}
-            thumb_url   = (fi or {}).get("url")
-            hl = entry.get("hostLogo") or entry.get("hostlogo") or {}
-            host_logo   = (hl or {}).get("url")
-
-            pubdate_raw = getattr(entry, "published", None)
-            timestamp   = dateparser.parse(pubdate_raw) if pubdate_raw else None
-
-            embed = Embed(
-                title=f"<a:sun_clouds:1517425608143933470>**{chapter}**",
-                url=link,
-                timestamp=timestamp,
-                color=embed_color(
-                    "free_chapter",
-                    "FFF9BF",
-                    short_code=short_code,
-                ),
-            )
             
-            if chaptername:
-                embed.description = chaptername
-
-            author_kwargs = {
-                "name": f"{translator}˙ᵕ˙"
-            }
+            ctx.update({
+                "chapter_mention": mention_line,
+                "global_mention": GLOBAL_MENTION,
+                "chapter_author_url": AUTHOR_URL,
+            })
             
-            author_url = globals().get("AUTHOR_URL", "").strip()
+            payload = render_message("free_chapter", ctx)
+            kwargs = to_discord_py_kwargs(payload)
             
-            if author_url:
-                author_kwargs["url"] = author_url
-            
-            embed.set_author(**author_kwargs)
-            
-            if thumb_url:
-                embed.set_thumbnail(url=thumb_url)
-    
-            embed.set_footer(text=host, icon_url=host_logo)
-
-            # Button & send
-            view = View()
-            view.add_item(Button(label="Read here", url=link))
-            await channel.send(content=content, embed=embed, view=view)
+            await channel.send(**kwargs)
 
             print(f"📨 Sent: {chapter} / {guid}")
 
