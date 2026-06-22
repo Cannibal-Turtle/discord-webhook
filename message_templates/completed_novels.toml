@@ -1,13 +1,10 @@
 [paid_with_duration]
 suppress_embeds = true
-
-[allowed_mentions]
-parse = ["everyone", "users", "roles"]
-
-[paid_with_duration]
 content = '''
 {completion_mention} <a:HappyCloud:1365575487333859398>
+
 ## ꧁ᐟᐟ ◌ೄ⟢  Completion Announcement  :blueberries: ˚. ᵎᵎ˖ˎˊ-
+
 <:purple_divider1:1365652778957144165><:purple_divider1:1365652778957144165><:purple_divider1:1365652778957144165><:purple_divider1:1365652778957144165><:purple_divider1:1365652778957144165><:purple_divider1:1365652778957144165><:purple_divider1:1365652778957144165><:purple_divider1:1365652778957144165><:purple_divider1:1365652778957144165><:purple_divider1:1365652778957144165>
 ***<a:kikilts_bracket:1365693072138174525>[{novel_title}]({novel_link})<a:lalalts_bracket:1365693058905014313> — officially completed!*** <a:cowiggle:1368136766791483472><a:whitesparkles:1365569806966853664>
 
@@ -17,16 +14,16 @@ After {duration} of updates, {novel_title} is now fully translated with {chapter
 -# Check out other translated projects at {discord_role_url} and react to get the latest updates <a:LoveLetter:1365575475841339435>
 '''
 
+[paid_with_duration.allowed_mentions]
+parse = ["everyone", "users", "roles"]
+
 [paid_no_duration]
 suppress_embeds = true
-
-[paid_no_duration.allowed_mentions]
-parse = ["roles"]
-
-[paid_no_duration]
 content = '''
 {completion_mention} <a:HappyCloud:1365575487333859398>
+
 ## ꧁ᐟᐟ ◌ೄ⟢  Completion Announcement  :blueberries: ˚. ᵎᵎ˖ˎˊ-
+
 <:purple_divider1:1365652778957144165><:purple_divider1:1365652778957144165><:purple_divider1:1365652778957144165><:purple_divider1:1365652778957144165><:purple_divider1:1365652778957144165><:purple_divider1:1365652778957144165><:purple_divider1:1365652778957144165><:purple_divider1:1365652778957144165><:purple_divider1:1365652778957144165><:purple_divider1:1365652778957144165>
 ***<a:kikilts_bracket:1365693072138174525>[{novel_title}]({novel_link})<a:lalalts_bracket:1365693058905014313> — officially completed!*** <a:cowiggle:1368136766791483472><a:whitesparkles:1365569806966853664>
 
@@ -36,16 +33,16 @@ content = '''
 -# Check out other translated projects at {discord_role_url} and react to get the latest updates <a:LoveLetter:1365575475841339435>
 '''
 
+[paid_no_duration.allowed_mentions]
+parse = ["everyone", "users", "roles"]
+
 [free]
 suppress_embeds = true
-
-[free.allowed_mentions]
-parse = ["roles"]
-
-[free]
 content = '''
 {completion_mention} <a:HappyCloud:1365575487333859398>
+
 ## 𐔌  Announcing: Complete Series Unlocked ,, :cherries: — 𝝑𝝔  ꒱
+
 <:purple_divider1:1365652778957144165><:purple_divider1:1365652778957144165><:purple_divider1:1365652778957144165><:purple_divider1:1365652778957144165><:purple_divider1:1365652778957144165><:purple_divider1:1365652778957144165><:purple_divider1:1365652778957144165><:purple_divider1:1365652778957144165><:purple_divider1:1365652778957144165><:purple_divider1:1365652778957144165>
 ***<a:kikilts_bracket:1365693072138174525>[{novel_title}]({novel_link})<a:lalalts_bracket:1365693058905014313>— complete access granted!*** <a:cowiggle:1368136766791483472><a:whitesparkles:1365569806966853664>
 
@@ -56,16 +53,16 @@ Head over to {host} to dive straight in~*<a:Heart:1365575427724283944><a:Paws:13
 -# Check out other translated projects at {discord_role_url} and react to get the latest updates <a:LoveLetter:1365575475841339435>
 '''
 
+[free.allowed_mentions]
+parse = ["everyone", "users", "roles"]
+
 [only_free_with_duration]
 suppress_embeds = true
-
-[only_free_with_duration.allowed_mentions]
-parse = ["roles"]
-
-[only_free_with_duration]
 content = '''
 {completion_mention} <a:HappyCloud:1365575487333859398>
+
 ## ⁺‧ ༻•┈๑☽₊˚ ⌞Completion Announcement⋆ཋྀ ˚₊‧⁺ :kiwi: ∗༉‧₊˚
+
 <:purple_divider1:1365652778957144165><:purple_divider1:1365652778957144165><:purple_divider1:1365652778957144165><:purple_divider1:1365652778957144165><:purple_divider1:1365652778957144165><:purple_divider1:1365652778957144165><:purple_divider1:1365652778957144165><:purple_divider1:1365652778957144165><:purple_divider1:1365652778957144165><:purple_divider1:1365652778957144165>
 ***<a:kikilts_bracket:1365693072138174525>[{novel_title}]({novel_link})<a:lalalts_bracket:1365693058905014313> — officially completed!*** <a:cowiggle:1368136766791483472><a:whitesparkles:1365569806966853664>
 
@@ -75,16 +72,16 @@ After {duration} of updates, {novel_title} is now fully translated with {chapter
 -# Check out other translated projects at {discord_role_url} and react to get the latest updates <a:LoveLetter:1365575475841339435>
 '''
 
+[only_free_with_duration.allowed_mentions]
+parse = ["everyone", "users", "roles"]
+
 [only_free_no_duration]
 suppress_embeds = true
-
-[only_free_no_duration.allowed_mentions]
-parse = ["roles"]
-
-[only_free_no_duration]
 content = '''
 {completion_mention} <a:HappyCloud:1365575487333859398>
+
 ## ⁺‧ ༻•┈๑☽₊˚ ⌞Completion Announcement⋆ཋྀ ˚₊‧⁺ :kiwi: ∗༉‧₊˚
+
 <:purple_divider1:1365652778957144165><:purple_divider1:1365652778957144165><:purple_divider1:1365652778957144165><:purple_divider1:1365652778957144165><:purple_divider1:1365652778957144165><:purple_divider1:1365652778957144165><:purple_divider1:1365652778957144165><:purple_divider1:1365652778957144165><:purple_divider1:1365652778957144165><:purple_divider1:1365652778957144165>
 ***<a:kikilts_bracket:1365693072138174525>[{novel_title}]({novel_link})<a:lalalts_bracket:1365693058905014313> — officially completed!*** <a:cowiggle:1368136766791483472><a:whitesparkles:1365569806966853664>
 
@@ -93,3 +90,6 @@ content = '''
 <:FF_Divider_Pink:1365575626194681936><:FF_Divider_Pink:1365575626194681936><:FF_Divider_Pink:1365575626194681936><:FF_Divider_Pink:1365575626194681936><:FF_Divider_Pink:1365575626194681936>
 -# Check out other translated projects at {discord_role_url} and react to get the latest updates <a:LoveLetter:1365575475841339435>
 '''
+
+[only_free_no_duration.allowed_mentions]
+parse = ["everyone", "users", "roles"]
