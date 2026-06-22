@@ -178,7 +178,7 @@ async def main():
                     "url":  link
                 },
                 "timestamp": timestamp,
-                "color": resolve_embed_color(
+                "color": embed_color(
                     color_key,
                     "F0C7A4",
                     short_code=short_code,
