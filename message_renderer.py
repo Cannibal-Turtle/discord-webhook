@@ -173,24 +173,31 @@ def render_message(name: str, ctx: dict[str, Any], *, variant: str | None = None
 
 def render_message_sequence(name: str, ctx: dict[str, Any], *, variant: str | None = None) -> list[dict[str, Any]]:
     """
-    For multi-message templates like arc.toml:
+    For multi-message templates like new_arcs.toml:
 
       [[messages]]
-      content = "header"
+      name = "header"
+      content = "..."
 
       [[messages]]
-      content = "locked embed"
+      name = "locked"
+      content = "..."
     """
     template = load_template(name, variant=variant)
     messages = template.get("messages", [])
 
     rendered_messages: list[dict[str, Any]] = []
+
     for message in messages:
         rendered = render_obj(message, ctx)
         if not rendered:
             continue
 
-        rendered.pop("name", None)
+        # Keep readable TOML multiline strings from adding blank top/bottom lines.
+        if isinstance(rendered.get("content"), str):
+            rendered["content"] = rendered["content"].strip("\n")
+
+        # suppress_embeds is easier to write/read in TOML than flags = 4.
         if rendered.pop("suppress_embeds", False):
             rendered["flags"] = int(rendered.get("flags", 0)) | 4
 
