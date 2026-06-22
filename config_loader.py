@@ -96,10 +96,6 @@ def embed_color_hex(key: str, default: str) -> str:
     return str(value).strip().lstrip("#")
 
 
-def embed_color(key: str, default: str) -> int:
-    return int(embed_color_hex(key, default), 16)
-
-
 def get_novel_color_from_short_code(short_code: str) -> str:
     """
     Returns the novel's theme/Discord color from rss-feed mappings.
@@ -135,7 +131,7 @@ def get_novel_color_from_short_code(short_code: str) -> str:
     ).strip()
 
 
-def resolve_embed_color(
+def embed_color(
     key: str,
     default: str,
     *,
@@ -145,15 +141,15 @@ def resolve_embed_color(
     """
     Resolves an embed color.
 
-    Fixed color config:
+    Supports fixed hex config:
       "paid_chapter": "A87676"
 
-    Novel color config:
+    Supports novel-specific config:
       "paid_chapter": "novel"
 
-    In novel mode, it uses:
+    In "novel" mode, it uses:
       1. explicit novel_color if passed
-      2. color from rss-feed mapping using short_code
+      2. theme_color / discord_color from rss-feed using short_code
       3. default fallback
     """
     configured = embed_color_hex(key, default)
