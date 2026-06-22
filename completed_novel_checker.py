@@ -27,6 +27,7 @@ import re
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 from novel_mappings import HOSTING_SITE_DATA, get_nsfw_novels
+from message_renderer import render_message, to_discord_api_payload
 
 # ─── CONFIG ────────────────────────────────────────────────────────────────────
 from config_loader import (
@@ -166,125 +167,36 @@ def build_completion_mention(novel: dict) -> str:
     return join_role_mentions(base_role, COMPLETE_ROLE, nsfw_tail)
 
 
+def build_completion_context(novel, chap_field, chap_link, duration: str = "") -> dict:
+    return {
+        "completion_mention": build_completion_mention(novel),
+        "novel_title": novel.get("novel_title", ""),
+        "novel_link": novel.get("novel_link", ""),
+        "host": novel.get("host", ""),
+        "discord_role_url": novel.get("discord_role_url", ""),
+        "chapter_count": novel.get("chapter_count", "the entire series"),
+        "chapter_text": (chap_field or "").replace("\u00A0", " "),
+        "chapter_link": chap_link,
+        "duration": duration,
+    }
+
+
 def build_paid_completion(novel, chap_field, chap_link, duration: str):
-    mention     = build_completion_mention(novel)
-    title       = novel.get("novel_title", "")
-    link        = novel.get("novel_link", "")
-    host        = novel.get("host", "")
-    discord_url = novel.get("discord_role_url", "")
-    count       = novel.get("chapter_count", "the entire series")
-    DIV         = "<:purple_divider1:1365652778957144165>"
-    divider_line = DIV * 10
-
-    chap_text = chap_field.replace("\u00A0", " ")
-
-    if duration:
-        mid_line = (
-            f"After {duration} of updates, {title} is now fully translated with "
-            f"{count}! Thank you for coming on this journey and for your continued "
-            f"support <:turtle_plead:1365223487274352670> You can now visit {host} "
-            f"to binge all advance releases~*<a:Heart:1365575427724283944>"
-            f"<a:Paws:1365676154865979453>\n"
-        )
-    else:
-        mid_line = (
-            f"{title} is now fully translated with {count}! Thank you for coming "
-            f"on this journey and for your continued support "
-            f"<:turtle_plead:1365223487274352670> You can now visit {host} "
-            f"to binge all advance releases~*<a:Heart:1365575427724283944>"
-            f"<a:Paws:1365676154865979453>\n"
-        )
-
-    return (
-        f"{mention} <a:HappyCloud:1365575487333859398>\n"
-        "## ꧁ᐟᐟ ◌ೄ⟢  Completion Announcement  :blueberries: ˚. ᵎᵎ˖ˎˊ-\n"
-        f"{divider_line}\n"
-        f"***<a:kikilts_bracket:1365693072138174525>[{title}]({link})"
-        f"<a:lalalts_bracket:1365693058905014313> — officially completed!*** "
-        f"<a:cowiggle:1368136766791483472><a:whitesparkles:1365569806966853664>\n\n"
-        f"*The last chapter, [{chap_text}]({chap_link}), has now been released. "
-        f"<a:turtle_hyper:1365223449827737630>\n"
-        f"{mid_line}"
-        f"{'<:FF_Divider_Pink:1365575626194681936>' * 5}\n"
-        f"-# Check out other translated projects at {discord_url} and react "
-        f"to get the latest updates <a:LoveLetter:1365575475841339435>"
-    )
+    variant = "paid_with_duration" if duration else "paid_no_duration"
+    ctx = build_completion_context(novel, chap_field, chap_link, duration)
+    return render_message("completed_novels", ctx, variant=variant)
 
 
 def build_free_completion(novel, chap_field, chap_link):
-    mention     = build_completion_mention(novel)
-    title       = novel.get("novel_title", "")
-    link        = novel.get("novel_link", "")
-    host        = novel.get("host", "")
-    discord_url = novel.get("discord_role_url", "")
-    count       = novel.get("chapter_count", "the entire series")
-    comp_role   = COMPLETE_ROLE
-    DIV         = "<:purple_divider1:1365652778957144165>"
-    divider_line = DIV * 10
-
-    chap_text = chap_field.replace("\u00A0", " ")
-
-    return (
-        f"{mention} <a:HappyCloud:1365575487333859398>\n"
-        "## 𐔌  Announcing: Complete Series Unlocked ,, :cherries: — 𝝑𝝔  ꒱\n"
-        f"{divider_line}\n"
-        f"***<a:kikilts_bracket:1365693072138174525>[{title}]({link})"
-        f"<a:lalalts_bracket:1365693058905014313>— complete access granted!*** "
-        f"<a:cowiggle:1368136766791483472><a:whitesparkles:1365569806966853664>\n\n"
-        f"*All {count} has been unlocked and ready for you to binge—completely free!\n"
-        f"Thank you all for your amazing support   "
-        f"<:green_turtle_heart:1365264636064305203>\n"
-        f"Head over to {host} to dive straight in~*"
-        f"<a:Heart:1365575427724283944><a:Paws:1365676154865979453>\n"
-        f"{'<:FF_Divider_Pink:1365575626194681936>' * 5}\n"
-        f"-# Check out other translated projects at {discord_url} and react "
-        f"to get the latest updates <a:LoveLetter:1365575475841339435>"
-    )
+    ctx = build_completion_context(novel, chap_field, chap_link)
+    return render_message("completed_novels", ctx, variant="free")
 
 
 def build_only_free_completion(novel, chap_field, chap_link, duration: str):
-    mention     = build_completion_mention(novel)
-    title       = novel.get("novel_title", "")
-    link        = novel.get("novel_link", "")
-    host        = novel.get("host", "")
-    discord_url = novel.get("discord_role_url", "")
-    count       = novel.get("chapter_count", "the entire series")
-    DIV         = "<:purple_divider1:1365652778957144165>"
-    divider_line = DIV * 10
-
-    chap_text = chap_field.replace("\u00A0", " ")
-
-    if duration:
-        mid_line = (
-            f"After {duration} of updates, {title} is now fully translated with "
-            f"{count}! Thank you for coming on this journey and for your continued "
-            f"support <:luv_turtle:365263712549736448> You can now visit {host} "
-            f"to binge on all the releases~*<a:Heart:1365575427724283944>"
-            f"<a:Paws:1365676154865979453>\n"
-        )
-    else:
-        mid_line = (
-            f"{title} is now fully translated with {count}! Thank you for coming "
-            f"on this journey and for your continued support "
-            f"<:luv_turtle:365263712549736448> You can now visit {host} "
-            f"to binge on all the releases~*<a:Heart:1365575427724283944>"
-            f"<a:Paws:1365676154865979453>\n"
-        )
-
-    return (
-        f"{mention} <a:HappyCloud:1365575487333859398>\n"
-        "## ⁺‧ ༻•┈๑☽₊˚ ⌞Completion Announcement⋆ཋྀ ˚₊‧⁺ :kiwi: ∗༉‧₊˚\n"
-        f"{divider_line}\n"
-        f"***<a:kikilts_bracket:1365693072138174525>[{title}]({link})"
-        f"<a:lalalts_bracket:1365693058905014313> — officially completed!*** "
-        f"<a:cowiggle:1368136766791483472><a:whitesparkles:1365569806966853664>\n\n"
-        f"*The last chapter, [{chap_text}]({chap_link}), has now been released. "
-        f"<a:turtle_hyper:1365223449827737630>\n"
-        f"{mid_line}"
-        f"{'<:FF_Divider_Pink:1365575626194681936>' * 5}\n"
-        f"-# Check out other translated projects at {discord_url} and react "
-        f"to get the latest updates <a:LoveLetter:1365575475841339435>"
-    )
+    variant = "only_free_with_duration" if duration else "only_free_no_duration"
+    ctx = build_completion_context(novel, chap_field, chap_link, duration)
+    return render_message("completed_novels", ctx, variant=variant)
+  
 
 def load_novels():
     """
