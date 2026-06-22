@@ -7,10 +7,12 @@ import aiohttp
 import html
 from urllib.parse import urlsplit, urlunsplit
 
+from message_context import build_feed_context
+from message_renderer import render_message, to_discord_api_payload
+
 # ─── CONFIG ────────────────────────────────────────────────────────────────────
 from config_loader import (
     get_novel_role_id,
-    embed_color,
     require_feed_value,
     require_feeds_value,
     require_file_value,
@@ -95,7 +97,24 @@ def parse_pub_iso(entry):
 def get_series_role(entry) -> str:
     short_code = (entry.get("short_code") or "").strip().upper()
     role_id = get_novel_role_id(short_code)
-    return role_id_to_mention(role_id)
+    return role_id_to_mention(role_id) if role_id else ""
+
+def build_comment_title(comment_txt: str, comment_image: str = "") -> str:
+    start_marker = "❛❛"
+    end_marker = "❜❜"
+    ellipsis = "..."
+
+    content_max = 256 - len(start_marker) - len(end_marker) - len(ellipsis)
+
+    if len(comment_txt) > content_max:
+        safe_comment = comment_txt[:content_max].rstrip() + ellipsis
+    else:
+        safe_comment = comment_txt
+
+    if comment_image and comment_txt == "Sticker comment":
+        return ""
+
+    return f"{start_marker}{safe_comment}{end_marker}"
 
 async def main():
     state   = load_state()
@@ -135,76 +154,28 @@ async def main():
 
         for entry in to_send:
             guid        = entry.get("guid") or entry.get("id")
-            title       = entry.get("title", "").strip()
-            role_id     = get_series_role(entry)
-            author      = entry.get("author") or entry.get("dc_creator", "")
-            chapter     = entry.get("chapter", "").strip()
-            comment_txt = entry.get("description", "").strip()
-            reply_chain = entry.get("reply_chain", "").strip()
-            host        = entry.get("host", "").strip()
-            host_logo   = (entry.get("hostLogo") or entry.get("hostlogo") or {}).get("url", "")
-            comment_image_obj = entry.get("commentImage") or entry.get("commentimage") or {}
-            comment_image = comment_image_obj.get("url", "").strip() if isinstance(comment_image_obj, dict) else ""
-            link        = entry.get("link", "").strip()
-            pubdate_raw = getattr(entry, "published", None)
-            timestamp   = dateparser.parse(pubdate_raw).isoformat() if pubdate_raw else None
-
-            # ─── Truncate the quoted comment so title <= 256 chars ──────────
-            start_marker = "❛❛"
-            end_marker   = "❜❜"
-            ellipsis     = "..."
-            # compute how many chars of comment_txt we can keep
-            # total max = 256, minus markers and ellipsis
-            content_max = 256 - len(start_marker) - len(end_marker) - len(ellipsis)
-            # if too long, truncate and add "..."
-            if len(comment_txt) > content_max:
-                truncated = comment_txt[:content_max].rstrip()
-                safe_comment = truncated + ellipsis
-            else:
-                safe_comment = comment_txt
-            full_title = "" if (comment_image and comment_txt == "Sticker comment") else f"{start_marker}{safe_comment}{end_marker}"
             
-            # pick embed color per host
+            ctx = build_feed_context(entry)
+            
+            role_id = get_series_role(entry)
+            role_tail = f" {role_id}" if role_id else ""
+            
+            comment_txt = ctx["description"]
+            comment_image = ctx["comment_image_url"]
+            
             color_key = (
                 "novel_updates_comments"
-                if host.strip().lower() == "novel updates"
+                if ctx["host"].strip().lower() == "novel updates"
                 else "comments"
             )
             
-            # ─── Build the embed dict (no author icon_url) ────────────────
-            embed = {
-                "author": {
-                    "name": f"comment by {author} 🕊️ {chapter}",
-                    "url":  link
-                },
-                "timestamp": timestamp,
-                "color": embed_color(
-                    color_key,
-                    "F0C7A4",
-                    short_code=short_code,
-                ),
-                "footer": {
-                    "text":     host,
-                    "icon_url": host_logo
-                }
-            }
+            ctx.update({
+                "comment_title": build_comment_title(comment_txt, comment_image),
+                "comment_color_key": color_key,
+                "comment_role_tail": role_tail,
+            })
             
-            if full_title:
-                embed["title"] = full_title
-                
-            if comment_image:
-                embed["image"] = {"url": comment_image}
-
-            # only include description if reply_chain exists
-            if reply_chain:
-                embed["description"] = reply_chain
-
-            role_tail = f" {role_id}" if role_id else ""
-            
-            payload = {
-                "content": f"<a:7977heartslike:1368146209981857792> New comment for **{title}** <a:flowersandpetals:1444260426182295623>{role_tail}",
-                "embeds":  [embed]
-            }
+            payload = to_discord_api_payload(render_message("comments", ctx))
 
             async with session.post(API_URL, headers=headers, json=payload) as resp:
                 text = await resp.text()
