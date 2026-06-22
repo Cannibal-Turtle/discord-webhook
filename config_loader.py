@@ -29,32 +29,6 @@ def load_toml(relative_path: str | Path, *, required: bool = True, default: Any 
         return {} if default is None else default
 
 
-def load_novel_discord_map(path: str | Path | None = None) -> dict:
-    path = path or require_file_value("novel_discord_map_file")
-    raw = load_toml(path)
-
-    out = {}
-
-    for short_code, value in raw.items():
-        code = str(short_code).strip().upper()
-
-        if not code:
-            continue
-
-        if not isinstance(value, dict):
-            raise RuntimeError(
-                f"Invalid novel Discord config for {code}: expected table"
-            )
-
-        out[code] = {
-            "role_id": str(value.get("role_id", "")).strip(),
-            "custom_emoji": str(value.get("custom_emoji", "")).strip(),
-            "role_url": str(value.get("role_url", "")).strip(),
-        }
-
-    return out
-
-
 def load_json(relative_path: str | Path, *, required: bool = True, default: Any = None) -> Any:
     path = repo_path(relative_path)
 
