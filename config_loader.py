@@ -100,6 +100,76 @@ def embed_color(key: str, default: str) -> int:
     return int(embed_color_hex(key, default), 16)
 
 
+def get_novel_color_from_short_code(short_code: str) -> str:
+    """
+    Returns the novel's theme/Discord color from rss-feed mappings.
+
+    Looks for:
+      theme_color
+      discord_color
+
+    Returns "" if not found.
+    """
+    short_code = (short_code or "").strip().upper()
+
+    if not short_code:
+        return ""
+
+    try:
+        from novel_mappings import get_novel_details_by_short_code
+    except Exception:
+        return ""
+
+    try:
+        _host, _title, details = get_novel_details_by_short_code(short_code)
+    except Exception:
+        return ""
+
+    if not details:
+        return ""
+
+    return str(
+        details.get("theme_color")
+        or details.get("discord_color")
+        or ""
+    ).strip()
+
+
+def resolve_embed_color(
+    key: str,
+    default: str,
+    *,
+    short_code: str = "",
+    novel_color: str = "",
+) -> int:
+    """
+    Resolves an embed color.
+
+    Fixed color config:
+      "paid_chapter": "A87676"
+
+    Novel color config:
+      "paid_chapter": "novel"
+
+    In novel mode, it uses:
+      1. explicit novel_color if passed
+      2. color from rss-feed mapping using short_code
+      3. default fallback
+    """
+    configured = embed_color_hex(key, default)
+    configured_key = str(configured or "").strip().casefold()
+
+    if configured_key in {"novel", "theme", "theme_color", "discord_color"}:
+        configured = (
+            novel_color
+            or get_novel_color_from_short_code(short_code)
+            or default
+        )
+
+    configured = str(configured or default).strip().lstrip("#")
+    return int(configured, 16)
+
+
 def role_id_to_mention(role_id: str) -> str:
     role_id = str(role_id or "").strip()
 
