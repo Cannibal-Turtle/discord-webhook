@@ -487,14 +487,23 @@ def process_arc(novel):
     if has_unlocked:
         embed_unlocked = {
             "description": f"||{unlocked_md}||",
-            "color": embed_color("arc_unlocked", "FFF9BF")
+            "color": embed_color(
+                "arc_unlocked",
+                "FFF9BF",
+                short_code=novel.get("short_code", ""),
+            )
         }
     else:
         embed_unlocked = None  # sentinel
 
     embed_locked = {
         "description": f"||{locked_md if locked_md else 'None'}||",
-        "color": embed_color("arc_locked", "A87676")
+        "color": embed_color(
+            "arc_locked",
+            "A87676",
+            short_code=novel.get("short_code", ""),
+        )
+        
     }
 
     footer_and_react = (
