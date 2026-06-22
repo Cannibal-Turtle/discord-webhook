@@ -43,6 +43,7 @@ from novel_mappings import (
 # ─── CONFIG ────────────────────────────────────────────────────────────────────
 from config_loader import (
     TAG_ROLE_MAP,
+    embed_color,
     require_file_value,
     require_role_value,
     role_id_to_mention,
@@ -371,9 +372,7 @@ def build_launch_embed(
             "text": host_name,
             "icon_url": host_logo_url
         },
-        # pastel embed color aec6cf
-        "color": 0xAEC6CF,
-        # THIS is the magic: send the chapter's time up to Discord
+        "color": embed_color("new_novel", "AEC6CF"),
         "timestamp": iso_timestamp,
     }
 
