@@ -72,7 +72,7 @@ AUTHOR_ICON = "https://www.novelupdates.com/appicon.png"
 
 EMBED_COLOR_HEX = (
     os.environ.get("EMBED_COLOR_HEX")
-    or embed_color_hex("nu_weekly", "2d3f51")
+    or embed_color_hex("nu_weekly", "2D3F51")
 ).lstrip("#")
 
 ADMIN_MENTION = role_id_to_mention(require_role_value("admin"))
