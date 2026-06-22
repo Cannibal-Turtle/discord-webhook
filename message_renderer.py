@@ -154,22 +154,15 @@ def load_template(name: str, *, variant: str | None = None) -> dict[str, Any]:
 
 
 def render_message(name: str, ctx: dict[str, Any], *, variant: str | None = None) -> dict[str, Any]:
-    """
-    Render one TOML template into a generic payload dict.
-
-    For discord.py scripts:
-      kwargs = to_discord_py_kwargs(render_message(...))
-      await dest.send(**kwargs)
-
-    For raw Discord API scripts:
-      payload = to_discord_api_payload(render_message(...))
-      requests.post(..., json=payload)
-    """
     template = load_template(name, variant=variant)
     payload = render_obj(template, ctx) or {}
 
     # mode is template metadata, not a Discord payload field.
     payload.pop("mode", None)
+
+    # Let TOML multiline strings stay readable without adding blank top/bottom lines.
+    if isinstance(payload.get("content"), str):
+        payload["content"] = payload["content"].strip("\n")
 
     # suppress_embeds is easier to write/read in TOML than flags = 4.
     if payload.pop("suppress_embeds", False):
