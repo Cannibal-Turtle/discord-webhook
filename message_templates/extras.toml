@@ -1,0 +1,12 @@
+mode = "classic"
+suppress_embeds = true
+
+content = '''
+{extra_mention} <a:Heart1:1365676465059794985>
+## :lotus:<a:greensparklingstars:1365569873845157918>NEW {display_label} JUST DROPPED<a:greensparklingstars:1365569873845157918>:lotus:
+{remaining}
+{drop_message} in {host}'s advance access today. Thanks for sticking with this one ‘til the end. It means a lot. Please show your final love and support by leaving comments on the site~ <:turtlelovefamily:1365266991690285156> :heart_hands:
+'''
+
+[allowed_mentions]
+parse = ["everyone", "users", "roles"]
