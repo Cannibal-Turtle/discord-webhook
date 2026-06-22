@@ -9,6 +9,7 @@ from novel_mappings import HOSTING_SITE_DATA, get_nsfw_novels
 # ─── CONFIG ────────────────────────────────────────────────────────────────────
 from config_loader import (
     get_novel_role_id,
+    embed_color,
     require_role_value,
     role_id_to_mention,
 )
@@ -484,7 +485,7 @@ def process_arc(novel):
     if has_unlocked:
         embed_unlocked = {
             "description": f"||{unlocked_md}||",
-            "color": 0xFFF9BF
+            "color": embed_color("arc_unlocked", "FFF9BF")
         }
     else:
         embed_unlocked = None  # sentinel
