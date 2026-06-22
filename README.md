@@ -70,6 +70,12 @@ discord-webhook/
 │  ├─ tvitpa_history.json
 │  ├─ tdlbkgc_history.json
 │  └─ ...
+├─ message_templates/
+│  ├─ free_chapter.toml
+│  ├─ paid_chapter.toml
+│  ├─ comments.toml
+│  ├─ new_novel.toml
+│  └─ completed_novel.toml
 ├─ bot_free_chapters.py
 ├─ bot_paid_chapters.py
 ├─ bot_comments.py
@@ -81,19 +87,6 @@ discord-webhook/
 ├─ config_loader.py
 ├─ host_mistmint.py
 └─ README.md
-```
-
-Newly added feature - template folder:
-
-```text
-discord-webhook/
-└─ message_templates/
-   ├─ free_chapter.toml
-   ├─ paid_chapter.toml
-   ├─ comments.toml
-   ├─ new_novel.toml
-   └─ completed_novel.toml
-```
 
 ---
 
@@ -1230,6 +1223,146 @@ inline = true
 ```
 
 Templates require a renderer before scripts can use them.
+
+---
+
+## Message Templates
+
+Discord message layouts are now handled through TOML files in:
+
+```text
+message_templates/
+```
+
+### Template mode
+
+Most templates use:
+
+```toml
+mode = "classic"
+```
+
+`classic` means a normal Discord message payload: `content`, `embeds`, `components`, `allowed_mentions`, and `flags`.
+
+Keep `mode = "classic"` unless a script/template is specifically updated for another payload style later.
+
+### Multiline content
+
+Use TOML literal strings for readable Discord messages:
+
+```toml
+content = '''
+Line one
+Line two
+'''
+```
+
+The renderer strips the first/last template-only newline, but keeps intentional blank lines inside the message.
+
+### Suppressing embeds
+
+Use:
+
+```toml
+suppress_embeds = true
+```
+
+instead of manually setting Discord flags in Python.
+
+### Allowed mentions
+
+Mentions only ping if both are true:
+
+1. the mention exists in `content`
+2. `allowed_mentions` permits it
+
+Role-ping example:
+
+```toml
+content = "{chapter_mention} New chapter!"
+
+[allowed_mentions]
+parse = ["roles"]
+```
+
+No-ping example:
+
+```toml
+[allowed_mentions]
+parse = []
+```
+
+For user-only pings:
+
+```toml
+[allowed_mentions]
+parse = []
+users = ["{ping_user_id}"]
+```
+
+### Embeds
+
+Embed colors can use config keys with fallback values:
+
+```toml
+color = { key = "paid_chapter", default = "A87676" }
+```
+
+Optional fields can use `_when` guards:
+
+```toml
+[embeds.thumbnail]
+url = "{featured_image_url}"
+url_when = "featured_image_url"
+```
+
+If the placeholder is empty, the guarded field is skipped.
+
+### Buttons
+
+Classic link buttons are written like this:
+
+```toml
+[components]
+[[components.action_rows]]
+[[components.action_rows.buttons]]
+style = "link"
+label = "Read here"
+url = "{link}"
+```
+
+### Multi-message templates
+
+Templates like `new_arcs.toml` can send multiple messages from one event:
+
+```toml
+[[messages]]
+name = "header"
+content = "..."
+
+[[messages]]
+name = "locked"
+content = "..."
+```
+
+Each `[[messages]]` block can have its own `content`, `embeds`, `allowed_mentions`, `when`, and `suppress_embeds`.
+
+Example conditional message:
+
+```toml
+[[messages]]
+name = "unlocked"
+when = "has_unlocked"
+content = "Unlocked arcs:"
+```
+
+The message only sends when `has_unlocked` is truthy in the Python context.
+
+### Editing rule
+
+Edit TOML when changing Discord wording, emojis, spacing, embeds, colors, buttons, or ping behavior.
+
+Edit Python only when changing detection logic, feed parsing, state handling, routing, or placeholder/context values.
 
 ---
 
