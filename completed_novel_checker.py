@@ -31,6 +31,7 @@ from novel_mappings import HOSTING_SITE_DATA, get_nsfw_novels
 # ─── CONFIG ────────────────────────────────────────────────────────────────────
 from config_loader import (
     get_novel_role_id,
+    get_novel_role_url,
     require_file_value,
     require_role_value,
     role_id_to_mention,
@@ -304,10 +305,12 @@ def load_novels():
             if not (free or paid):
                 continue
 
+            short_code = (details.get("short_code", "") or "").strip().upper()
+
             novels.append({
                 "novel_title":      title,
-                "short_code":       (details.get("short_code", "") or "").strip().upper(),
-                "role_mention":     get_series_role_from_short_code(details.get("short_code", "")),
+                "short_code":       short_code,
+                "role_mention":     get_series_role_from_short_code(short_code),
                 "host":             host,
                 "novel_link":       details.get("novel_url", ""),
                 "chapter_count":    details.get("chapter_count", ""),
@@ -315,7 +318,7 @@ def load_novels():
                 "start_date":       details.get("start_date", ""),
                 "free_feed":        free,
                 "paid_feed":        paid,
-                "discord_role_url": details.get("discord_role_url", ""),
+                "discord_role_url": get_novel_role_url(short_code),
             })
     return novels
 
