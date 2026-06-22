@@ -138,8 +138,8 @@ async def main():
                 continue
         to_send.append(e)
 
-    last = state.get(FEED_KEY)  # keep your legacy key around (harmless)
-
+    last = state.get(FEED_KEY)
+    
     if not to_send:
         print("🛑 No new comments to send.")
         return
@@ -157,8 +157,8 @@ async def main():
             
             ctx = build_feed_context(entry)
             
-            role_id = get_series_role(entry)
-            role_tail = f" {role_id}" if role_id else ""
+            role_mention = get_series_role(entry)
+            role_tail = f" {role_mention}" if role_mention else ""
             
             comment_txt = ctx["description"]
             comment_image = ctx["comment_image_url"]
