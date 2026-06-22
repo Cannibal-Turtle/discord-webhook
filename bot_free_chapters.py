@@ -17,7 +17,7 @@ import requests
 from config_loader import (
     get_novel_role_id,
     embed_value,
-    resolve_embed_color,
+    embed_color,
     require_feed_value,
     require_feeds_value,
     require_file_value,
@@ -207,7 +207,7 @@ async def send_new_entries():
                 title=f"<a:sun_clouds:1517425608143933470>**{chapter}**",
                 url=link,
                 timestamp=timestamp,
-                color=resolve_embed_color(
+                color=embed_color(
                     "free_chapter",
                     "FFF9BF",
                     short_code=short_code,
