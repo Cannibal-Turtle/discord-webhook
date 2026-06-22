@@ -85,6 +85,23 @@ def save_state(state, path=STATE_PATH):
     with open(path, "w", encoding="utf-8") as f:
         json.dump(state, f, indent=2, ensure_ascii=False)
 
+def commit_state_update(path=STATE_PATH):
+    try:
+        import subprocess
+
+        subprocess.run(["git", "config", "--global", "user.name", "GitHub Actions"], check=True)
+        subprocess.run(["git", "config", "--global", "user.email", "actions@github.com"], check=True)
+        subprocess.run(["git", "add", path], check=True)
+
+        staged = subprocess.run(["git", "diff", "--staged", "--quiet"])
+        if staged.returncode != 0:
+            subprocess.run(["git", "commit", "-m", f"Auto-update: {os.path.basename(path)}"], check=True)
+            subprocess.run(["git", "push", "origin", "main"], check=True)
+        else:
+            print(f"ℹ️ No changes detected in {path}, skipping commit.")
+    except Exception as e:
+        print(f"❌ Git commit/push for {path} failed: {e}")
+
 def find_released_extras(paid_feed, raw_kw):
     if not raw_kw:
         return set()
@@ -249,6 +266,7 @@ def process_extras(novel):
             meta["last_extra_announced"] = current
             meta["extra_announced"]      = True   # never fire again
             save_state(state)
+            commit_state_update(STATE_PATH)
         else:
             print("→ Send failed; not updating state.json")
 
