@@ -1,0 +1,52 @@
+[[messages]]
+name = "header"
+suppress_embeds = true
+content = '''
+{arc_header_mention} <a:Crown:1365575414550106154>
+## <a:announcement:1365566215975731274> NEW ARC ALERT <a:pinksparkles:1365566023201198161><a:Butterfly:1365572264774471700><a:pinksparkles:1365566023201198161>
+***<:babypinkarrowleft:1365566594503147550><:world_01:1368202193038999562><:world_02:1368202204468613162> {world_emoji}<:babypinkarrowright:1365566635838275595>is Live for*** <a:pinkloading:1365566815736172637>
+### [{novel_title}]({novel_link}) <a:Turtle_Police:1365223650466205738>
+❀° ┄───────────────────────╮
+'''
+
+[messages.allowed_mentions]
+parse = ["everyone", "users", "roles"]
+
+
+[[messages]]
+name = "unlocked"
+when = "has_unlocked"
+content = "<a:5693pinkwings:1368138669004820500> `Unlocked 🔓` <a:5046_bounce_pink:1368138460027813888>"
+
+[messages.allowed_mentions]
+parse = ["everyone", "users", "roles"]
+
+[[messages.embeds]]
+description = "||{unlocked_md}||"
+color = { key = "arc_unlocked", default = "FFF9BF" }
+
+
+[[messages]]
+name = "locked"
+content = "<a:5693pinkwings:1368138669004820500> `Locked 🔐` <a:5046_bounce_pink:1368138460027813888>"
+
+[messages.allowed_mentions]
+parse = ["everyone", "users", "roles"]
+
+[[messages.embeds]]
+description = "||{locked_md}||"
+color = { key = "arc_locked", default = "A87676" }
+
+
+[[messages]]
+name = "footer"
+suppress_embeds = true
+content = '''
+╰───────────────────────┄ °❀
+> *Advance access is ready for you on {host}! <a:holo_diamond:1365566087277711430>*
+<:pinkdiamond_border:1365575603734183936><:pinkdiamond_border:1365575603734183936><:pinkdiamond_border:1365575603734183936><:pinkdiamond_border:1365575603734183936><:pinkdiamond_border:1365575603734183936><:pinkdiamond_border:1365575603734183936>
+-# React to the {custom_emoji} @ {discord_role_url} to get notified on updates and announcements <a:LoveLetter:1365575475841339435>
+'''
+
+[messages.allowed_mentions]
+parse = ["everyone", "users", "roles"]
