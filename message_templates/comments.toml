@@ -1,0 +1,28 @@
+mode = "classic"
+
+[allowed_mentions]
+parse = ["roles"]
+
+content = "<a:7977heartslike:1368146209981857792> New comment for **{title}** <a:flowersandpetals:1444260426182295623>{comment_role_tail}"
+
+[[embeds]]
+title = "{comment_title}"
+title_when = "comment_title"
+description = "{reply_chain}"
+description_when = "reply_chain"
+timestamp = "{pub_date_iso}"
+timestamp_when = "pub_date_iso"
+color = { key = "{comment_color_key}", default = "F0C7A4" }
+
+[embeds.author]
+name = "comment by {author} 🕊️ {chapter}"
+url = "{link}"
+
+[embeds.image]
+url = "{comment_image_url}"
+url_when = "comment_image_url"
+
+[embeds.footer]
+text = "{host}"
+icon_url = "{host_logo_url}"
+icon_url_when = "host_logo_url"
