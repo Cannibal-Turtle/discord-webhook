@@ -277,22 +277,6 @@ def build_ping_roles(novel_title: str, tags: list[str] | None = None) -> str:
     return " ".join(clean_parts)
 
 
-def shorten_description(desc_text: str, max_words: int = 50) -> str:
-    """
-    Keep only the first `max_words` words of desc_text.
-    If truncated, add "...".
-    """
-    if not desc_text:
-        return ""
-
-    words = desc_text.split()
-    if len(words) <= max_words:
-        return desc_text
-
-    preview = " ".join(words[:max_words])
-    return preview.rstrip() + "..."
-
-
 def load_novels_from_mapping():
     """
     Flatten HOSTING_SITE_DATA into a list of dicts with the fields we need.
@@ -436,7 +420,7 @@ def main():
                 "chapter_link": chap_link,
                 "host": host_name,
                 "translator": novel.get("translator", ""),
-                "description": shorten_description(desc_text),
+                "description": desc_text,
                 "featured_image_url": novel.get("featured_image", ""),
                 "host_logo_url": novel.get("host_logo", ""),
                 "pub_date_iso": pub_date_iso,
