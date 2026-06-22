@@ -330,4 +330,24 @@ These scripts are invoked by your `rss-feed` repository workflows, and can also 
 - You can now receive announcements from Novel Updates to know about:
    - New comments.
    - Weekly readers' statistics.
+ 
+---
+ 
+### Embed colors
+
+Embed colors are configured in `config/embeds.json`.
+
+Each color can use either a fixed hex code:
+
+```json
+"paid_chapter": "A87676"
+```
+
+or the novel’s default color from `rss-feed/mappings/novels/*.toml`:
+
+```json
+"paid_chapter": "novel"
+```
+
+When set to `"novel"`, the bot uses the novel’s `theme_color` or `discord_color` value. If no novel color is found, it falls back to the script’s default color.
 
