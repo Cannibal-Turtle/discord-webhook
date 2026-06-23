@@ -371,7 +371,7 @@ def process_arc(novel):
 
     # --- 3B. Handle paid arcs
     seen_bases_after_free = [
-        re.sub(r"^【Arc\s*\d+】", "", f)
+        re.sub(r"^【Arc\s*\d+】\s*", "", f).strip()
         for f in (history["unlocked"] + history["locked"])
     ]
     for base in paid_new:
