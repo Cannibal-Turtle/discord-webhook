@@ -284,7 +284,7 @@ def load_novels_from_mapping():
     free_feed (because you only announce once it's public/free).
 
     We also pull:
-      - translator        (host-level)
+      - translator        (per-novel override, host fallback)
       - host_logo         (host-level)
       - tags              (per novel)     -- resolved through tag_roles.json
       - novel_url, featured_image, custom_emoji, discord_role_url, etc.
@@ -292,7 +292,6 @@ def load_novels_from_mapping():
     novels = []
 
     for host_name, host_data in HOSTING_SITE_DATA.items():
-        translator   = host_data.get("translator", "")
         host_logo    = host_data.get("host_logo", "")
         novels_block = host_data.get("novels", {})
 
@@ -306,7 +305,7 @@ def load_novels_from_mapping():
 
             novels.append({
                 "host":             host_name,
-                "translator":       translator,
+                "translator":       details.get("translator") or host_data.get("translator", ""),
                 "host_logo":        host_logo,
 
                 "novel_title":      novel_title,
