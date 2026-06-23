@@ -138,9 +138,14 @@ def clean_feed_title(raw_title):
     return raw_title.replace("*", "").strip()
 
 def format_stored_title(title):
-    """Formats arc titles for Discord messages."""
-    match = re.match(r"(【Arc\s+\d+】)\s*(.*)", title)
-    return f"**{match.group(1)}**{match.group(2)}" if match else f"**{title}**"
+    m = re.match(r"(【Arc\s+\d+】)\s*(.*)", title or "")
+    if not m:
+        return f"**{title}**"
+
+    arc_label = m.group(1)
+    arc_name = m.group(2).strip()
+
+    return f"**{arc_label}** {arc_name}" if arc_name else f"**{arc_label}**"
 
 def extract_arc_number(title):
     """Extracts arc number from a title that begins with 【Arc N】."""
@@ -353,12 +358,12 @@ def process_arc(novel):
         # Case: completely new arc that STARTED free (never in locked)
         if not matched_locked:
             seen_bases = [
-                re.sub(r"^【Arc\s*\d+】", "", t)
+                re.sub(r"^【Arc\s*\d+】\s*", "", t).strip()
                 for t in (history["unlocked"] + history["locked"])
             ]
             if base not in seen_bases:
                 n = next_arc_number(history)
-                full = f"【Arc {n}】{base}"
+                full = f"【Arc {n}】 {base.strip()}"
                 history["unlocked"].append(full)
                 free_created_new_arc = True
                 history_changed = True
@@ -372,7 +377,7 @@ def process_arc(novel):
     for base in paid_new:
         if base not in seen_bases_after_free:
             n = next_arc_number(history)
-            full = f"【Arc {n}】{base}"
+            full = f"【Arc {n}】 {base.strip()}"
             history["locked"].append(full)
             paid_created_new_arc = True
             history_changed = True
