@@ -255,7 +255,7 @@ def _build_description(lines: List[Tuple[str, int, Optional[int]]]) -> str:
     parts: List[str] = []
     for role, count, delta in lines:
         role_txt = role or "(no-role)"
-        parts.append(f"{role_txt} ༺♡༻ {_format_delta(delta)}\n> <:23286kawaiiaccents:1435916448890617948> ̟ !! ***{count} total readers***")
+        parts.append(f"{role_txt} ༺♡༻ {_format_delta(delta)}\n> <:kawaiiaccents:1435916448890617948> ̟ !! ***{count} total readers***")
     return "\n".join(parts)
 
 
