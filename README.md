@@ -1,14 +1,14 @@
 # Discord Novel Feed Bot
 
-Discord bot scripts for posting novel feed updates, comments, new novel launches, new arcs, extras, Novel Updates analytics, and completion announcements.
+Discord bot scripts for posting novel feed updates, comments, new novel launches, new arcs, extras, and completion announcements.
 
-This repo reads generated RSS feeds from `rss-feed`, imports novel metadata from `novel_mappings.py`, and posts announcements to Discord using the Discord bot API.
+This repo is the **general Discord announcement layer**. It reads generated RSS feeds from [`rss-feed`](https://github.com/Cannibal-Turtle/rss-feed), imports shared novel metadata from `novel_mappings.py`, then posts styled messages to Discord using the Discord bot API.
 
 The old single-webhook setup is legacy. Current scripts use:
 
 ```text
 DISCORD_BOT_TOKEN
-channel IDs from repo secrets/config
+channel IDs from GitHub secrets/config
 ```
 
 ---
@@ -17,39 +17,31 @@ channel IDs from repo secrets/config
 
 This repo handles:
 
-1. **Free Chapter Announcements**
+1. **Free chapter announcements**
+   - Posts new public/free chapters.
 
-   * Posts new public/free chapters.
+2. **Paid/advance chapter announcements**
+   - Posts new paid/locked/advance chapters.
 
-2. **Paid/Advance Chapter Announcements**
+3. **Comment announcements**
+   - Posts new comments from hosting sites.
+   - Supports Novel Updates comment styling through the comments feed.
 
-   * Posts new paid/locked/advance chapters.
+4. **New novel launch alerts**
+   - Detects first public drops such as `Chapter 1`, `Ch. 1`, `Episode 1`, `Ep. 1`, `1.1`, or `Prologue`.
 
-3. **Comment Announcements**
+5. **New arc alerts**
+   - Detects new locked/advance arcs using per-novel arc history.
 
-   * Posts new comments from hosting sites and Novel Updates.
+6. **Side story / extra alerts**
+   - Detects when extras or side stories begin.
 
-4. **New Novel Launch Alerts**
+7. **Completion announcements**
+   - Announces when the final paid chapter appears.
+   - Announces when the full series unlocks for free.
+   - Supports only-free completion paths.
 
-   * Detects first public drops like `Chapter 1`, `Ch. 1`, `Episode 1`, `Ep. 1`, `1.1`, or `Prologue`.
-
-5. **New Arc Alerts**
-
-   * Detects new locked/advance arcs.
-
-6. **Side Story / Extra Alerts**
-
-   * Detects when extras or side stories begin.
-
-7. **Completion Announcements**
-
-   * Announces when the final paid chapter appears.
-   * Announces when the full series unlocks for free.
-
-8. **Novel Updates Analytics**
-
-   * Posts Novel Updates comment alerts.
-   * Posts weekly reader statistics.
+This repo no longer owns NU weekly reader reports. Those live in `rss-feed`.
 
 ---
 
@@ -59,8 +51,11 @@ Important files and folders:
 
 ```text
 discord-webhook/
-├─ .github/
-│  └─ workflows/
+├─ .github/workflows/
+│  ├─ chapters_discord.yml
+│  ├─ comments_discord.yml
+│  ├─ rss_to_discord.yml
+│  └─ fix-embed-other-server.yml
 ├─ config/
 │  ├─ embeds.json
 │  ├─ feeds.json
@@ -84,7 +79,6 @@ discord-webhook/
 ├─ requirements/
 │  ├─ chapters.txt
 │  ├─ comments.txt
-│  ├─ nu_weekly.txt
 │  └─ rss_dispatch.txt
 ├─ bot_free_chapters.py
 ├─ bot_paid_chapters.py
@@ -93,24 +87,23 @@ discord-webhook/
 ├─ new_arc_checker.py
 ├─ new_extra_checker.py
 ├─ completed_novel_checker.py
-├─ nu_weekly_readers.py
 ├─ config_loader.py
 ├─ message_context.py
 ├─ message_renderer.py
 ├─ state.json
 ├─ state_rss.json
-├─ nu_readers.json
 ├─ README.md
 ├─ PRIVACY.md
 └─ TERMS.md
+```
 
 ---
 
 ## Mapping Source
 
-Novel metadata now comes from the `rss-feed` repo.
+Novel metadata comes from the `rss-feed` repo.
 
-The `rss-feed` repo stores editable novel data in split TOML files:
+`rss-feed` stores editable novel data in split TOML files:
 
 ```text
 rss-feed/
@@ -132,13 +125,13 @@ Even though the data is split into TOML files, this repo still imports:
 from novel_mappings import HOSTING_SITE_DATA
 ```
 
-`novel_mappings.py` remains the compatibility layer/front door.
+`novel_mappings.py` remains the compatibility front door.
 
 ---
 
 ## Install the RSS Mapping Package
 
-The GitHub Actions workflow should install the latest `rss-feed` package:
+The GitHub Actions workflows should install the latest `rss-feed` package:
 
 ```bash
 pip install --upgrade git+https://github.com/Cannibal-Turtle/rss-feed.git@main
@@ -150,7 +143,7 @@ This lets scripts import:
 from novel_mappings import HOSTING_SITE_DATA
 ```
 
-and helper functions like:
+and helper functions such as:
 
 ```python
 get_novel_details_by_short_code(short_code)
@@ -160,11 +153,24 @@ short_code_has_paid_chapters(short_code)
 short_code_has_comments_feed(short_code)
 ```
 
+The installed package provides shared mappings, not this repo’s Discord configs.
+
 ---
 
 ## Required Python Dependencies
 
-Install these in the workflow:
+Use the requirement files in `requirements/` from the workflows.
+
+Typical install commands are:
+
+```bash
+pip install -r requirements/chapters.txt
+pip install -r requirements/comments.txt
+pip install -r requirements/rss_dispatch.txt
+pip install --upgrade git+https://github.com/Cannibal-Turtle/rss-feed.git@main
+```
+
+Common direct dependencies include:
 
 ```bash
 pip install discord.py feedparser python-dateutil aiohttp requests tomli
@@ -182,21 +188,21 @@ Add these in:
 Settings → Secrets and variables → Actions
 ```
 
-| Secret                             | Purpose                                                  |
-| ---------------------------------- | -------------------------------------------------------- |
-| `DISCORD_BOT_TOKEN`                | Discord bot token                                        |
-| `DISCORD_CHANNEL_ID`               | General/news announcement channel                        |
-| `DISCORD_FREE_CHAPTERS_CHANNEL`    | Free chapter posts                                       |
-| `DISCORD_ADVANCE_CHAPTERS_CHANNEL` | Paid/advance chapter posts                               |
-| `DISCORD_COMMENTS_CHANNEL`         | Comment posts                                            |
-| `DISCORD_MOD_CHANNEL_ID`           | Optional mod/alert posts                                 |
-| `GH_PAT`                           | Personal Access Token for workflow dispatch/history push |
+| Secret | Purpose |
+| --- | --- |
+| `DISCORD_BOT_TOKEN` | Discord bot token |
+| `DISCORD_CHANNEL_ID` | General/news announcement channel |
+| `DISCORD_FREE_CHAPTERS_CHANNEL` | Free chapter posts |
+| `DISCORD_ADVANCE_CHAPTERS_CHANNEL` | Paid/advance chapter posts |
+| `DISCORD_COMMENTS_CHANNEL` | Comment posts |
+| `DISCORD_MOD_CHANNEL_ID` | Optional mod/admin alert posts |
+| `GH_PAT` | Personal Access Token for cross-repo dispatch/history push when needed |
 
 Legacy only:
 
-| Secret            | Purpose                                                     |
-| ----------------- | ----------------------------------------------------------- |
-| `DISCORD_WEBHOOK` | Old webhook URL, no longer required for current bot scripts |
+| Secret | Purpose |
+| --- | --- |
+| `DISCORD_WEBHOOK` | Old webhook URL, no longer required for the current bot scripts |
 
 ---
 
@@ -216,25 +222,15 @@ Read and write permissions
 
 Also allow actions and reusable workflows.
 
-A PAT may still be required for cross-repo dispatch.
+A PAT may still be needed for cross-repo dispatch.
 
 ---
 
 ## Config Files
 
-Config lives in:
+### `config/files.json`
 
-```text
-config/
-```
-
----
-
-## `config/files.json`
-
-This file stores paths used by scripts.
-
-Example:
+Central paths used by scripts:
 
 ```json
 {
@@ -247,82 +243,187 @@ Example:
 }
 ```
 
-Optional future field:
+`state_path` is for legacy/general state.
 
-```json
-{
-  "message_templates_dir": "message_templates"
-}
+`rss_state_path` is for RSS dedupe keys such as:
+
+```text
+free_seen_guids
+paid_seen_guids
+comments_seen_guids
+last_post_time_free
+last_post_time_paid
+last_post_time_comments
 ```
 
-Do not use the old field:
-
-```json
-"novel_role_id_map_file": "config/novel_role_id_map.json"
-```
-
-The old JSON role map has been replaced by TOML.
+`arc_history_dir` stores per-novel arc tracking JSON.
 
 ---
 
-## `config/novel_discord_map.toml`
+### `config/feeds.json`
 
-Discord-specific novel data belongs here.
+Defines RSS source URLs and state keys:
 
-This includes:
+```json
+{
+  "free": {
+    "url": "https://raw.githubusercontent.com/Cannibal-Turtle/rss-feed/main/free_chapters_feed.xml",
+    "last_guid_key": "free_last_guid",
+    "seen_key": "free_seen_guids",
+    "last_post_time_key": "last_post_time_free"
+  },
+  "paid": {
+    "url": "https://raw.githubusercontent.com/Cannibal-Turtle/rss-feed/main/paid_chapters_feed.xml",
+    "last_guid_key": "paid_last_guid",
+    "seen_key": "paid_seen_guids",
+    "last_post_time_key": "last_post_time_paid"
+  },
+  "comments": {
+    "url": "https://raw.githubusercontent.com/Cannibal-Turtle/rss-feed/main/aggregated_comments_feed.xml",
+    "last_guid_key": "comments_last_guid",
+    "seen_key": "comments_seen_guids",
+    "last_post_time_key": "last_post_time_comments"
+  },
+  "seen_cap": 500,
+  "time_backstop": true
+}
+```
 
-* Discord role ID
-* Custom emoji
-* Role URL
+`seen_cap` limits how many GUIDs are kept per feed.
+
+`time_backstop` helps prevent old items from reposting after state resets.
+
+---
+
+### `config/roles.json`
+
+Global Discord role IDs:
+
+```json
+{
+  "free_global": "1342483851338846288",
+  "paid_global": "1342484466043453511",
+  "new": "1329502873503006842",
+  "ongoing": "1329502951764525187",
+  "complete": "1329502614110474270",
+  "nsfw": "1343352825811439616",
+  "admin": "1329392448798982214"
+}
+```
+
+Scripts convert IDs into mentions with:
+
+```python
+role_id_to_mention(role_id)
+```
+
+Keep IDs as raw numbers in JSON, not `<@&...>` strings.
+
+---
+
+### `config/novel_discord_map.toml`
+
+Discord-only per-novel data lives here.
 
 Example:
 
 ```toml
-[TVITPA]
-role_id = "1329391480435114005"
-custom_emoji = "<:emoji_62:1365400946330435654>"
-role_url = "https://discord.com/channels/1329384099609051136/1329419555600203776/1330466188349800458"
-
-[TDLBKGC]
-role_id = "1431675643078250646"
-custom_emoji = "<:468087cutebunny:1431678613002125313>"
-role_url = "https://discord.com/channels/1329384099609051136/1329419555600203776/1330466188349800458"
-
 [AMLWC]
 role_id = "1517842780003635240"
 custom_emoji = "<:ghostcat:1517845090779791490>"
-role_url = "https://discord.com/channels/1329384099609051136/1329419555600203776/1330466188349800458"
+role_url = "https://discord.com/channels/.../..."
 ```
 
-Use raw role IDs:
+This file should contain:
 
-```toml
-role_id = "1517842780003635240"
-```
+| Field | Purpose |
+| --- | --- |
+| `role_id` | Novel role ID used for pings |
+| `custom_emoji` | Novel emoji used in display text |
+| `role_url` | Link to the role-selection message or channel |
 
-not role mentions:
-
-```toml
-role_id = "<@&1517842780003635240>"
-```
-
-The bot converts role IDs to mentions automatically.
+Do **not** put title, host, feed flags, cover image, NSFW, membership, or chapter metadata here. Those belong in `rss-feed/mappings/novels/*.toml`.
 
 ---
 
-## What Belongs in `rss-feed` vs `discord-webhook`
+### `config/tag_roles.json`
 
-### `rss-feed/mappings/novels/*.toml`
+Tag-to-role map used for new novel announcements.
 
-Novel metadata belongs in `rss-feed`.
+Keys should be lowercase/normalized tag names:
 
-Examples:
+```json
+{
+  "quick transmigration": "1329427832077684736",
+  "infinite flow": "1329428382089347102",
+  "comedy": "1330469306936328286",
+  "bl": "1330469077784727562"
+}
+```
+
+Use this for language, genre, and content tags that should ping.
+
+---
+
+### `config/embeds.json`
+
+Embed appearance settings:
+
+```json
+{
+  "chapter_author_url": "",
+  "colors": {
+    "free_chapter": "FFF9BF",
+    "paid_chapter": "A87676",
+    "comments": "F0C7A4",
+    "novel_updates_comments": "2D3F51",
+    "new_novel": "AEC6CF",
+    "arc_unlocked": "FFF9BF",
+    "arc_locked": "A87676"
+  }
+}
+```
+
+Colors can be:
+
+```json
+"FFF9BF"
+```
+
+or:
+
+```json
+"#FFF9BF"
+```
+
+Some message templates may also use:
 
 ```toml
+color = { key = "paid_chapter", default = "A87676" }
+```
+
+or, where supported by Python:
+
+```json
+"paid_chapter": "novel"
+```
+
+`"novel"` means the script resolves the color from the novel TOML in `rss-feed`, usually `theme_color` or `discord_color`.
+
+---
+
+## What Belongs Where
+
+### In `rss-feed/mappings/novels/*.toml`
+
+Put novel metadata:
+
+```toml
+host = "Mistmint Haven"
 title = "After the Male Leads Went Crazy, They All Turned Into Male Ghosts"
 short_code = "AMLWC"
-novel_url = "https://mistminthaven.com/novel/..."
-featured_image = "https://mistminthaven.com/wp-content/uploads/cover.jpg"
+novel_url = "https://..."
+featured_image = "https://..."
 
 has_free = true
 has_paid = true
@@ -331,233 +432,209 @@ has_comments = true
 is_nsfw = false
 is_membership = false
 
-chapter_count = "92 Chapters"
-last_chapter = "Chapter 92"
-start_date = ""
+chapter_count = "93 Chapters"
+last_chapter = "Chapter 93"
+start_date = "2026-..."
 history_file = "arc_history/amlwc_history.json"
-
 discord_color = "#c90016"
 ```
 
-### `discord-webhook/config/novel_discord_map.toml`
+### In `discord-webhook/config/novel_discord_map.toml`
 
-Discord-only presentation data belongs here.
-
-Examples:
+Put Discord routing/display data:
 
 ```toml
 [AMLWC]
-role_id = "1517842780003635240"
-custom_emoji = "<:ghostcat:1517845090779791490>"
+role_id = "..."
+custom_emoji = "<:...:...>"
 role_url = "https://discord.com/channels/..."
 ```
-
-Do not duplicate role IDs, custom emojis, or role URLs inside the RSS mapping.
-
----
-
-## `config/embeds.json`
-
-Embed colors are configured here.
-
-JSON does not allow `#` comments. Use `_comment` if you want notes.
-
-Example:
-
-```json
-{
-  "_comment": "Color values can be fixed hex codes or \"novel\". When set to \"novel\", the bot uses theme_color/discord_color from rss-feed/mappings/novels/*.toml.",
-
-  "colors": {
-    "free_chapter": "FFF9BF",
-    "paid_chapter": "A87676",
-    "comments": "F0C7A4",
-    "novel_updates_comments": "2D3F51",
-    "new_novel": "AEC6CF",
-    "arc_unlocked": "FFF9BF",
-    "arc_locked": "A87676",
-    "nu_weekly": "2D3F51"
-  }
-}
-```
-
----
-
-## Novel-Specific Embed Colors
-
-Each color can use either a fixed hex code:
-
-```json
-"paid_chapter": "A87676"
-```
-
-or the novel’s default color from `rss-feed/mappings/novels/*.toml`:
-
-```json
-"paid_chapter": "novel"
-```
-
-When set to `"novel"`, the bot uses the novel’s:
-
-```toml
-theme_color = "#c90016"
-```
-
-or:
-
-```toml
-discord_color = "#c90016"
-```
-
-If no novel color is found, the script falls back to the default color.
-
-Example mixed config:
-
-```json
-{
-  "colors": {
-    "free_chapter": "novel",
-    "paid_chapter": "novel",
-    "comments": "F0C7A4",
-    "novel_updates_comments": "2D3F51",
-    "new_novel": "novel",
-    "arc_unlocked": "novel",
-    "arc_locked": "novel",
-    "nu_weekly": "2D3F51"
-  }
-}
-```
-
-Supported special values:
-
-```text
-novel
-theme
-theme_color
-discord_color
-```
-
-Recommended value:
-
-```json
-"paid_chapter": "novel"
-```
-
----
-
-## `config/tag_roles.json`
-
-This file maps novel tags to Discord role IDs.
-
-Example:
-
-```json
-{
-  "Quick Transmigration": "123456789",
-  "Infinite Flow": "123456789",
-  "Transmigration": "123456789",
-  "BL": "123456789",
-  "Comedy": "123456789"
-}
-```
-
-Tags are normalized by lowercasing and trimming extra spaces.
-
----
-
-## `config/feeds.json`
-
-This file stores feed URLs or feed-related config used by the bots.
-
-The actual RSS feed URLs normally come from `rss-feed` mapping data, but this file can still store repo-level feed config when needed.
-
----
-
-## `config/roles.json`
-
-This file stores global role config.
-
-Example uses:
-
-* Global announcement role
-* NSFW role
-* News role
-* Other server-wide roles
-
-Novel-specific roles should stay in:
-
-```text
-config/novel_discord_map.toml
-```
-
-not `roles.json`.
 
 ---
 
 ## Main Bot Scripts
 
-| Script                       | Purpose                                  |
-| ---------------------------- | ---------------------------------------- |
-| `bot_free_chapters.py`       | Posts new free/public chapters           |
-| `bot_paid_chapters.py`       | Posts new paid/advance chapters          |
-| `bot_comments.py`            | Posts new comments                       |
-| `new_novel_checker.py`       | Posts first public drop/new novel launch |
-| `new_arc_checker.py`         | Posts new locked/advance arc alerts      |
-| `new_extra_checker.py`       | Posts extras/side story alerts           |
-| `completed_novel_checker.py` | Posts paid/free completion announcements |
-| `nu_weekly_readers.py`       | Posts Novel Updates weekly reader stats  |
+| Script | Purpose |
+| --- | --- |
+| `bot_free_chapters.py` | Reads free RSS feed and posts free chapter announcements |
+| `bot_paid_chapters.py` | Reads paid RSS feed and posts paid/advance chapter announcements |
+| `bot_comments.py` | Reads comments RSS feed and posts comment announcements |
+| `new_novel_checker.py` | Detects first public chapter/new novel launch |
+| `new_arc_checker.py` | Detects new advance/locked arcs |
+| `new_extra_checker.py` | Detects side stories/extras |
+| `completed_novel_checker.py` | Detects paid/free/only-free completion announcements |
+
+All scripts share helpers from:
+
+```text
+config_loader.py
+message_context.py
+message_renderer.py
+```
 
 ---
 
 ## Supported RSS Item Fields
 
-The bots read generated RSS/XML feeds from `rss-feed`.
+The Discord scripts can use these values from the RSS item context:
 
-Example item:
-
-```xml
-<item>
-  <title>After the Male Leads Went Crazy, They All Turned Into Male Ghosts</title>
-  <volume>Arc 1: The Charming Landlord Is Too Hard to Handle</volume>
-  <chapter>Chapter 2</chapter>
-  <chaptername>***1.2***</chaptername>
-  <link>https://mistminthaven.com/novel/.../chapter-2/</link>
-  <description><![CDATA[A short chapter summary or excerpt...]]></description>
-  <category>SFW</category>
-  <translator>Cannibal Turtle</translator>
-  <short_code>AMLWC</short_code>
-  <featuredImage url="https://mistminthaven.com/wp-content/uploads/cover.jpg"/>
-  <coin>🪙 5</coin>
-  <pubDate>Fri, 18 Apr 2025 12:00:00 +0000</pubDate>
-  <host>Mistmint Haven</host>
-  <hostLogo url="https://mistminthaven.com/logo.png"/>
-  <guid isPermaLink="false">amlwc-chapter-2</guid>
-</item>
+```text
+title
+volume
+chapter
+chaptername
+link
+description
+category
+translator
+short_code
+featured_image_url
+pub_date
+pub_date_iso
+host
+host_logo_url
+guid
+guid_is_permalink
 ```
 
-Important fields:
+Templates can reference them as:
 
-| Tag               | Purpose                                    |
-| ----------------- | ------------------------------------------ |
-| `<title>`         | Novel title                                |
-| `<volume>`        | Arc/volume name                            |
-| `<chapter>`       | Chapter label, used for completion checks  |
-| `<chaptername>`   | Chapter title/name, used for arc detection |
-| `<link>`          | Chapter URL                                |
-| `<description>`   | Chapter summary/excerpt                    |
-| `<category>`      | SFW/NSFW                                   |
-| `<translator>`    | Translator name                            |
-| `<short_code>`    | Stable novel short code                    |
-| `<featuredImage>` | Cover image                                |
-| `<coin>`          | Paid chapter cost/display                  |
-| `<pubDate>`       | Publish date                               |
-| `<host>`          | Hosting site                               |
-| `<hostLogo>`      | Host logo                                  |
-| `<guid>`          | Unique item ID                             |
+```toml
+content = "New chapter for {title}"
+description = "{chaptername}"
+timestamp = "{pub_date_iso}"
+```
 
-Only `<chapter>` and `<link>` are strictly required for completion checks.
+---
 
-Arc alerts also use `<chaptername>` or `<volume>`.
+## Message Templates
+
+Templates live in:
+
+```text
+message_templates/
+```
+
+A basic template:
+
+```toml
+mode = "classic"
+content = "{chapter_mention} New chapter for **{title}**"
+
+[allowed_mentions]
+parse = ["roles"]
+
+[[embeds]]
+title = "{chapter}"
+url = "{link}"
+description = "{chaptername}"
+timestamp = "{pub_date_iso}"
+color = { key = "free_chapter", default = "FFF9BF" }
+```
+
+### Template Modes
+
+| Mode | Meaning |
+| --- | --- |
+| `classic` | Normal Discord content/embed/components payload |
+| multi-message via `[[messages]]` | Sends several Discord messages in order |
+
+### Conditions
+
+Many fields support `*_when` keys:
+
+```toml
+description = "{chaptername}"
+description_when = "chaptername"
+```
+
+If `chaptername` is empty, that field is dropped.
+
+### Link Preview Suppression
+
+For pure text messages where Discord link previews are unwanted:
+
+```toml
+suppress_embeds = true
+```
+
+### Allowed Mentions
+
+Allowed mentions should be explicit:
+
+```toml
+[allowed_mentions]
+parse = ["roles"]
+```
+
+or for messages that should not ping:
+
+```toml
+[allowed_mentions]
+parse = []
+```
+
+If the content includes roles but `allowed_mentions` does not allow roles, the role text may appear without pinging.
+
+### Embeds
+
+Templates support embed fields such as:
+
+```toml
+[[embeds]]
+title = "{title}"
+url = "{link}"
+description = "{description}"
+color = { key = "comments", default = "F0C7A4" }
+
+[embeds.author]
+name = "{translator}"
+url = "{chapter_author_url}"
+url_when = "chapter_author_url"
+
+[embeds.thumbnail]
+url = "{featured_image_url}"
+url_when = "featured_image_url"
+
+[embeds.footer]
+text = "{host}"
+icon_url = "{host_logo_url}"
+icon_url_when = "host_logo_url"
+```
+
+### Buttons
+
+Templates can include link buttons:
+
+```toml
+[components]
+[[components.action_rows]]
+[[components.action_rows.buttons]]
+style = "link"
+label = "Read here"
+url = "{link}"
+```
+
+### Multi-Message Templates
+
+`new_arcs.toml` uses a multi-message shape:
+
+```toml
+[[messages]]
+name = "header"
+content = "..."
+
+[[messages]]
+name = "unlocked"
+when = "has_unlocked"
+content = "..."
+
+[[messages]]
+name = "locked"
+content = "..."
+```
+
+The Python checker builds one context, then `render_message_sequence(...)` sends the enabled messages in order.
 
 ---
 
@@ -565,139 +642,103 @@ Arc alerts also use `<chaptername>` or `<volume>`.
 
 ### Free Chapter Bot
 
-Requires:
+Needs free-feed items with:
 
 ```text
-free_feed
+title
+link
+chapter
+chaptername
+host
+short_code
+pub_date/guid
 ```
-
-Posts new public/free chapters.
-
----
 
 ### Paid Chapter Bot
 
-Requires:
+Needs paid-feed items with:
 
 ```text
-paid_feed
+title
+link
+chapter
+chaptername
+host
+short_code
+category containing paid/locked/advance info
+pub_date/guid
 ```
-
-Posts new paid/advance chapters.
-
----
 
 ### Comment Bot
 
-Requires:
+Needs comment-feed items with:
 
 ```text
-comments_feed
+title
+link
+author
+comment_title/comment body/reply chain where available
+host
+short_code
+pub_date/guid
 ```
 
-Posts new comments.
+### New Novel Checker
 
----
-
-### New Series Launch Alerts
-
-Requires:
+Detects first drops like:
 
 ```text
-free_feed
+Chapter 1
+Ch. 1
+Episode 1
+Ep. 1
+1.1
+Prologue
 ```
 
-Behavior:
+Uses RSS metadata + novel TOML to build a launch announcement.
 
-* Fires only when a public first drop appears.
-* Detects labels like:
+### New Arc Checker
 
-  * `Chapter 1`
-  * `Ch. 1`
-  * `Episode 1`
-  * `Ep. 1`
-  * `1.1`
-  * `Prologue`
-* Skips paywalled-only debuts.
+Uses paid feed + novel `history_file`.
 
----
+If a novel has:
 
-### New Arc Alerts
-
-Requires:
-
-```text
-free_feed
-paid_feed
-history_file
+```toml
+history_file = "arc_history/amlwc_history.json"
 ```
 
-Behavior:
+then arc tracking can run.
 
-* Compares free/public arcs against paid/advance arcs.
-* Announces newly locked/advance arcs.
-* If either feed is missing, the novel is skipped.
-* If `history_file = ""`, arc tracking is skipped.
+If it has:
 
----
-
-### Extras / Side Story Alerts
-
-Requires:
-
-```text
-paid_feed
+```toml
+history_file = ""
 ```
 
-Behavior:
+then the checker safely skips arc tracking for that novel.
 
-* Announces when extras or side stories begin dropping in paid/advance access.
-* Fires one time for each novel.
+### Extra Checker
 
----
+Detects side stories/extras from chapter labels.
 
-### Completion Announcements
+### Completion Checker
 
-Runs twice:
+Supports:
 
-```bash
-python completed_novel_checker.py --feed paid
-python completed_novel_checker.py --feed free
+- paid completion
+- free completion/unlocked full series
+- only-free completion
+
+Uses fields such as:
+
+```toml
+chapter_count = "93 Chapters"
+last_chapter = "Chapter 93"
+start_date = ""
 ```
 
-#### Paid Completion
-
-Requires:
-
-```text
-paid_feed
-last_chapter
-```
-
-Announces when the final paid/advance chapter is out.
-
-If `start_date` exists, the message can include:
-
-```text
-After X of updates...
-```
-
-If `start_date = ""`, it uses the shorter no-duration version.
-
-#### Free Completion
-
-Requires:
-
-```text
-free_feed
-last_chapter
-```
-
-Announces when the full series is unlocked/free.
-
-#### Only-Free Completion
-
-If a novel only has a free feed and no paid feed, the free completion path acts like normal novel completion.
+If `start_date = ""`, the duration phrase is safely omitted.
 
 ---
 
@@ -715,321 +756,117 @@ Example:
 arc_history/amlwc_history.json
 ```
 
-The matching RSS novel TOML should have:
+Each file tracks which arcs were already announced so the bot does not repost old arcs.
 
-```toml
-history_file = "arc_history/amlwc_history.json"
+For a new arc-tracked novel:
+
+1. Add `history_file` in the novel TOML in `rss-feed`.
+2. Create the matching JSON file in this repo.
+3. Initialize it with valid JSON:
+
+```json
+{}
 ```
 
-For novels without arc tracking:
-
-```toml
-history_file = ""
-```
-
-The checker should skip empty history files safely.
-
-Arc history prevents duplicate arc announcements.
+The current arc checker saves history even when an announcement is skipped, so stale old arcs do not keep triggering.
 
 ---
 
 ## NSFW Behavior
 
-NSFW status comes from the RSS feed item category and/or novel mapping.
+NSFW status comes from the RSS/novel metadata, not the Discord mapping.
 
-If a chapter is NSFW, the bot can add an NSFW role mention.
+For RSS-generated items, the category can include NSFW text.
 
-Novel-wide NSFW status is configured in `rss-feed`:
+In `rss-feed` novel TOML:
 
 ```toml
 is_nsfw = true
 ```
 
-The feed generator may also mark an item NSFW if chapter/chaptername contains labels like:
+The Discord bot can then add the NSFW role from:
+
+```json
+config/roles.json
+```
+
+The series role and NSFW role are joined safely, so missing pieces do not create duplicate spaces.
+
+---
+
+## State Files
+
+State files prevent duplicate posts.
+
+Current files:
 
 ```text
-(NSFW)
-(R-18)
-(18+)
-(H)
-(HH)
-(HHH)
+state.json
+state_rss.json
+arc_history/*.json
 ```
 
----
+The RSS state tracks seen GUIDs and last post times.
 
-## Allowed Mentions
+If a state file becomes empty or invalid, the bot can crash with:
 
-Role pings should be controlled with allowed mentions.
+```text
+JSONDecodeError
+```
 
-Recommended behavior:
+Fix it by committing valid JSON:
 
 ```json
-{
-  "allowed_mentions": {
-    "parse": ["roles"]
-  }
-}
+{}
 ```
-
-Use empty allowed mentions when a message should not ping.
-
----
-
-## Link Preview Suppression
-
-Where supported, bot payloads should suppress link preview embeds.
-
-For Discord message flags:
-
-```json
-"flags": 4
-```
-
-This keeps the custom embed clean.
 
 ---
 
 ## Workflows
 
-### Triggering from `rss-feed`
+### `chapters_discord.yml`
 
-The `rss-feed` repo regenerates XML feeds, commits them, and can trigger this repo using a repository dispatch event.
+Runs the free and paid chapter bots.
 
-Example dispatch:
-
-```bash
-curl -X POST \
-  -H "Accept: application/vnd.github.v3+json" \
-  -H "Authorization: Bearer $GH_PAT" \
-  https://api.github.com/repos/Cannibal-Turtle/discord-webhook/dispatches \
-  -d '{"event_type":"trigger-discord-notify"}'
-```
-
----
-
-### Discord Notifier Workflow
-
-The workflow can listen for:
-
-```yaml
-on:
-  repository_dispatch:
-    types: [trigger-discord-notify]
-  workflow_dispatch:
-  schedule:
-    - cron: "*/10 * * * *"
-```
-
-Jobs may run:
-
-```bash
-python bot_free_chapters.py
-python bot_paid_chapters.py
-python bot_comments.py
-python new_novel_checker.py --feed free
-python new_arc_checker.py
-python new_extra_checker.py
-python completed_novel_checker.py --feed paid
-python completed_novel_checker.py --feed free
-python nu_weekly_readers.py
-```
-
-Adjust scheduling and job order as needed.
-
----
-
-## Bot Chapter Scripts
-
-### `bot_free_chapters.py`
-
-Posts free/public chapter announcements.
-
-Expected behavior:
-
-* Reads the free feed.
-* Skips already-seen GUIDs.
-* Posts oldest to newest.
-* Uses the novel role from `config/novel_discord_map.toml`.
-* Uses custom emoji from `config/novel_discord_map.toml`.
-* Uses embed color from `config/embeds.json`.
-* If color is `"novel"`, uses `discord_color` or `theme_color` from `rss-feed`.
-
----
-
-### `bot_paid_chapters.py`
-
-Posts paid/advance chapter announcements.
-
-Expected behavior:
-
-* Reads the paid feed.
-* Skips already-seen GUIDs.
-* Posts oldest to newest.
-* Uses the novel role from `config/novel_discord_map.toml`.
-* Uses custom emoji from `config/novel_discord_map.toml`.
-* Uses embed color from `config/embeds.json`.
-* If color is `"novel"`, uses `discord_color` or `theme_color` from `rss-feed`.
-
----
-
-### `bot_comments.py`
-
-Posts comments.
-
-Expected behavior:
-
-* Reads comments feed.
-* Skips already-seen comment GUIDs.
-* Cleans or formats comment text.
-* Uses comments color from `config/embeds.json`.
-* Uses `novel_updates_comments` color for Novel Updates comments when applicable.
-
-If comments have a `short_code`, comments can also use `"comments": "novel"`.
-
-If no short code is available, `"novel"` falls back to the script default.
-
----
-
-## New Novel Launch Checker
-
-`new_novel_checker.py` detects first public drops.
-
-Requires:
+Triggered by:
 
 ```text
-free_feed
+repository_dispatch
+workflow_dispatch
 ```
 
-It detects:
+### `comments_discord.yml`
+
+Runs the comments bot.
+
+Triggered by:
 
 ```text
-Chapter 1
-Ch. 1
-Episode 1
-Ep. 1
-1.1
-Prologue
+repository_dispatch
+workflow_dispatch
 ```
 
-It should not announce paywalled-only debuts.
+### `rss_to_discord.yml`
 
-Discord role URL and custom emoji come from:
+Runs checker-style announcements such as:
 
 ```text
-config/novel_discord_map.toml
+new arcs
+new extras
+completion checks
 ```
 
-not RSS mapping.
-
----
-
-## New Arc Checker
-
-`new_arc_checker.py` detects locked/advance arcs.
-
-Requires:
+Triggered by:
 
 ```text
-free_feed
-paid_feed
-history_file
+repository_dispatch
+schedule
+workflow_dispatch
 ```
 
-It uses:
+### `fix-embed-other-server.yml`
 
-```text
-volume
-chaptername
-chapter
-```
-
-to infer arc names and arc starts.
-
-If `history_file` is missing or empty, the novel is skipped.
-
-Arc history should be saved even when announcement posting fails, as long as the arc was detected and should not be announced repeatedly.
-
----
-
-## New Extra Checker
-
-`new_extra_checker.py` detects side stories/extras.
-
-Requires:
-
-```text
-paid_feed
-```
-
-It fires once per novel when extras or side stories begin appearing in paid/advance content.
-
----
-
-## Completion Checker
-
-`completed_novel_checker.py` runs in two modes.
-
-### Paid Mode
-
-```bash
-python completed_novel_checker.py --feed paid
-```
-
-Announces when the final paid/advance chapter is out.
-
-Uses:
-
-```text
-last_chapter
-chapter_count
-start_date
-paid_feed
-```
-
-### Free Mode
-
-```bash
-python completed_novel_checker.py --feed free
-```
-
-Announces when the full series is unlocked/free.
-
-Uses:
-
-```text
-last_chapter
-chapter_count
-free_feed
-```
-
-If the novel has only free chapters, this also acts as the full translation completion announcement.
-
----
-
-## Novel Updates Analytics
-
-### Comments
-
-Novel Updates comments can be posted through the comments bot.
-
-Use a separate color key:
-
-```json
-"novel_updates_comments": "2D3F51"
-```
-
-### Weekly Readers
-
-`nu_weekly_readers.py` posts weekly reader statistics.
-
-Use:
-
-```json
-"nu_weekly": "2D3F51"
-```
-
-This color should usually stay fixed, not `"novel"`, because weekly stats may not belong to one novel embed color in every context.
+Manual maintenance workflow for patching/fixing embeds by URL.
 
 ---
 
@@ -1037,44 +874,37 @@ This color should usually stay fixed, not `"novel"`, because weekly stats may no
 
 ### 1. Add Novel Metadata in `rss-feed`
 
-Create a new TOML file:
+Create:
 
 ```text
 rss-feed/mappings/novels/code.toml
 ```
 
-Required fields:
+Required basics:
 
 ```toml
 host = "Mistmint Haven"
-
 title = "Novel Title"
 short_code = "CODE"
-
 novel_url = "https://..."
 featured_image = "https://..."
 
 has_free = true
 has_paid = true
 has_comments = true
-
 is_nsfw = false
 is_membership = false
 ```
 
-Optional fields:
+Optional status/checker fields:
 
 ```toml
-chapter_count = ""
-last_chapter = ""
+chapter_count = "93 Chapters"
+last_chapter = "Chapter 93"
 start_date = ""
 history_file = ""
-discord_color = ""
-custom_description = """
-"""
+discord_color = "#c90016"
 ```
-
----
 
 ### 2. Add Discord Data in This Repo
 
@@ -1088,12 +918,10 @@ Add:
 
 ```toml
 [CODE]
-role_id = "123456789"
-custom_emoji = "<:emoji_name:123456789>"
+role_id = "..."
+custom_emoji = "<:...:...>"
 role_url = "https://discord.com/channels/..."
 ```
-
----
 
 ### 3. Add Tag Roles if Needed
 
@@ -1103,42 +931,31 @@ Edit:
 config/tag_roles.json
 ```
 
-Example:
-
-```json
-{
-  "Quick Transmigration": "123456789",
-  "Comedy": "123456789"
-}
-```
-
----
+Only add tags that should ping.
 
 ### 4. Add Arc History if Needed
 
-If the novel uses arc tracking, set this in `rss-feed` novel TOML:
+If the novel uses arc tracking:
 
 ```toml
 history_file = "arc_history/code_history.json"
 ```
 
-The file will live in this repo:
+Then create:
 
 ```text
-discord-webhook/arc_history/code_history.json
+arc_history/code_history.json
 ```
 
-If the novel does not use arc tracking, leave:
+with:
 
-```toml
-history_file = ""
+```json
+{}
 ```
-
----
 
 ### 5. Check Feed Flags
 
-In `rss-feed` novel TOML:
+Make sure the novel TOML flags match the feeds you expect:
 
 ```toml
 has_free = true
@@ -1146,261 +963,20 @@ has_paid = true
 has_comments = true
 ```
 
-Set these based on what the novel actually has.
-
-Scripts may skip a novel if the required feed is missing.
-
 ---
 
 ## Adding a New Host
 
-Most host-specific work happens in `rss-feed`.
-
-In `rss-feed`:
-
-1. Add host TOML:
-
-   ```text
-   mappings/hosts/new_host.toml
-   ```
-
-2. Add host utility logic in:
-
-   ```text
-   host_utils.py
-   ```
-
-3. Add novel TOML files under:
-
-   ```text
-   mappings/novels/
-   ```
-
-In this repo:
-
-1. Make sure bot scripts can parse the feed output.
-2. Add any Discord-specific config needed.
-3. Add role/tag mappings if needed.
-
----
-
-## Message Templates
-
-Future message templates may live in:
-
-```text
-message_templates/
-```
-
-Recommended structure:
-
-```text
-message_templates/
-├─ free_chapter.toml
-├─ paid_chapter.toml
-├─ comments.toml
-├─ new_novel.toml
-├─ completed_novel.toml
-└─ membership_update.toml
-```
-
-These templates should stay top-level instead of inside `config/`, because they are editable message layouts rather than small config values.
-
-Example paid chapter template shape:
-
-```toml
-content = "{role_mention}"
-
-[[embeds]]
-title = "{custom_emoji} {title}"
-url = "{link}"
-description = """
-## {chapter} — {chaptername}
-
-{volume}
-
-{coin}
-
-{description}
-"""
-color = "paid_chapter"
-
-[embeds.thumbnail]
-url = "{featured_image}"
-
-[embeds.footer]
-text = "{host} · {translator}"
-icon_url = "{host_logo}"
-
-[[embeds.fields]]
-name = "Chapter"
-value = "[{chapter} — {chaptername}]({link})"
-inline = true
-```
-
-Templates require a renderer before scripts can use them.
-
----
-
-## Message Templates
-
-Discord message layouts are now handled through TOML files in:
-
-```text
-message_templates/
-```
-
-### Template mode
-
-Most templates use:
-
-```toml
-mode = "classic"
-```
-
-`classic` means a normal Discord message payload: `content`, `embeds`, `components`, `allowed_mentions`, and `flags`.
-
-Keep `mode = "classic"` unless a script/template is specifically updated for another payload style later.
-
-### Multiline content
-
-Use TOML literal strings for readable Discord messages:
-
-```toml
-content = '''
-Line one
-Line two
-'''
-```
-
-The renderer strips the first/last template-only newline, but keeps intentional blank lines inside the message.
-
-### Suppressing embeds
-
-Use:
-
-```toml
-suppress_embeds = true
-```
-
-instead of manually setting Discord flags in Python.
-
-### Allowed mentions
-
-Mentions only ping if both are true:
-
-1. the mention exists in `content`
-2. `allowed_mentions` permits it
-
-Role-ping example:
-
-```toml
-content = "{chapter_mention} New chapter!"
-
-[allowed_mentions]
-parse = ["roles"]
-```
-
-No-ping example:
-
-```toml
-[allowed_mentions]
-parse = []
-```
-
-For user-only pings:
-
-```toml
-[allowed_mentions]
-parse = []
-users = ["{ping_user_id}"]
-```
-
-### Embeds
-
-Embed colors can use config keys with fallback values:
-
-```toml
-color = { key = "paid_chapter", default = "A87676" }
-```
-
-Optional fields can use `_when` guards:
-
-```toml
-[embeds.thumbnail]
-url = "{featured_image_url}"
-url_when = "featured_image_url"
-```
-
-If the placeholder is empty, the guarded field is skipped.
-
-### Buttons
-
-Classic link buttons are written like this:
-
-```toml
-[components]
-[[components.action_rows]]
-[[components.action_rows.buttons]]
-style = "link"
-label = "Read here"
-url = "{link}"
-```
-
-### Multi-message templates
-
-Templates like `new_arcs.toml` can send multiple messages from one event:
-
-```toml
-[[messages]]
-name = "header"
-content = "..."
-
-[[messages]]
-name = "locked"
-content = "..."
-```
-
-Each `[[messages]]` block can have its own `content`, `embeds`, `allowed_mentions`, `when`, and `suppress_embeds`.
-
-Example conditional message:
-
-```toml
-[[messages]]
-name = "unlocked"
-when = "has_unlocked"
-content = "Unlocked arcs:"
-```
-
-The message only sends when `has_unlocked` is truthy in the Python context.
-
-### Editing rule
-
-Edit TOML when changing Discord wording, emojis, spacing, embeds, colors, buttons, or ping behavior.
-
-Edit Python only when changing detection logic, feed parsing, state handling, routing, or placeholder/context values.
-
----
-
-## State Files
-
-State files prevent duplicate posts.
-
-Common state files:
-
-```text
-state.json
-state_rss.json
-nu_readers.json
-```
-
-These paths are configured in:
-
-```text
-config/files.json
-```
-
-Do not delete state files unless intentionally resetting the bot.
+For a new host:
+
+1. Add a host TOML file in `rss-feed/mappings/hosts/`.
+2. Add novel TOML files in `rss-feed/mappings/novels/`.
+3. Implement host utilities in `rss-feed/host_utils/` if needed.
+4. Ensure RSS feeds include the host’s items.
+5. Add Discord role/emoji/role URL data in this repo if announcements should ping.
+6. Add feed/channel handling here only if the host needs different Discord behavior.
+
+Most new host metadata belongs in `rss-feed`, not this repo.
 
 ---
 
@@ -1411,138 +987,109 @@ Do not delete state files unless intentionally resetting the bot.
 Check:
 
 ```text
-state.json
 state_rss.json
+seen GUID keys
+last post time keys
+config/feeds.json
 ```
 
-The seen GUID may be missing or reset.
-
----
+Make sure state files are committed after successful workflow runs.
 
 ### Novel role did not ping
 
 Check:
 
-```text
-config/novel_discord_map.toml
-```
-
-Make sure the short code matches exactly:
-
-```toml
-[AMLWC]
-role_id = "1517842780003635240"
-```
-
-Also check `allowed_mentions`.
-
----
+1. `config/novel_discord_map.toml` has the correct `role_id`.
+2. The template has `allowed_mentions` with roles enabled.
+3. The bot role has permission to mention the role.
+4. The role is mentionable or the bot has enough permission to ping it.
 
 ### Embed color crashed
 
-If `config/embeds.json` says:
+Check `config/embeds.json`.
+
+Valid colors:
 
 ```json
-"paid_chapter": "novel"
+"FFF9BF"
+"#FFF9BF"
+"novel"
 ```
 
-then the script must use:
+Invalid colors:
 
-```python
-resolve_embed_color(...)
+```json
+"yellow"
+"FFF"
+"not-a-color"
 ```
 
-not:
+If using `"novel"`, make sure the novel TOML has:
 
-```python
-embed_color(...)
+```toml
+discord_color = "#c90016"
 ```
 
-`embed_color(...)` expects a real hex color and will crash on `"novel"`.
-
----
+or another supported novel color field.
 
 ### JSON config crashed
 
-JSON does not support comments.
+JSON does not allow comments or trailing commas.
 
-This is invalid:
-
-```json
-# comment
-{
-  "colors": {}
-}
-```
-
-Use `_comment` instead:
+Bad:
 
 ```json
 {
-  "_comment": "This is a note.",
-  "colors": {}
+  "state_path": "state.json", // comment
 }
 ```
 
----
+Good:
+
+```json
+{
+  "state_path": "state.json"
+}
+```
 
 ### Arc checker skipped a novel
 
-Check the RSS novel TOML:
-
-```toml
-history_file = ""
-```
-
-If empty, arc checking skips the novel.
-
-For arc tracking, set:
+Check:
 
 ```toml
 history_file = "arc_history/code_history.json"
 ```
 
-Also make sure the novel has both:
+If the field is empty, the skip is intentional.
 
-```toml
-has_free = true
-has_paid = true
-```
-
----
+Also confirm the history file exists and contains valid JSON.
 
 ### Completion checker skipped a novel
 
 Check:
 
 ```toml
-last_chapter = ""
+chapter_count = "93 Chapters"
+last_chapter = "Chapter 93"
 ```
 
-If empty, completion checking may skip the novel.
-
-Set:
-
-```toml
-last_chapter = "Chapter 92"
-chapter_count = "92 Chapters"
-```
+If `last_chapter` does not match the feed item’s chapter label, completion may not trigger.
 
 ---
 
 ## Design Guarantees
 
-* Discord-specific role IDs, emojis, and role URLs live in this repo.
-* Novel metadata lives in `rss-feed`.
-* `HOSTING_SITE_DATA` remains import-compatible through `novel_mappings.py`.
-* Split TOML mappings are supported through the installed `rss-feed` package.
-* Embed colors can use fixed hex values or `"novel"`.
-* `"novel"` colors resolve to `theme_color` or `discord_color` from RSS novel TOML.
-* Empty `history_file` safely skips arc tracking.
-* Empty `start_date` safely removes the duration phrase from completion messages.
-* State files prevent duplicate chapter/comment announcements.
-* Arc history prevents duplicate arc announcements.
-* Cross-repo dispatch can trigger notifier workflows automatically.
+- Discord-specific role IDs, emojis, and role URLs live in this repo.
+- Novel metadata lives in `rss-feed`.
+- `HOSTING_SITE_DATA` remains import-compatible through `novel_mappings.py`.
+- Split TOML mappings are supported through the installed `rss-feed` package.
+- Embed colors can use fixed hex values or `"novel"` where supported.
+- `"novel"` colors resolve to novel color fields from RSS novel TOML.
+- Empty `history_file` safely skips arc tracking.
+- Empty `start_date` safely removes the duration phrase from completion messages.
+- State files prevent duplicate chapter/comment announcements.
+- Arc history prevents duplicate arc announcements.
+- Cross-repo dispatch can trigger notifier workflows automatically.
 
 ---
 
@@ -1570,28 +1117,21 @@ Before running the notifier:
 
 1. `rss-feed` has the novel TOML file.
 2. `rss-feed` has the correct feed flags:
-
-   * `has_free`
-   * `has_paid`
-   * `has_comments`
-3. This repo has the short code in:
-
-   * `config/novel_discord_map.toml`
+   - `has_free`
+   - `has_paid`
+   - `has_comments`
+3. This repo has the short code in `config/novel_discord_map.toml`.
 4. `config/embeds.json` has valid colors.
-5. If using `"novel"` colors, scripts use `resolve_embed_color(...)`.
-6. If using arc tracking, `history_file` is set.
+5. If using `"novel"` colors, the novel TOML has a valid color field.
+6. If using arc tracking, `history_file` is set and the history JSON exists.
 7. Required Discord channel secrets exist.
 8. `DISCORD_BOT_TOKEN` exists.
-9. Workflow installs the latest `rss-feed` package.
+9. The workflow installs the latest `rss-feed` package.
 10. State/history files are committed after successful runs.
 
 ---
 
-Now you are ready to automate chapter, comment, arc, extra, new novel, Novel Updates, and completion announcements to Discord.
-
----
-
-### 📷 How It Looks
+## How It Looks
 
 <table>
   <tr>
@@ -1611,4 +1151,3 @@ Now you are ready to automate chapter, comment, arc, extra, new novel, Novel Upd
     </td>
   </tr>
 </table>
-
