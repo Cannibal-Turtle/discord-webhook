@@ -20,6 +20,7 @@ from config_loader import (
     embed_value,
     require_feed_value,
     require_feeds_value,
+    require_feed_url,
     require_file_value,
     require_role_value,
     role_id_to_mention,
@@ -30,7 +31,7 @@ CHANNEL_ID = int(os.environ["DISCORD_FREE_CHAPTERS_CHANNEL"])
 
 STATE_FILE = require_file_value("rss_state_path")
 FEED_KEY   = require_feed_value("free", "last_guid_key")
-RSS_URL    = require_feed_value("free", "url")
+RSS_URL    = require_feed_url("free")
 
 SEEN_KEY       = require_feed_value("free", "seen_key")
 LAST_POST_TIME = require_feed_value("free", "last_post_time_key")

@@ -73,6 +73,28 @@ def require_feed_value(feed_name: str, key: str) -> Any:
     return require_value(feed, key, f"feeds.{feed_name}")
 
 
+def require_feed_url(feed_name: str) -> str:
+    feed_key = require_feed_value(feed_name, "feed_key")
+
+    try:
+        from novel_mappings import get_output_feed_url
+    except Exception as e:
+        raise RuntimeError(
+            "Could not import get_output_feed_url from rss-feed/novel_mappings. "
+            "Make sure the latest rss-feed package is installed."
+        ) from e
+
+    url = get_output_feed_url(feed_key)
+
+    if not url:
+        raise RuntimeError(
+            f"Missing output feed URL for {feed_key!r}. "
+            "Check rss-feed/mappings/output_feeds.toml."
+        )
+
+    return url
+
+
 def require_role_value(key: str) -> Any:
     return require_value(ROLES, key, "roles")
 

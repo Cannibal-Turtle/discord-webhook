@@ -3,3 +3,4 @@ feedparser~=6.0
 python-dateutil~=2.9
 requests
 tomli>=2.0.1
+git+https://github.com/Cannibal-Turtle/rss-feed.git@main

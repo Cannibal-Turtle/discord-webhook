@@ -3,3 +3,4 @@ requests~=2.32
 python-dateutil~=2.9
 aiohttp~=3.10
 tomli>=2.0.1
+git+https://github.com/Cannibal-Turtle/rss-feed.git@main

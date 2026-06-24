@@ -15,6 +15,7 @@ from config_loader import (
     get_novel_role_id,
     require_feed_value,
     require_feeds_value,
+    require_feed_url,
     require_file_value,
     role_id_to_mention,
 )
@@ -24,7 +25,7 @@ CHANNEL_ID = os.environ["DISCORD_COMMENTS_CHANNEL"]
 
 STATE_FILE = require_file_value("rss_state_path")
 FEED_KEY   = require_feed_value("comments", "last_guid_key")
-RSS_URL    = require_feed_value("comments", "url")
+RSS_URL    = require_feed_url("comments")
 API_URL    = f"https://discord.com/api/v10/channels/{CHANNEL_ID}/messages"
 
 SEEN_KEY       = require_feed_value("comments", "seen_key")
