@@ -240,7 +240,7 @@ def build_ping_roles(novel_title: str, tags: list[str] | None = None) -> str:
         parts.append(GLOBAL_ROLE.strip())
 
     if not tags:
-        raise ValueError(f"No tags set for {novel_title}")
+        tags = []
 
     unknown_tags = []
 
