@@ -449,14 +449,6 @@
   "last_post_time_free": "2026-06-24T05:00:00+00:00",
   "free_last_guid": "232040cb-2b4c-479d-9e7a-63223e0c06c7",
   "paid_seen_guids": [
-    "Mistmint Haven::7e4f3aa8-b3d9-4037-9708-9e78c8e8228a",
-    "Mistmint Haven::bee1f97c-34c2-4529-848a-214ba9510c41",
-    "Mistmint Haven::ccf618a4-2d79-4e0c-97f8-1df579d507ae",
-    "Mistmint Haven::6c5cf000-11b5-4494-9df3-73e75fc419b3",
-    "Mistmint Haven::74382d4b-f0e9-4fea-b8a4-d2cb84703f31",
-    "Mistmint Haven::68bd9779-e030-43c1-bc0b-42734bd6571f",
-    "Mistmint Haven::12a200a3-932e-4fe8-8f53-11a0bf2156cf",
-    "Mistmint Haven::e2ecd4e3-eea1-401e-b479-c68e49ca857f",
     "Mistmint Haven::f76df389-07cd-43b5-9c43-b287900c0a7b",
     "Mistmint Haven::805dc8e7-1a0c-4a59-b71f-a7ff6359a7fb",
     "Mistmint Haven::edc2328a-8ea2-4e4f-8520-fd0f42b3f755",
@@ -948,10 +940,18 @@
     "Mistmint Haven::90cafb92-718a-4e7f-9d95-e185559c585b",
     "Mistmint Haven::6d88dab0-5d26-433e-a22f-2c4864494a09",
     "Mistmint Haven::7f2e9c98-4fae-4aeb-a9ee-b6850f7eece8",
-    "Mistmint Haven::6fa9284c-74b9-462c-b40d-86e44989395f"
+    "Mistmint Haven::6fa9284c-74b9-462c-b40d-86e44989395f",
+    "Mistmint Haven::4755c5d4-c797-47cb-ae61-20bdc50ca3a2",
+    "Mistmint Haven::eec00076-bcc0-458b-8c72-a16fa41ea51d",
+    "Mistmint Haven::ae79f92c-526b-4639-8fc5-8542a7ab41cc",
+    "Mistmint Haven::0411e87e-a238-4b20-baa0-2cc3df47333c",
+    "Mistmint Haven::5a2be22d-efd9-4c21-8f58-4d435df588ce",
+    "Mistmint Haven::d7185e71-2ae2-4011-9099-21e8df233532",
+    "Mistmint Haven::16966978-6986-492b-be7f-cf9379a65b8e",
+    "Mistmint Haven::921bc4a0-ba58-4eea-a03e-6fe609a7404b"
   ],
-  "last_post_time_paid": "2026-06-23T16:24:25+00:00",
-  "paid_last_guid": "6fa9284c-74b9-462c-b40d-86e44989395f",
+  "last_post_time_paid": "2026-06-24T16:08:11+00:00",
+  "paid_last_guid": "921bc4a0-ba58-4eea-a03e-6fe609a7404b",
   "comments_seen_guids": [
     "novel updates::https://www.novelupdates.com/?post_type=seriesplans&p=88639#comment-434808",
     "novel updates::https://www.novelupdates.com/?post_type=seriesplans&p=88639#comment-439240",
@@ -1110,8 +1110,9 @@
     "mistmint haven::560240b1-f74f-4db3-82cb-65372ed457cc",
     "mistmint haven::bf5437ac-221e-4f1d-84f8-b3e2bc73b00b",
     "mistmint haven::91d04480-55f3-4731-9a00-7474a5a180d3",
-    "mistmint haven::05cf57a8-3cfd-4d12-ac64-84d4274b5ccc"
+    "mistmint haven::05cf57a8-3cfd-4d12-ac64-84d4274b5ccc",
+    "mistmint haven::e8bb0510-bf41-4643-950b-757b45034741"
   ],
-  "last_post_time_comments": "2026-06-23T14:10:06+00:00",
-  "comments_last_guid": "05cf57a8-3cfd-4d12-ac64-84d4274b5ccc"
+  "last_post_time_comments": "2026-06-24T15:01:26+00:00",
+  "comments_last_guid": "e8bb0510-bf41-4643-950b-757b45034741"
 }
