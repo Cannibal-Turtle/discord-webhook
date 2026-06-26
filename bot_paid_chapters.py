@@ -24,6 +24,7 @@ from config_loader import (
     require_feed_url,
     require_file_value,
     require_role_value,
+    require_server_value,
     role_id_to_mention,
 )
 
@@ -110,6 +111,69 @@ def _join_role_mentions(*parts) -> str:
 def _build_chapter_mention(series_role: str, nsfw: bool, global_mention: str) -> str:
     nsfw_tail = NSFW_ROLE if nsfw else None
     return _join_role_mentions(series_role, nsfw_tail, global_mention)
+
+
+def setting_bool(env_name: str, server_key: str, default: bool = True) -> bool:
+    raw = os.getenv(env_name)
+    if raw is None:
+        try:
+            raw = require_server_value(server_key)
+        except RuntimeError:
+            return default
+
+    if isinstance(raw, bool):
+        return raw
+
+    return str(raw).strip().lower() in {"1", "true", "yes", "y", "on"}
+
+
+def first_chapter_release_enabled() -> bool:
+    return setting_bool(
+        "ANNOUNCE_FIRST_CHAPTER_RELEASE",
+        "announce_first_chapter_release",
+        True,
+    )
+
+
+def _clean_compare(s: str) -> str:
+    s = (s or "").replace("\u00A0", " ").strip().lower()
+    return re.sub(r"\s+", " ", s)
+
+
+def is_probable_first_paid_chapter(entry) -> bool:
+    raw_chap = entry.get("chapter") or ""
+    raw_extend = entry.get("chaptername") or ""
+
+    fields = [_clean_compare(raw_chap), _clean_compare(raw_extend)]
+    text = " ".join(x for x in fields if x)
+
+    if not text:
+        return False
+
+    if "prologue" in text:
+        return True
+
+    if re.search(r"\bch(?:apter)?\.?\s*0*1\b", text):
+        return True
+
+    if re.search(r"\bep(?:isode)?\.?\s*0*1\b", text):
+        return True
+
+    if re.search(r"(?:^|\s)1[．\.]\s*0*1\b", text):
+        return True
+
+    for field in fields:
+        if re.fullmatch(r"0*1", field):
+            return True
+
+    return False
+
+
+def should_hold_first_paid_chapter(entry) -> bool:
+    if first_chapter_release_enabled():
+        return False
+
+    return is_probable_first_paid_chapter(entry)
 
 
 def normalize_guid(entry):
@@ -266,6 +330,14 @@ async def send_new_paid_entries():
             )
             
             ctx = build_feed_context(entry)
+
+            if should_hold_first_paid_chapter(entry):
+                print(
+                    f"⏳ Holding first paid chapter: "
+                    f"{ctx.get('title', '')} / {ctx.get('chapter', '')} / {guid}. "
+                    "announce_first_chapter_release is false."
+                )
+                continue
             
             label_text, emoji_obj = get_coin_button_parts_from_feed(ctx["coin"])
             
