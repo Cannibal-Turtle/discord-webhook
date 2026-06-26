@@ -4,5 +4,6 @@
   "nu_readers_path": "nu_readers.json",
   "novel_discord_map_file": "config/novel_discord_map.toml",
   "tag_role_map_file": "config/tag_roles.json",
-  "arc_history_dir": "arc_history"
+  "arc_history_dir": "arc_history",
+  "rss_feed_integrations_url": "https://raw.githubusercontent.com/Cannibal-Turtle/rss-feed/main/config/integrations.json"
 }

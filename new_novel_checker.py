@@ -21,7 +21,6 @@ Behavior:
 
 Env vars required:
   DISCORD_BOT_TOKEN  -> your bot token (not webhook)
-  DISCORD_CHANNEL_ID -> channel ID to post in
 """
 
 import argparse
@@ -44,6 +43,7 @@ from novel_mappings import (
 
 # ─── CONFIG ────────────────────────────────────────────────────────────────────
 from config_loader import (
+    server_channel_id_str,
     TAG_ROLE_MAP,
     get_novel_custom_emoji,
     get_novel_role_url,
@@ -52,9 +52,9 @@ from config_loader import (
     role_id_to_mention,
 )
 
-STATE_PATH     = require_file_value("state_path")
-BOT_TOKEN_ENV  = "DISCORD_BOT_TOKEN"
-CHANNEL_ID_ENV = "DISCORD_CHANNEL_ID"
+STATE_PATH = require_file_value("state_path")
+BOT_TOKEN  = os.environ["DISCORD_BOT_TOKEN"]
+CHANNEL_ID = server_channel_id_str("announcements")
 
 GLOBAL_ROLE = role_id_to_mention(require_role_value("new"))
 NSFW_ROLE   = role_id_to_mention(require_role_value("nsfw"))
@@ -333,10 +333,10 @@ def main():
     )
     args = parser.parse_args()
 
-    bot_token  = os.getenv(BOT_TOKEN_ENV)
-    channel_id = os.getenv(CHANNEL_ID_ENV)
+    bot_token  = BOT_TOKEN
+    channel_id = CHANNEL_ID
     if not (bot_token and channel_id):
-        sys.exit("❌ Missing DISCORD_BOT_TOKEN or DISCORD_CHANNEL_ID")
+        sys.exit("❌ Missing DISCORD_BOT_TOKEN or config/server.json announcements channel")
 
     state  = load_state()
     novels = load_novels_from_mapping()

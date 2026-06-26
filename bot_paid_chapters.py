@@ -16,6 +16,7 @@ from message_renderer import render_message, to_discord_py_kwargs
 
 # ─── CONFIG ────────────────────────────────────────────────────────────────
 from config_loader import (
+    server_channel_id,
     get_novel_role_id,
     embed_value,
     require_feed_value,
@@ -27,7 +28,7 @@ from config_loader import (
 )
 
 TOKEN      = os.environ["DISCORD_BOT_TOKEN"]
-CHANNEL_ID = int(os.environ["DISCORD_ADVANCE_CHAPTERS_CHANNEL"])
+CHANNEL_ID = server_channel_id("paid_chapters")
 
 STATE_FILE = require_file_value("rss_state_path")
 FEED_KEY   = require_feed_value("paid", "last_guid_key")

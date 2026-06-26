@@ -8,6 +8,16 @@ on:
   repository_dispatch:
     types: [trigger-discord-notify]
   workflow_dispatch:
+    inputs:
+      feed:
+        description: "Which chapter workflow should run?"
+        type: choice
+        required: true
+        default: both
+        options:
+          - both
+          - free
+          - paid
 
 permissions:
   contents: write
@@ -18,7 +28,7 @@ jobs:
     runs-on: ubuntu-latest
     if: |
       github.event_name == 'schedule' ||
-      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'workflow_dispatch' && (inputs.feed == 'free' || inputs.feed == 'both')) ||
       (github.event_name == 'repository_dispatch' && (github.event.client_payload.feed == 'free' || github.event.client_payload.feed == 'both'))
     steps:
       - uses: actions/checkout@v5
@@ -38,7 +48,6 @@ jobs:
         timeout-minutes: 5
         env:
           DISCORD_BOT_TOKEN:             ${{ secrets.DISCORD_BOT_TOKEN }}
-          DISCORD_FREE_CHAPTERS_CHANNEL: ${{ secrets.DISCORD_FREE_CHAPTERS_CHANNEL }}
           PAT_GITHUB:                    ${{ secrets.PAT_GITHUB }}
         run: python bot_free_chapters.py
       - name: Upload free state
@@ -53,7 +62,7 @@ jobs:
     runs-on: ubuntu-latest
     if: |
       github.event_name == 'schedule' ||
-      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'workflow_dispatch' && (inputs.feed == 'paid' || inputs.feed == 'both')) ||
       (github.event_name == 'repository_dispatch' && (github.event.client_payload.feed == 'paid' || github.event.client_payload.feed == 'both'))
     steps:
       - uses: actions/checkout@v5
@@ -73,7 +82,6 @@ jobs:
         timeout-minutes: 5
         env:
           DISCORD_BOT_TOKEN:              ${{ secrets.DISCORD_BOT_TOKEN }}
-          DISCORD_ADVANCE_CHAPTERS_CHANNEL: ${{ secrets.DISCORD_ADVANCE_CHAPTERS_CHANNEL }}
         run: python bot_paid_chapters.py
       - name: Upload paid state
         uses: actions/upload-artifact@v4

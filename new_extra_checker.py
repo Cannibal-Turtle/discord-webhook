@@ -9,6 +9,7 @@ from novel_mappings import HOSTING_SITE_DATA, get_nsfw_novels
 
 # ─── CONFIG ────────────────────────────────────────────────────────────────────
 from config_loader import (
+    server_channel_id_str,
     get_novel_role_id,
     require_file_value,
     require_role_value,
@@ -18,10 +19,10 @@ from config_loader import (
 STATE_PATH = require_file_value("state_path")
 
 ONGOING_ROLE = role_id_to_mention(require_role_value("ongoing"))
-NSFW_ROLE = role_id_to_mention(require_role_value("nsfw"))
+NSFW_ROLE    = role_id_to_mention(require_role_value("nsfw"))
 
-BOT_TOKEN_ENV  = "DISCORD_BOT_TOKEN"
-CHANNEL_ID_ENV = "DISCORD_CHANNEL_ID"
+BOT_TOKEN  = os.environ["DISCORD_BOT_TOKEN"]
+CHANNEL_ID = server_channel_id_str("announcements")
 # ────────────────────────────────────────────────────────────────────────────────
 
 def get_series_role_from_short_code(short_code: str) -> str:
@@ -250,8 +251,8 @@ def process_extras(novel):
 
         message_payload = render_message("new_extras", ctx)
 
-        bot_token  = os.getenv(BOT_TOKEN_ENV)
-        channel_id = os.getenv(CHANNEL_ID_ENV)
+        bot_token  = BOT_TOKEN
+        channel_id = CHANNEL_ID
 
         if not (bot_token and channel_id):
             print("⚠️ Bot token or channel ID missing; skipped bot post")

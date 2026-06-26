@@ -14,8 +14,21 @@ import requests
 from message_context import build_feed_context
 from message_renderer import render_message, to_discord_py_kwargs
 
+try:
+    from status_update_dispatcher import trigger_status_update
+except Exception as import_exc:
+    _STATUS_UPDATE_IMPORT_ERROR = str(import_exc)
+
+    def trigger_status_update(title: str, host: str) -> bool:
+        print(
+            f"⚠️ Optional card status update unavailable; skipped {title}: "
+            f"{_STATUS_UPDATE_IMPORT_ERROR}"
+        )
+        return False
+
 # ─── CONFIG ────────────────────────────────────────────────────────────────────
 from config_loader import (
+    server_channel_id,
     get_novel_role_id,
     embed_value,
     require_feed_value,
@@ -27,7 +40,7 @@ from config_loader import (
 )
 
 TOKEN      = os.environ["DISCORD_BOT_TOKEN"]
-CHANNEL_ID = int(os.environ["DISCORD_FREE_CHAPTERS_CHANNEL"])
+CHANNEL_ID = server_channel_id("free_chapters")
 
 STATE_FILE = require_file_value("rss_state_path")
 FEED_KEY   = require_feed_value("free", "last_guid_key")
@@ -217,32 +230,12 @@ async def send_new_entries():
 
         # 🔔 trigger once per novel
         for title, host in updated_titles:
-            print(f"🔔 Triggering status update for {title} ({host})")
-            trigger_status_update(title, host)
+            try:
+                trigger_status_update(title, host)
+            except Exception as exc:
+                print(f"⚠️ Optional card status update crashed for {title}; skipped: {exc}")
 
         await asyncio.sleep(1)
         await bot.close()
 
     await bot.start(TOKEN)
-
-def trigger_status_update(title: str, host: str):
-    url = "https://api.github.com/repos/Cannibal-Turtle/rss-feed/dispatches"
-    headers = {
-        "Authorization": f"Bearer {os.environ['PAT_GITHUB']}",
-        "Accept": "application/vnd.github+json",
-    }
-    payload = {
-        "event_type": "update-novel-status",
-        "client_payload": {
-            "title": title,
-            "host": host,
-            "source": "free_chapter"
-        }
-    }
-
-    r = requests.post(url, headers=headers, json=payload, timeout=10)
-    if r.status_code >= 300:
-        print(f"❌ Dispatch failed for {title}: {r.status_code} {r.text}")
-
-if __name__ == "__main__":
-    asyncio.run(send_new_entries())

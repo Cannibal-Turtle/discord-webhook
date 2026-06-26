@@ -49,6 +49,7 @@ FILES = load_json("config/files.json")
 FEEDS = load_json("config/feeds.json")
 ROLES = load_json("config/roles.json")
 EMBEDS = load_json("config/embeds.json", required=False, default={})
+SERVER = load_json("config/server.json")
 
 
 def require_value(source: dict, key: str, label: str) -> Any:
@@ -97,6 +98,22 @@ def require_feed_url(feed_name: str) -> str:
 
 def require_role_value(key: str) -> Any:
     return require_value(ROLES, key, "roles")
+
+
+def require_server_value(key: str) -> Any:
+    return require_value(SERVER, key, "server")
+
+
+def server_channel_id(key: str) -> int:
+    return int(require_server_value(key))
+
+
+def server_channel_id_str(key: str) -> str:
+    return str(require_server_value(key)).strip()
+
+
+def server_guild_id() -> str:
+    return str(require_server_value("guild_id")).strip()
 
 
 def embed_value(key: str, default: Any = None) -> Any:

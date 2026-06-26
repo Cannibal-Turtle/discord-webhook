@@ -11,6 +11,7 @@ from message_renderer import render_message_sequence, to_discord_api_payload
 
 # ─── CONFIG ────────────────────────────────────────────────────────────────────
 from config_loader import (
+    server_channel_id_str,
     get_novel_role_id,
     get_novel_custom_emoji,
     get_novel_role_url,
@@ -19,7 +20,7 @@ from config_loader import (
 )
 
 BOT_TOKEN  = os.environ["DISCORD_BOT_TOKEN"]
-CHANNEL_ID = os.environ["DISCORD_CHANNEL_ID"]
+CHANNEL_ID = server_channel_id_str("announcements")
 
 ONGOING_ROLE = role_id_to_mention(require_role_value("ongoing"))
 NSFW_ROLE = role_id_to_mention(require_role_value("nsfw"))

@@ -196,12 +196,17 @@ Settings → Secrets and variables → Actions
 | `DISCORD_ADVANCE_CHAPTERS_CHANNEL` | Paid/advance chapter posts |
 | `DISCORD_COMMENTS_CHANNEL` | Comment posts |
 | `DISCORD_MOD_CHANNEL_ID` | Optional mod/admin alert posts |
-| `GH_PAT` | Personal Access Token for cross-repo dispatch/history push when needed |
+| `PAT_GITHUB` | Optional Personal Access Token for the free chapter → rss-feed status card update callback |
 
-Legacy only:
+Legacy / no longer required by current scripts:
 
 | Secret | Purpose |
 | --- | --- |
+| `DISCORD_CHANNEL_ID` | Old announcement channel secret; replaced by `config/server.json` |
+| `DISCORD_FREE_CHAPTERS_CHANNEL` | Old free chapter channel secret; replaced by `config/server.json` |
+| `DISCORD_ADVANCE_CHAPTERS_CHANNEL` | Old paid chapter channel secret; replaced by `config/server.json` |
+| `DISCORD_COMMENTS_CHANNEL` | Old comments channel secret; replaced by `config/server.json` |
+| `DISCORD_MOD_CHANNEL_ID` | Old mod/admin channel secret; replaced by `config/server.json` if needed |
 | `DISCORD_WEBHOOK` | Old webhook URL, no longer required for the current bot scripts |
 
 ---
@@ -863,6 +868,80 @@ repository_dispatch
 schedule
 workflow_dispatch
 ```
+
+### Optional free chapter status card update callback
+
+Free chapter announcements can optionally trigger a status card refresh back in the `rss-feed` repo.
+
+This flow is intentionally optional and non-fatal. If the callback config is missing, disabled, unreachable, or `PAT_GITHUB` is not configured, the free chapter announcement should still post normally.
+
+Flow:
+
+```text
+rss-feed updates free_chapters_feed.xml
+→ rss-feed dispatches discord-webhook with feed=free
+→ bot_free_chapters.py posts the new free chapter message
+→ status_update_dispatcher.py checks rss-feed config/integrations.json
+→ if card_status_update.enabled=true, it sends repository_dispatch to rss-feed
+→ rss-feed runs update_novel_status.yml
+→ tools/update_novel_status.py updates the configured novel status card embeds
+```
+
+Required file in this repo:
+
+```text
+status_update_dispatcher.py
+```
+
+`bot_free_chapters.py` calls this after free chapter posts are sent:
+
+```python
+trigger_status_update(title, host)
+```
+
+The dispatcher reads the integration config from the URL configured in:
+
+```json
+{
+  "rss_feed_integrations_url": "https://raw.githubusercontent.com/Cannibal-Turtle/rss-feed/main/config/integrations.json"
+}
+```
+
+That value belongs in:
+
+```text
+config/files.json
+```
+
+Required config in `rss-feed/config/integrations.json`:
+
+```json
+{
+  "card_status_update": {
+    "enabled": true,
+    "repo": "Cannibal-Turtle/rss-feed",
+    "event_type": "update-novel-status"
+  }
+}
+```
+
+Required secret in the `discord-webhook` repo:
+
+```text
+PAT_GITHUB
+```
+
+`PAT_GITHUB` is only required for the optional status card update callback.
+
+If `PAT_GITHUB` is missing, `status_update_dispatcher.py` should skip the callback and print a warning instead of crashing the free chapter bot.
+
+Example skip behavior:
+
+```text
+⚠️ PAT_GITHUB missing; skipped optional card status update.
+```
+
+The chapter posting flow must not depend on this callback succeeding.
 
 ### `fix-embed-other-server.yml`
 

@@ -43,7 +43,6 @@ jobs:
         timeout-minutes: 5
         env:
           DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
-          DISCORD_COMMENTS_CHANNEL: ${{ secrets.DISCORD_COMMENTS_CHANNEL }}
           PYTHONUNBUFFERED: 1
         run: python -u bot_comments.py
 

@@ -31,6 +31,7 @@ from message_renderer import render_message, to_discord_api_payload
 
 # ─── CONFIG ────────────────────────────────────────────────────────────────────
 from config_loader import (
+    server_channel_id_str,
     get_novel_role_id,
     get_novel_role_url,
     require_file_value,
@@ -38,9 +39,9 @@ from config_loader import (
     role_id_to_mention,
 )
 
-STATE_PATH     = require_file_value("state_path")
-BOT_TOKEN_ENV  = "DISCORD_BOT_TOKEN"
-CHANNEL_ID_ENV = "DISCORD_CHANNEL_ID"
+STATE_PATH = require_file_value("state_path")
+BOT_TOKEN  = os.environ["DISCORD_BOT_TOKEN"]
+CHANNEL_ID = server_channel_id_str("announcements")
 
 COMPLETE_ROLE = role_id_to_mention(require_role_value("complete"))
 NSFW_ROLE     = role_id_to_mention(require_role_value("nsfw"))
@@ -238,10 +239,10 @@ def main():
     parser.add_argument("--feed", choices=["paid", "free"], required=True)
     args = parser.parse_args()
 
-    bot_token  = os.getenv(BOT_TOKEN_ENV)
-    channel_id = os.getenv(CHANNEL_ID_ENV)
+    bot_token  = BOT_TOKEN
+    channel_id = CHANNEL_ID
     if not (bot_token and channel_id):
-        sys.exit("❌ Missing DISCORD_BOT_TOKEN or DISCORD_CHANNEL_ID")
+        sys.exit("❌ Missing DISCORD_BOT_TOKEN or config/server.json announcements channel")
 
     state  = load_state()
     novels = load_novels()

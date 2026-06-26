@@ -12,6 +12,7 @@ from message_renderer import render_message, to_discord_api_payload
 
 # ─── CONFIG ────────────────────────────────────────────────────────────────────
 from config_loader import (
+    server_channel_id_str,
     get_novel_role_id,
     require_feed_value,
     require_feeds_value,
@@ -21,7 +22,7 @@ from config_loader import (
 )
 
 TOKEN      = os.environ["DISCORD_BOT_TOKEN"]
-CHANNEL_ID = os.environ["DISCORD_COMMENTS_CHANNEL"]
+CHANNEL_ID = server_channel_id_str("comments")
 
 STATE_FILE = require_file_value("rss_state_path")
 FEED_KEY   = require_feed_value("comments", "last_guid_key")
