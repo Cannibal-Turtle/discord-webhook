@@ -19,7 +19,7 @@ when = "has_unlocked"
 content = "<a:5693pinkwings:1368138669004820500> `Unlocked 🔓` <a:5046_bounce_pink:1368138460027813888>"
 
 [messages.allowed_mentions]
-parse = ["everyone", "users", "roles"]
+parse = []
 
 [[messages.embeds]]
 description = "||{unlocked_md}||"
@@ -28,10 +28,11 @@ color = { key = "arc_unlocked", default = "FFF9BF" }
 
 [[messages]]
 name = "locked"
+when = "has_locked"
 content = "<a:5693pinkwings:1368138669004820500> `Locked 🔐` <a:5046_bounce_pink:1368138460027813888>"
 
 [messages.allowed_mentions]
-parse = ["everyone", "users", "roles"]
+parse = []
 
 [[messages.embeds]]
 description = "||{locked_md}||"
@@ -39,7 +40,23 @@ color = { key = "arc_locked", default = "A87676" }
 
 
 [[messages]]
-name = "footer"
+name = "footer_first_arc_release"
+when = "is_first_arc_release_announcement"
+suppress_embeds = true
+content = '''
+╰───────────────────────┄ °❀
+> *The first arc has opened on {host}! <a:holo_diamond:1365566087277711430>*
+<:pinkdiamond_border:1365575603734183936><:pinkdiamond_border:1365575603734183936><:pinkdiamond_border:1365575603734183936><:pinkdiamond_border:1365575603734183936><:pinkdiamond_border:1365575603734183936><:pinkdiamond_border:1365575603734183936>
+-# React to the {custom_emoji} @ {discord_role_url} to get notified on updates and announcements <a:LoveLetter:1365575475841339435>
+'''
+
+[messages.allowed_mentions]
+parse = []
+
+
+[[messages]]
+name = "footer_normal_arc_release"
+when = "is_normal_arc_release"
 suppress_embeds = true
 content = '''
 ╰───────────────────────┄ °❀
@@ -49,4 +66,4 @@ content = '''
 '''
 
 [messages.allowed_mentions]
-parse = ["everyone", "users", "roles"]
+parse = []

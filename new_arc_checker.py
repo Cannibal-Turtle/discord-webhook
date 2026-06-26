@@ -15,6 +15,8 @@ from config_loader import (
     get_novel_role_id,
     get_novel_custom_emoji,
     get_novel_role_url,
+    require_server_value,
+    require_file_value,
     require_role_value,
     role_id_to_mention,
 )
@@ -22,8 +24,31 @@ from config_loader import (
 BOT_TOKEN  = os.environ["DISCORD_BOT_TOKEN"]
 CHANNEL_ID = server_channel_id_str("announcements")
 
+STATE_PATH = require_file_value("state_path")
+
 ONGOING_ROLE = role_id_to_mention(require_role_value("ongoing"))
 NSFW_ROLE = role_id_to_mention(require_role_value("nsfw"))
+
+def setting_bool(env_name: str, server_key: str, default: bool = False) -> bool:
+    raw = os.getenv(env_name)
+    if raw is None:
+        try:
+            raw = require_server_value(server_key)
+        except RuntimeError:
+            return default
+
+    if isinstance(raw, bool):
+        return raw
+
+    return str(raw).strip().lower() in {"1", "true", "yes", "y", "on"}
+
+
+ANNOUNCE_FIRST_ARC_RELEASE = setting_bool(
+    "ANNOUNCE_FIRST_ARC_RELEASE",
+    "announce_first_arc_release",
+    False,
+)
+
 # ────────────────────────────────────────────────────────────────────────────────
 
 # === HELPER FUNCTIONS ===
@@ -102,6 +127,19 @@ def load_history(history_file):
     # no file at all -> brand new novel
     print(f"📂 No history file found at {history_file}, starting fresh")
     return {"unlocked": [], "locked": [], "last_announced": ""}
+
+def load_state(path=STATE_PATH):
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except FileNotFoundError:
+        return {}
+    except json.JSONDecodeError:
+        return {}
+
+def launch_announcement_done(novel_title: str) -> bool:
+    state = load_state()
+    return bool(state.get(novel_title, {}).get("launch_free"))
 
 def save_history(history, history_file):
     """Saves the novel's arc history to JSON file with proper encoding."""
@@ -392,33 +430,42 @@ def process_arc(novel):
     # If history was empty before this run, don't announce anything even if both
     # free and paid created entries. Just save numbering and exit.
     first_run = (not had_any_locked_before and not had_any_unlocked_before)
-    if first_run and (free_created_new_arc or paid_created_new_arc):
-        # Mark the newest locked arc as already "announced" so run #2 won't post Arc 1
+
+    is_first_arc_release_announcement = (
+        first_run
+        and ANNOUNCE_FIRST_ARC_RELEASE
+        and (free_created_new_arc or paid_created_new_arc)
+    )
+
+    if is_first_arc_release_announcement and not launch_announcement_done(novel["novel_title"]):
+        print(
+            f"⏳ First arc detected for {novel['novel_title']}, "
+            "but launch_free is not recorded yet. Deferring arc announcement."
+        )
+        return
+
+    if first_run and (free_created_new_arc or paid_created_new_arc) and not ANNOUNCE_FIRST_ARC_RELEASE:
         if history["locked"]:
             history["last_announced"] = history["locked"][-1]
             print(f"🌱 Bootstrap: marking last_announced = {history['last_announced']}")
         else:
-            print("🌱 Bootstrap: no locked arcs yet; leaving last_announced empty")
+            print("🌱 Bootstrap: no locked arcs yet; saving numbering only.")
         save_history(history, novel["history_file"])
         commit_history_update(novel["history_file"])
         return
-            
-    # 5. Figure out what (if anything) to announce
 
-    # A) Special case 1: first-ever arc started FREE and nothing locked
     scenario_first_arc_free_only = (
         free_created_new_arc
         and not paid_created_new_arc
-        and not history["locked"]  # still zero locked arcs
+        and not history["locked"]
     )
 
-    if scenario_first_arc_free_only:
+    if scenario_first_arc_free_only and not is_first_arc_release_announcement:
         print("🌱 First arc started free. Saving numbering to history, no Discord ping.")
         save_history(history, novel["history_file"])
         commit_history_update(novel["history_file"])
         return
 
-    # B) Special case 2: first-ever arc started PAID ONLY
     scenario_first_arc_paid_only = (
         paid_created_new_arc
         and not free_created_new_arc
@@ -426,25 +473,35 @@ def process_arc(novel):
         and not had_any_unlocked_before
     )
 
-    if scenario_first_arc_paid_only:
+    if scenario_first_arc_paid_only and not ANNOUNCE_FIRST_ARC_RELEASE:
         print("💸 First arc started paid-only. Saving numbering to history, no Discord ping.")
-        # Don't touch last_announced.
         save_history(history, novel["history_file"])
         commit_history_update(novel["history_file"])
         return
 
-    # After those two bootstraps, continue like normal.
-
-    # If we have no locked arcs at all (nothing advance-only to hype), stop.
-    if not history["locked"]:
+    if not history["locked"] and not is_first_arc_release_announcement:
         if history_changed:
             save_history(history, novel["history_file"])
             commit_history_update(novel["history_file"])
         print("ℹ️ No locked arcs exist. Nothing to announce.")
         return
 
-    new_full = history["locked"][-1]  # newest locked arc title, e.g. "【Arc 5】..."
+    if is_first_arc_release_announcement:
+        all_arcs = history["unlocked"] + history["locked"]
+        new_full = next(
+            (t for t in all_arcs if extract_arc_number(t) == 1),
+            all_arcs[0],
+        )
+    else:
+        new_full = history["locked"][-1]
+
     last_announced = history.get("last_announced", "")
+
+    is_first_arc_release_announcement = (
+        ANNOUNCE_FIRST_ARC_RELEASE
+        and not last_announced
+        and extract_arc_number(new_full) == 1
+    )
 
     # If we've already announced this exact locked arc, we're done.
     if new_full == last_announced:
@@ -482,10 +539,13 @@ def process_arc(novel):
         "short_code": novel.get("short_code", ""),
         "world_emoji": world_emoji,
         "unlocked_md": unlocked_md,
-        "locked_md": locked_md if locked_md else "None",
-        "has_unlocked": has_unlocked,
+        "locked_md": locked_md,
+        "has_unlocked": bool(unlocked_md),
+        "has_locked": bool(locked_md),
         "custom_emoji": novel.get("custom_emoji", ""),
         "discord_role_url": novel.get("discord_role_url", ""),
+        "is_first_arc_release_announcement": is_first_arc_release_announcement,
+        "is_normal_arc_release": not is_first_arc_release_announcement,
     }
 
     arc_messages = render_message_sequence("new_arcs", arc_ctx)
