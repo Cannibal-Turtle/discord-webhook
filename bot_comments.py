@@ -7,7 +7,7 @@ import aiohttp
 import html
 from urllib.parse import urlsplit, urlunsplit
 
-from message_context import build_feed_context
+from message_context import build_feed_context, entry_get
 from message_renderer import render_message, to_discord_api_payload
 
 # ─── CONFIG ────────────────────────────────────────────────────────────────────
@@ -18,6 +18,7 @@ from config_loader import (
     require_feeds_value,
     require_feed_url,
     require_file_value,
+    require_server_value,
     role_id_to_mention,
 )
 
@@ -96,6 +97,40 @@ def parse_pub_iso(entry):
     except Exception:
         return None
 
+
+def setting_bool(env_name: str, server_key: str, default: bool = True) -> bool:
+    raw = os.getenv(env_name)
+
+    if raw is None:
+        try:
+            raw = require_server_value(server_key)
+        except RuntimeError:
+            return default
+
+    if isinstance(raw, bool):
+        return raw
+
+    return str(raw).strip().lower() in {"1", "true", "yes", "y", "on"}
+
+def include_novel_updates_comments() -> bool:
+    return setting_bool(
+        "INCLUDE_NOVEL_UPDATES_COMMENTS",
+        "include_novel_updates_comments",
+        True,
+    )
+
+def is_novel_updates_host(host: str) -> bool:
+    key = " ".join(str(host or "").strip().casefold().split())
+    compact = key.replace(" ", "").replace(".", "")
+    return key == "novel updates" or compact in {
+        "novelupdates",
+        "novelupdatescom",
+        "novelupdate",
+    }
+
+def is_novel_updates_entry(entry) -> bool:
+    return is_novel_updates_host(entry_get(entry, "host", default=""))
+
 def get_series_role(entry) -> str:
     short_code = (entry.get("short_code") or "").strip().upper()
     role_id = get_novel_role_id(short_code)
@@ -128,6 +163,9 @@ async def main():
     last_post_time = state.get(LAST_POST_TIME)
     last_post_dt = dateparser.parse(last_post_time) if (TIME_BACKSTOP and last_post_time) else None
 
+    include_nu_comments = include_novel_updates_comments()
+    skipped_nu_comments = 0
+
     to_send = []
     for e in entries:
         norm = normalize_guid(e)
@@ -138,7 +176,19 @@ async def main():
             # if we can parse pubdate and it isn't newer than last posted time, skip
             if dt and dt <= last_post_dt:
                 continue
+        if not include_nu_comments and is_novel_updates_entry(e):
+            state[SEEN_KEY].append(norm)
+            seen.add(norm)
+            skipped_nu_comments += 1
+            continue
         to_send.append(e)
+
+    if skipped_nu_comments:
+        save_state(state)
+        print(
+            f"🚫 Skipped {skipped_nu_comments} Novel Updates comment(s) "
+            "because include_novel_updates_comments is false."
+        )
 
     last = state.get(FEED_KEY)
     
