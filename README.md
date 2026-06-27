@@ -624,11 +624,11 @@ color = { key = "comments", default = "F0C7A4" }
 
 [embeds.author]
 name = "{translator}"
-url = "{chapter_author_url}"
-url_when = "chapter_author_url"
+url = "{translator_url}"
+url_when = "translator_url"
 ```
 
-`chapter_author_url` is only a template placeholder. The scripts fill it from `translator_url`; do not configure it in `config/embeds.json`.
+`translator_url` is only a template placeholder. The scripts fill it from `translator_url`; do not configure it in `config/embeds.json`.
 
 ```toml
 

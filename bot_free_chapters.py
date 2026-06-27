@@ -273,7 +273,7 @@ async def send_new_entries():
             ctx.update({
                 "chapter_mention": mention_line,
                 "global_mention": GLOBAL_MENTION,
-                "chapter_author_url": (
+                "translator_url": (
                     ctx.get("translator_url", "")
                     or get_translator_url(ctx.get("host", ""), ctx.get("title", ""))
                     or TRANSLATOR_URL

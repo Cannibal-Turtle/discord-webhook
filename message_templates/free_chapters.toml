@@ -15,8 +15,8 @@ color = { key = "free_chapter", default = "FFF9BF" }
 
 [embeds.author]
 name = "{translator}˙ᵕ˙"
-url = "{chapter_author_url}"
-url_when = "chapter_author_url"
+url = "{translator_url}"
+url_when = "translator_url"
 
 [embeds.thumbnail]
 url = "{featured_image_url}"
