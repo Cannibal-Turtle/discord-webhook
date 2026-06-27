@@ -8,8 +8,8 @@ parse = ["everyone", "users", "roles"]
 [[embeds]]
 title = "<a:sun_clouds:1517425608143933470>**{chapter}**"
 url = "{link}"
-description = "{chaptername}"
-description_when = "chaptername"
+description = "{chaptername_display}"
+description_when = "chaptername_display"
 timestamp = "{pub_date_iso}"
 color = { key = "free_chapter", default = "FFF9BF" }
 

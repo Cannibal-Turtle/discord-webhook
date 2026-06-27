@@ -8,8 +8,8 @@ parse = ["everyone", "users", "roles"]
 [[embeds]]
 title = "<a:moonandstars:1365569468629123184>**{chapter}**"
 url = "{link}"
-description = "{chaptername}"
-description_when = "chaptername"
+description = "{chaptername_display}"
+description_when = "chaptername_display"
 timestamp = "{pub_date_iso}"
 color = { key = "paid_chapter", default = "A87676" }
 

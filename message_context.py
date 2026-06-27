@@ -61,6 +61,20 @@ def obj_get(obj: Any, key: str, default: Any = "") -> Any:
         return getattr(obj, key, default)
 
 
+
+def strip_discord_chaptername_format(value: Any) -> str:
+    """Return raw chaptername text, tolerating older feeds that stored ***text***."""
+    text = norm(value)
+    if text.startswith("***") and text.endswith("***") and len(text) >= 6:
+        return text[3:-3].strip()
+    return text
+
+
+def discord_chaptername_display(value: Any) -> str:
+    """Return the Discord-formatted chaptername, only when text exists."""
+    text = strip_discord_chaptername_format(value)
+    return f"***{text}***" if text else ""
+
 def get_obj_url(entry: Any, *names: str) -> str:
     """Get URL from RSS singleton tags like <featuredImage url="..."/>."""
     for name in names:
@@ -156,12 +170,18 @@ def build_feed_context(entry: Any) -> dict[str, Any]:
         default="",
     )
 
+    chaptername = strip_discord_chaptername_format(
+        entry_get(entry, "chaptername", "chapter_name", default="")
+    )
+    chaptername_display = discord_chaptername_display(chaptername)
+
     ctx: dict[str, Any] = {
         # Common RSS fields
         "title": norm(entry_get(entry, "title", default="")),
         "volume": norm(entry_get(entry, "volume", default="")),
         "chapter": norm(entry_get(entry, "chapter", default="")) or "New Chapter",
-        "chaptername": norm(entry_get(entry, "chaptername", "chapter_name", default="")),
+        "chaptername": chaptername,
+        "chaptername_display": chaptername_display,
         "link": norm(entry_get(entry, "link", default="")),
         "description": norm(entry_get(entry, "description", default="")),
         "category": category,
