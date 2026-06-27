@@ -1,0 +1,60 @@
+--- a/README.md
++++ b/README.md
+@@ -300,6 +300,37 @@
+ 
+ ---
+ 
++### `config/server.json`
++
++Server/channel behavior lives here. `translator_url` is optional and can be omitted.
++
++```json
++{
++  "guild_id": "1329384099609051136",
++  "free_chapters": "1329384438542499892",
++  "paid_chapters": "1342475922581884968",
++  "comments": "1361685556526055586",
++  "announcements": "1330049962129489930",
++  "mod": "1329655743799889962",
++  "novel_cards_archive": "1463476725253144751",
++  "announce_first_arc_release": true,
++  "announce_first_chapter_release": true,
++  "include_novel_updates_comments": true
++}
++```
++
++Optional server-level fallback if you want the translator/profile link to be clickable even when it is not available from RSS or `rss-feed` mappings:
++
++```json
++{
++  "translator_url": "https://www.mistminthaven.com/account/@CannibalTurtle-5082"
++}
++```
++
++Translator/profile URL lookup order is RSS `translator_url`, then `rss-feed` mapping `translator_url`, then optional `config/server.json` `translator_url`, then empty string.
++
++---
++
+ ### `config/roles.json`
+ 
+ Global Discord role IDs:
+@@ -376,7 +407,6 @@
+ 
+ ```json
+ {
+-  "chapter_author_url": "",
+   "colors": {
+     "free_chapter": "FFF9BF",
+     "paid_chapter": "A87676",
+@@ -596,6 +626,11 @@
+ name = "{translator}"
+ url = "{chapter_author_url}"
+ url_when = "chapter_author_url"
++```
++
++`chapter_author_url` is only a template placeholder. The scripts fill it from `translator_url`; do not configure it in `config/embeds.json`.
++
++```toml
+ 
+ [embeds.thumbnail]
+ url = "{featured_image_url}"

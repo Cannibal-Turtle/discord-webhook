@@ -166,6 +166,7 @@ def build_feed_context(entry: Any) -> dict[str, Any]:
         "description": norm(entry_get(entry, "description", default="")),
         "category": category,
         "translator": norm(entry_get(entry, "translator", default="")),
+        "translator_url": norm(entry_get(entry, "translator_url", "translatorUrl", "translatorurl", default="")),
         "short_code": short_code,
         "coin": norm(entry_get(entry, "coin", default="")),
 

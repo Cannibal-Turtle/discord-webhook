@@ -15,17 +15,23 @@ from message_context import build_feed_context
 from message_renderer import render_message, to_discord_py_kwargs
 from guid_state import entry_guid_identity, format_seen_guid, raw_guid_from_entry, seen_guid_identities
 
+try:
+    from novel_mappings import get_translator_url
+except Exception:
+    def get_translator_url(host, novel_title=""):
+        return ""
+
 # ─── CONFIG ────────────────────────────────────────────────────────────────
 from config_loader import (
     server_channel_id,
     get_novel_role_id,
-    embed_value,
     require_feed_value,
     require_feeds_value,
     require_feed_url,
     require_file_value,
     require_role_value,
     require_server_value,
+    server_value,
     role_id_to_mention,
 )
 
@@ -44,7 +50,7 @@ TIME_BACKSTOP  = bool(require_feeds_value("time_backstop"))
 GLOBAL_MENTION = role_id_to_mention(require_role_value("paid_global"))
 NSFW_ROLE      = role_id_to_mention(require_role_value("nsfw"))
 
-AUTHOR_URL = str(embed_value("chapter_author_url", "")).strip()
+TRANSLATOR_URL = str(server_value("translator_url", "") or "").strip()
 # ──────────────────────────────────────────────────────────────────────────
 
 
@@ -335,7 +341,11 @@ async def send_new_paid_entries():
             ctx.update({
                 "chapter_mention": mention_line,
                 "global_mention": GLOBAL_MENTION,
-                "chapter_author_url": AUTHOR_URL,
+                "chapter_author_url": (
+                    ctx.get("translator_url", "")
+                    or get_translator_url(ctx.get("host", ""), ctx.get("title", ""))
+                    or TRANSLATOR_URL
+                ),
                 "button_label": label_text,
                 "button_emoji": str(emoji_obj or ""),
             })

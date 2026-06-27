@@ -16,6 +16,12 @@ from message_renderer import render_message, to_discord_py_kwargs
 from guid_state import entry_guid_identity, format_seen_guid, raw_guid_from_entry, seen_guid_identities
 
 try:
+    from novel_mappings import get_translator_url
+except Exception:
+    def get_translator_url(host, novel_title=""):
+        return ""
+
+try:
     from status_update_dispatcher import trigger_status_update
 except Exception as import_exc:
     _STATUS_UPDATE_IMPORT_ERROR = str(import_exc)
@@ -31,13 +37,13 @@ except Exception as import_exc:
 from config_loader import (
     server_channel_id,
     get_novel_role_id,
-    embed_value,
     require_feed_value,
     require_feeds_value,
     require_feed_url,
     require_file_value,
     require_role_value,
     require_server_value,
+    server_value,
     role_id_to_mention,
 )
 
@@ -56,7 +62,7 @@ TIME_BACKSTOP  = bool(require_feeds_value("time_backstop"))
 GLOBAL_MENTION = role_id_to_mention(require_role_value("free_global"))
 NSFW_ROLE      = role_id_to_mention(require_role_value("nsfw"))
 
-AUTHOR_URL = str(embed_value("chapter_author_url", "")).strip()
+TRANSLATOR_URL = str(server_value("translator_url", "") or "").strip()
 # ────────────────────────────────────────────────────────────────────────────────
 
 def load_state():
@@ -267,7 +273,11 @@ async def send_new_entries():
             ctx.update({
                 "chapter_mention": mention_line,
                 "global_mention": GLOBAL_MENTION,
-                "chapter_author_url": AUTHOR_URL,
+                "chapter_author_url": (
+                    ctx.get("translator_url", "")
+                    or get_translator_url(ctx.get("host", ""), ctx.get("title", ""))
+                    or TRANSLATOR_URL
+                ),
             })
             
             payload = render_message("free_chapters", ctx)

@@ -104,6 +104,10 @@ def require_server_value(key: str) -> Any:
     return require_value(SERVER, key, "server")
 
 
+def server_value(key: str, default: Any = None) -> Any:
+    return SERVER.get(key, default)
+
+
 def server_channel_id(key: str) -> int:
     return int(require_server_value(key))
 

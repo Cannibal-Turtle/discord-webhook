@@ -23,6 +23,8 @@ color = { key = "new_novel", default = "AEC6CF" }
 
 [embeds.author]
 name = "{translator} ⋆. 𐙚"
+url = "{translator_url}"
+url_when = "translator_url"
 
 [embeds.image]
 url = "{featured_image_url}"

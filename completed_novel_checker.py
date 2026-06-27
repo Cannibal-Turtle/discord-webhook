@@ -27,6 +27,11 @@ import re
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 from novel_mappings import HOSTING_SITE_DATA, get_nsfw_novels
+try:
+    from novel_mappings import get_translator_url
+except Exception:
+    def get_translator_url(host, novel_title=""):
+        return ""
 from message_renderer import render_message, to_discord_api_payload
 
 # ─── CONFIG ────────────────────────────────────────────────────────────────────
@@ -36,6 +41,7 @@ from config_loader import (
     get_novel_role_url,
     require_file_value,
     require_role_value,
+    server_value,
     role_id_to_mention,
 )
 
@@ -45,6 +51,7 @@ CHANNEL_ID = server_channel_id_str("announcements")
 
 COMPLETE_ROLE = role_id_to_mention(require_role_value("complete"))
 NSFW_ROLE     = role_id_to_mention(require_role_value("nsfw"))
+TRANSLATOR_URL = str(server_value("translator_url", "") or "").strip()
 # ────────────────────────────────────────────────────────────────────────────────
 
 
@@ -166,9 +173,27 @@ def build_completion_mention(novel: dict) -> str:
     return join_role_mentions(base_role, COMPLETE_ROLE, nsfw_tail)
 
 
+def get_entry_translator_url(entry) -> str:
+    for key in ("translator_url", "translatorUrl", "translatorurl"):
+        value = entry.get(key)
+        if value:
+            return str(value).strip()
+    return ""
+
+
 def build_completion_context(novel, chap_field, chap_link, duration: str = "") -> dict:
+    translator_url = (
+        novel.get("feed_translator_url", "")
+        or novel.get("translator_url", "")
+        or get_translator_url(novel.get("host", ""), novel.get("novel_title", ""))
+        or TRANSLATOR_URL
+    )
+
     return {
         "completion_mention": build_completion_mention(novel),
+        "translator": novel.get("translator", ""),
+        "translator_url": translator_url,
+        "author_url": translator_url,
         "novel_title": novel.get("novel_title", ""),
         "novel_link": novel.get("novel_link", ""),
         "host": novel.get("host", ""),
@@ -206,6 +231,9 @@ def load_novels():
     """
     novels = []
     for host, host_data in HOSTING_SITE_DATA.items():
+        host_translator = host_data.get("translator", "")
+        host_translator_url = host_data.get("translator_url", "")
+
         for title, details in host_data.get("novels", {}).items():
             last = details.get("last_chapter")
             if not last:
@@ -223,6 +251,8 @@ def load_novels():
                 "short_code":       short_code,
                 "role_mention":     get_series_role_from_short_code(short_code),
                 "host":             host,
+                "translator":       details.get("translator") or host_translator,
+                "translator_url":   details.get("translator_url") or host_translator_url,
                 "novel_link":       details.get("novel_url", ""),
                 "chapter_count":    details.get("chapter_count", ""),
                 "last_chapter":     last,
@@ -296,6 +326,7 @@ def main():
         
             # 2) use a clean title for display (prefer base)
             chap_field = base.strip()
+            novel_for_message = dict(novel, feed_translator_url=get_entry_translator_url(entry))
 
             # --- ONLY-FREE CASE (series with no paid feed at all) ---
             if feed_type == "free" and not novel.get("paid_feed"):
@@ -314,7 +345,7 @@ def main():
 
                 duration = get_duration(novel.get("start_date", ""), chap_date)
 
-                msg = build_only_free_completion(novel, chap_field, entry.link, duration)
+                msg = build_only_free_completion(novel_for_message, chap_field, entry.link, duration)
                 print(f"→ Built message of {len(msg.get('content', ''))} characters")
 
                 success = safe_send_bot(bot_token, channel_id, msg)
@@ -349,7 +380,7 @@ def main():
 
                 duration = get_duration(novel.get("start_date", ""), chap_date)
 
-                msg = build_paid_completion(novel, chap_field, entry.link, duration)
+                msg = build_paid_completion(novel_for_message, chap_field, entry.link, duration)
                 print(f"→ Built message of {len(msg.get('content', ''))} characters")
 
                 success = safe_send_bot(bot_token, channel_id, msg)
@@ -374,7 +405,7 @@ def main():
                     print(f"→ skipping {novel_id} (free_completion) — already notified")
                     break
 
-                msg = build_free_completion(novel, chap_field, entry.link)
+                msg = build_free_completion(novel_for_message, chap_field, entry.link)
                 print(f"→ Built message of {len(msg.get('content', ''))} characters")
 
                 success = safe_send_bot(bot_token, channel_id, msg)
