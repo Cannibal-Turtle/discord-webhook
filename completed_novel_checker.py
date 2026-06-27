@@ -193,7 +193,6 @@ def build_completion_context(novel, chap_field, chap_link, duration: str = "") -
         "completion_mention": build_completion_mention(novel),
         "translator": novel.get("translator", ""),
         "translator_url": translator_url,
-        "author_url": translator_url,
         "novel_title": novel.get("novel_title", ""),
         "novel_link": novel.get("novel_link", ""),
         "host": novel.get("host", ""),
