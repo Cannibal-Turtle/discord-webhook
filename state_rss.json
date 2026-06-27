@@ -454,15 +454,6 @@
   "free_last_guid": "2b94e996-d015-4c20-b251-213cd9212dd9",
   "last_post_time_free": "2026-06-26T05:00:00+00:00",
   "paid_seen_guids": [
-    "Mistmint Haven::de790e8c-26ff-44be-a051-a5e6460fce10",
-    "Mistmint Haven::68c3e74a-3fd5-4e09-becb-c41ed8e60826",
-    "Mistmint Haven::7ac0f3fd-325c-48b1-89f2-05696342ee59",
-    "Mistmint Haven::08180ea3-2c66-4b63-ad86-c10ce7c1c2ab",
-    "Mistmint Haven::c8d366c8-01ce-42e2-8670-aa5f0012e71b",
-    "Mistmint Haven::62d08021-8e68-49cf-84ec-d3ee076acd12",
-    "Mistmint Haven::ac48ffcf-e63d-4f22-8037-576fd1007536",
-    "Mistmint Haven::fb682bb0-672c-4832-bb58-b40c5e21d845",
-    "Mistmint Haven::2645369b-7ab4-4f42-8f61-a11da007a3e8",
     "Mistmint Haven::0e6ad928-9122-421d-9d07-0646fb963c4d",
     "Mistmint Haven::c15dea6f-ff99-4754-976d-3cb08aa0800b",
     "Mistmint Haven::050b7b7b-3d5a-4563-83f5-811c248d5a1e",
@@ -953,10 +944,19 @@
     "Mistmint Haven::db74e227-e12f-47e5-8e53-36aa76a0826a",
     "Mistmint Haven::34ac1dd0-55ed-4da6-a39d-fc3e42a87444",
     "Mistmint Haven::07a173b0-55c0-4f9c-bd96-f9a3fd881cfb",
-    "Mistmint Haven::41a96523-73d9-442d-bb95-c43c8de85055"
+    "Mistmint Haven::41a96523-73d9-442d-bb95-c43c8de85055",
+    "Mistmint Haven::TDLBKGC::ecc75309-66a7-40a8-b869-128b2b57c2a7",
+    "Mistmint Haven::TDLBKGC::b4b04d71-5175-42a5-9921-6172837960cb",
+    "Mistmint Haven::TDLBKGC::a6f87266-df9b-4d34-b07f-2a37834213c1",
+    "Mistmint Haven::TDLBKGC::9eab3a8c-ff74-4a8d-9ef0-711f6c2654c1",
+    "Mistmint Haven::TDLBKGC::a958417f-763e-4bb9-8c6b-c0730ebb2782",
+    "Mistmint Haven::HIAFLG::8614128d-c102-4979-bdd8-01ebe430e479",
+    "Mistmint Haven::HIAFLG::55822395-bfd7-41d8-9ac4-55cc16238b80",
+    "Mistmint Haven::HIAFLG::4e68d43a-b3ad-4aed-8be4-018003c39293",
+    "Mistmint Haven::AMLWC::9134e566-6055-435f-81d0-d3a2353fffeb"
   ],
-  "paid_last_guid": "41a96523-73d9-442d-bb95-c43c8de85055",
-  "last_post_time_paid": "2026-06-26T16:18:24+00:00",
+  "paid_last_guid": "9134e566-6055-435f-81d0-d3a2353fffeb",
+  "last_post_time_paid": "2026-06-27T16:54:08+00:00",
   "comments_seen_guids": [
     "Novel Updates::https://www.novelupdates.com/?post_type=seriesplans&p=88639#comment-434808",
     "Novel Updates::https://www.novelupdates.com/?post_type=seriesplans&p=88639#comment-439240",
@@ -1122,8 +1122,9 @@
     "Mistmint Haven::a4c18413-9d7f-47a2-bfc3-0b76c1a8c407",
     "Mistmint Haven::d2475033-0e20-42b8-9718-8ae22def158a",
     "Mistmint Haven::766b944b-652f-4a62-b1ae-58ab1ca42379",
-    "Mistmint Haven::31ec20c3-cc9b-4ab8-91e0-ae7baaa8e097"
+    "Mistmint Haven::31ec20c3-cc9b-4ab8-91e0-ae7baaa8e097",
+    "Mistmint Haven::TDLBKGC::a110018d-e016-41ad-84c9-261bf659a8ee"
   ],
-  "comments_last_guid": "31ec20c3-cc9b-4ab8-91e0-ae7baaa8e097",
-  "last_post_time_comments": "2026-06-26T07:33:01+00:00"
+  "comments_last_guid": "a110018d-e016-41ad-84c9-261bf659a8ee",
+  "last_post_time_comments": "2026-06-27T18:12:26+00:00"
 }
