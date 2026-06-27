@@ -21,6 +21,12 @@ except Exception:
     def get_translator_url(host, novel_title=""):
         return ""
 
+try:
+    from novel_mappings import get_coin_emoji
+except Exception:
+    def get_coin_emoji(host):
+        return ""
+
 # ─── CONFIG ────────────────────────────────────────────────────────────────
 from config_loader import (
     server_channel_id,
@@ -230,37 +236,49 @@ def parse_custom_emoji(e: str):
     return None
 
 
-def get_coin_button_parts_from_feed(coin_text: str):
+def get_coin_button_parts_from_feed(coin_text: str, host: str = ""):
     """
     Parse <coin> like:
-      "<:mistmint_currency:143...> 5", "🔥 5", "🔥5", "5"
+      "5", "<:mistmint_currency:143...> 5", "🔥 5", "🔥5"
     Return (label_text, emoji_obj_or_unicode).
     """
     s = (coin_text or "").strip()
+    original = s
     label_text = ""
     emoji_obj = None
 
     if not s:
         return "Read here", None
 
+    # New feed shape: <coin>5</coin>. The emoji is Discord presentation,
+    # so get it from rss-feed host mappings instead of storing it in <coin>.
+    mapped_emoji = parse_custom_emoji(get_coin_emoji(host))
+    if mapped_emoji:
+        emoji_obj = mapped_emoji
+
+    # Backward compatible with old feed shape: <coin><:emoji:id> 5</coin>.
     m = re.match(r"^\s*(<a?:[A-Za-z0-9_]+:\d+>)", s)
     if m:
-        emoji_obj = parse_custom_emoji(m.group(1))
+        feed_emoji = parse_custom_emoji(m.group(1))
+        if feed_emoji:
+            emoji_obj = feed_emoji
         s = s[m.end():]
     else:
         m2 = re.match(r"^\s*(\S+)", s)
         if m2:
             tok = m2.group(1)
-            maybe = parse_custom_emoji(tok)
-            if maybe:
-                emoji_obj = maybe
-                s = s[m2.end():]
+            # Do not treat plain numbers like "5" as unicode emoji.
+            if not re.fullmatch(r"\d+", tok):
+                maybe = parse_custom_emoji(tok)
+                if maybe:
+                    emoji_obj = maybe
+                    s = s[m2.end():]
 
-    mnum = re.search(r"\d+", s)
+    mnum = re.search(r"\d+", s) or re.search(r"\d+", original)
     if mnum:
         label_text = mnum.group(0)
 
-    if not label_text and not emoji_obj:
+    if not label_text:
         label_text = "Read here"
 
     return label_text, emoji_obj
@@ -336,7 +354,10 @@ async def send_new_paid_entries():
                 )
                 continue
             
-            label_text, emoji_obj = get_coin_button_parts_from_feed(ctx["coin"])
+            label_text, emoji_obj = get_coin_button_parts_from_feed(
+                ctx["coin"],
+                ctx.get("host", ""),
+            )
             
             ctx.update({
                 "chapter_mention": mention_line,
