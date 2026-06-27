@@ -1,6 +1,6 @@
 mode = "classic"
 
-content = "{chapter_mention} <a:TurtleDance:1365253970435510293>\n<a:5037sweetpianoyay:1368138418487427102> **{title}** <:pink_unlock:1368266307824255026>"
+content = "{chapter_mention} <a:TurtleDance:1365253970435510293>\n<a:sweetpianoyay:1368138418487427102> **{title}** <:pink_unlock:1368266307824255026>"
 
 [allowed_mentions]
 parse = ["everyone", "users", "roles"]
