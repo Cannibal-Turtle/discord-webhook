@@ -4,11 +4,9 @@ import asyncio
 import feedparser
 from dateutil import parser as dateparser
 import aiohttp
-import html
-from urllib.parse import urlsplit, urlunsplit
-
 from message_context import build_feed_context, entry_get
 from message_renderer import render_message, to_discord_api_payload
+from guid_state import entry_guid_identity, format_seen_guid, raw_guid_from_entry, seen_guid_identities
 
 # ─── CONFIG ────────────────────────────────────────────────────────────────────
 from config_loader import (
@@ -72,21 +70,7 @@ def save_state(state):
         json.dump(state, f, indent=2, ensure_ascii=False)
 
 def normalize_guid(entry):
-    """
-    Composite identity so tiny encoding changes or cross-host collisions don't dup.
-    host::guid (guid unescaped, URL host lowercased if URL-like)
-    """
-    host = (entry.get("host") or "").strip().lower()
-    raw  = (entry.get("guid") or entry.get("id") or "").strip()
-    raw  = html.unescape(raw)
-    # normalize URL-ish GUIDs
-    try:
-        p = urlsplit(raw)
-        if p.scheme and p.netloc:
-            raw = urlunsplit((p.scheme, p.netloc.lower(), p.path, p.query, p.fragment))
-    except Exception:
-        pass
-    return f"{host}::{raw}"
+    return format_seen_guid(entry, default_host="")
 
 def parse_pub_iso(entry):
     pubdate_raw = getattr(entry, "published", None)
@@ -157,7 +141,7 @@ async def main():
     state   = load_state()
     feed    = feedparser.parse(RSS_URL)
     entries = list(reversed(feed.entries))  # oldest → newest (keep your order)
-    seen = set(state.get(SEEN_KEY, []))
+    seen = seen_guid_identities(state.get(SEEN_KEY, []))
 
     # optional time backstop
     last_post_time = state.get(LAST_POST_TIME)
@@ -168,8 +152,11 @@ async def main():
 
     to_send = []
     for e in entries:
-        norm = normalize_guid(e)
-        if norm in seen:
+        guid_key = entry_guid_identity(e)
+        if not guid_key:
+            continue
+
+        if guid_key in seen:
             continue
         if last_post_dt is not None:
             dt = parse_pub_iso(e)
@@ -177,8 +164,9 @@ async def main():
             if dt and dt <= last_post_dt:
                 continue
         if not include_nu_comments and is_novel_updates_entry(e):
+            norm = normalize_guid(e)
             state[SEEN_KEY].append(norm)
-            seen.add(norm)
+            seen.add(guid_key)
             skipped_nu_comments += 1
             continue
         to_send.append(e)
@@ -235,8 +223,9 @@ async def main():
                     print(f"✅ Sent comment {guid}")
                     norm = normalize_guid(entry)
                     state[SEEN_KEY].append(norm)
+                    seen.add(entry_guid_identity(entry))
                     state[LAST_POST_TIME] = (parse_pub_iso(entry) or dateparser.parse("1970-01-01")).isoformat()
-                    new_last = guid
+                    new_last = raw_guid_from_entry(entry)
                     save_state(state)
                 else:
                     print(f"❌ Error {resp.status} for {guid}: {text}")

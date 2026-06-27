@@ -13,6 +13,7 @@ import requests
 
 from message_context import build_feed_context
 from message_renderer import render_message, to_discord_py_kwargs
+from guid_state import entry_guid_identity, format_seen_guid, raw_guid_from_entry, seen_guid_identities
 
 try:
     from status_update_dispatcher import trigger_status_update
@@ -179,16 +180,7 @@ def should_hold_first_free_chapter(entry) -> bool:
     return is_probable_first_free_chapter(entry)
 
 def normalize_guid(entry):
-    host = (entry.get("host") or "").strip()
-    raw  = (entry.get("guid") or entry.get("id") or "").strip()
-    raw  = html.unescape(raw)
-    try:
-        p = urlsplit(raw)
-        if p.scheme and p.netloc:
-            raw = urlunsplit((p.scheme, p.netloc.lower(), p.path, p.query, p.fragment))
-    except Exception:
-        pass
-    return f"{host}::{raw}"
+    return format_seen_guid(entry, default_host='')
 
 def parse_pub_iso(entry):
     pub_raw = getattr(entry, "published", None)
@@ -205,14 +197,17 @@ async def send_new_entries():
     feed  = feedparser.parse(RSS_URL)
     entries = list(reversed(feed.entries))  # oldest → newest
 
-    seen = set(state.get(SEEN_KEY, []))
+    seen = seen_guid_identities(state.get(SEEN_KEY, []))
     last_post_time = state.get(LAST_POST_TIME)
     last_post_dt = dateparser.parse(last_post_time) if (TIME_BACKSTOP and last_post_time) else None
 
     to_send = []
     for e in entries:
-        norm = normalize_guid(e)
-        if norm in seen:
+        guid_key = entry_guid_identity(e)
+        if not guid_key:
+            continue
+
+        if guid_key in seen:
             continue
         if last_post_dt is not None:
             dt = parse_pub_iso(e)
@@ -241,6 +236,7 @@ async def send_new_entries():
 
         for entry in to_send:
             guid = entry.get("guid") or entry.get("id")
+            guid_key = entry_guid_identity(entry)
 
             # Pull source fields first
             host        = (entry.get("host") or "").strip()
@@ -284,11 +280,12 @@ async def send_new_entries():
             # mark as seen and bump time (timezone-aware)
             norm = normalize_guid(entry)
             state[SEEN_KEY].append(norm)
+            seen.add(guid_key)
             dt = parse_pub_iso(entry) or datetime.now(timezone.utc)
             state[LAST_POST_TIME] = dt.isoformat()
             save_state(state)
 
-            new_last = guid
+            new_last = raw_guid_from_entry(entry)
 
         if new_last and new_last != state.get(FEED_KEY):
             state[FEED_KEY] = new_last
