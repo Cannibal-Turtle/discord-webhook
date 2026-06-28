@@ -309,3 +309,7 @@ async def send_new_entries():
         await bot.close()
 
     await bot.start(TOKEN)
+    
+
+if __name__ == "__main__":
+    asyncio.run(send_new_entries())

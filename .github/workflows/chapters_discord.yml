@@ -23,16 +23,15 @@ permissions:
   contents: write
 
 jobs:
-  free_bot:
-    name: free_bot
+  chapters:
+    name: chapters
     runs-on: ubuntu-latest
-    if: |
-      github.event_name == 'schedule' ||
-      (github.event_name == 'workflow_dispatch' && (inputs.feed == 'free' || inputs.feed == 'both')) ||
-      (github.event_name == 'repository_dispatch' && (github.event.client_payload.feed == 'free' || github.event.client_payload.feed == 'both'))
+
     steps:
       - uses: actions/checkout@v5
-        with: { fetch-depth: 0 }
+        with:
+          fetch-depth: 0
+
       - uses: actions/setup-python@v6
         with:
           python-version: '3.x'
@@ -43,105 +42,34 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements/chapters.txt
-          
+
+      - name: Decide feed
+        id: feed
+        run: |
+          if [ "${{ github.event_name }}" = "repository_dispatch" ]; then
+            echo "feed=${{ github.event.client_payload.feed }}" >> "$GITHUB_OUTPUT"
+          elif [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "feed=${{ inputs.feed }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "feed=both" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Run Free Chapters Bot
+        if: ${{ steps.feed.outputs.feed == 'free' || steps.feed.outputs.feed == 'both' }}
         timeout-minutes: 5
         env:
-          DISCORD_BOT_TOKEN:             ${{ secrets.DISCORD_BOT_TOKEN }}
-          PAT_GITHUB:                    ${{ secrets.PAT_GITHUB }}
+          DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+          PAT_GITHUB: ${{ secrets.PAT_GITHUB }}
         run: python bot_free_chapters.py
-      - name: Upload free state
-        uses: actions/upload-artifact@v4
-        with:
-          name: state-free
-          path: state_rss.json
-          if-no-files-found: ignore
-
-  paid_bot:
-    name: paid_bot
-    runs-on: ubuntu-latest
-    if: |
-      github.event_name == 'schedule' ||
-      (github.event_name == 'workflow_dispatch' && (inputs.feed == 'paid' || inputs.feed == 'both')) ||
-      (github.event_name == 'repository_dispatch' && (github.event.client_payload.feed == 'paid' || github.event.client_payload.feed == 'both'))
-    steps:
-      - uses: actions/checkout@v5
-        with: { fetch-depth: 0 }
-      - uses: actions/setup-python@v6
-        with:
-          python-version: '3.x'
-          cache: 'pip'
-          cache-dependency-path: requirements/chapters.txt
-        
-      - name: Install deps
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements/chapters.txt
 
       - name: Run Paid Chapters Bot
+        if: ${{ steps.feed.outputs.feed == 'paid' || steps.feed.outputs.feed == 'both' }}
         timeout-minutes: 5
         env:
-          DISCORD_BOT_TOKEN:              ${{ secrets.DISCORD_BOT_TOKEN }}
+          DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
         run: python bot_paid_chapters.py
-      - name: Upload paid state
-        uses: actions/upload-artifact@v4
-        with:
-          name: state-paid
-          path: state_rss.json
-          if-no-files-found: ignore
 
-  persist_state:
-    name: persist_state
-    needs: [free_bot, paid_bot]
-    if: ${{ always() && (needs.free_bot.result == 'success' || needs.paid_bot.result == 'success') }}
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
-        with: { fetch-depth: 0 }
-  
-      # only try to pull free artifact if free_bot ran & succeeded
-      - if: ${{ needs.free_bot.result == 'success' }}
-        uses: actions/download-artifact@v4
-        with: { name: state-free, path: tmp/free }
-        continue-on-error: true
-  
-      # only try to pull paid artifact if paid_bot ran & succeeded
-      - if: ${{ needs.paid_bot.result == 'success' }}
-        uses: actions/download-artifact@v4
-        with: { name: state-paid, path: tmp/paid }
-        continue-on-error: true
-  
-      - name: Merge state_rss.json
-        run: |
-          python - << 'PY'
-          import json
-          from pathlib import Path
-          repo = Path("state_rss.json")
-          free = Path("tmp/free/state_rss.json")
-          paid = Path("tmp/paid/state_rss.json")
-  
-          def load(p):
-              try:
-                  return json.loads(p.read_text(encoding="utf-8"))
-              except Exception:
-                  return {}
-  
-          base = load(repo) if repo.exists() else {}
-          fdat = load(free) if free.exists() else {}
-          pdat = load(paid) if paid.exists() else {}
-  
-          out = dict(base)
-          for src in (fdat, pdat):
-              for k, v in src.items():
-                  if k.startswith("seen_guids") and isinstance(v, list):
-                      out[k] = list(dict.fromkeys(out.get(k, []) + v))
-                  else:
-                      out[k] = v
-  
-          repo.write_text(json.dumps(out, indent=2, ensure_ascii=False), encoding="utf-8")
-          PY
-  
-      - name: Commit merged state
+      - name: Commit state
         run: |
           git pull --rebase --autostash
           git add state_rss.json
@@ -151,5 +79,5 @@ jobs:
           fi
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git commit -m "ci: merge & update state_rss.json"
+          git commit -m "ci: update state_rss.json"
           git push
