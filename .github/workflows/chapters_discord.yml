@@ -22,6 +22,10 @@ on:
 permissions:
   contents: write
 
+env:
+  RSS_FEED_REPO: ${{ github.event.client_payload.rss_repo }}
+  RSS_FEED_REF: ${{ github.event.client_payload.rss_ref }}
+
 jobs:
   chapters:
     name: chapters
