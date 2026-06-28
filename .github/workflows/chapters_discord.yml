@@ -71,6 +71,7 @@ jobs:
 
       - name: Commit state
         run: |
+          if: ${{ always() }}
           git pull --rebase --autostash
           git add state_rss.json
           if git diff --cached --quiet; then
