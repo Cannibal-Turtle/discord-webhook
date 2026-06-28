@@ -1,7 +1,7 @@
 name: Check RSS & Send Chapters
 
 concurrency:
-  group: rss-to-discord-chapters
+  group: rss-to-discord-state-rss
   cancel-in-progress: false
 
 on:
