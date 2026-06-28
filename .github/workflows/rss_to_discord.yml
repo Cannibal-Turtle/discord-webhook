@@ -72,24 +72,22 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements/rss_dispatch.txt
 
-      - name: Run Extra Checker
-        env:
-          DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
-        run: python new_extra_checker.py
-
       - name: Commit updated state.json
         run: |
+          set -e
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          
+
+          git pull --rebase --autostash origin main
+
           git add state.json
-          git commit -m "ci: update state" || echo "No changes"
-          
-          for i in 1 2 3; do
-            git pull --rebase origin main && git push && break
-            echo "Retry $i..."
-            sleep 2
-          done
+          if git diff --cached --quiet; then
+            echo "No state changes to commit."
+            exit 0
+          fi
+
+          git commit -m "ci: update state.json"
+          git push origin HEAD:main
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -130,17 +128,20 @@ jobs:
 
       - name: Commit updated state.json
         run: |
+          set -e
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          
+
+          git pull --rebase --autostash origin main
+
           git add state.json
-          git commit -m "ci: update state" || echo "No changes"
-          
-          for i in 1 2 3; do
-            git pull --rebase origin main && git push && break
-            echo "Retry $i..."
-            sleep 2
-          done
+          if git diff --cached --quiet; then
+            echo "No state changes to commit."
+            exit 0
+          fi
+
+          git commit -m "ci: update state.json"
+          git push origin HEAD:main
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -180,23 +181,25 @@ jobs:
 
       - name: Commit updated state.json
         run: |
+          set -e
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          
+
+          git pull --rebase --autostash origin main
+
           git add state.json
-          git commit -m "ci: update state" || echo "No changes"
-          
-          for i in 1 2 3; do
-            git pull --rebase origin main && git push && break
-            echo "Retry $i..."
-            sleep 2
-          done
+          if git diff --cached --quiet; then
+            echo "No state changes to commit."
+            exit 0
+          fi
+
+          git commit -m "ci: update state.json"
+          git push origin HEAD:main
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   new_launch_checker:
     runs-on: ubuntu-latest
-    needs: free_completion        # <── launch waits for free completion
     if: >
       github.event_name == 'schedule' ||
       github.event_name == 'workflow_dispatch' ||
@@ -231,17 +234,20 @@ jobs:
 
       - name: Commit updated state.json
         run: |
+          set -e
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          
+
+          git pull --rebase --autostash origin main
+
           git add state.json
-          git commit -m "ci: update state" || echo "No changes"
-          
-          for i in 1 2 3; do
-            git pull --rebase origin main && git push && break
-            echo "Retry $i..."
-            sleep 2
-          done
+          if git diff --cached --quiet; then
+            echo "No state changes to commit."
+            exit 0
+          fi
+
+          git commit -m "ci: update state.json"
+          git push origin HEAD:main
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
