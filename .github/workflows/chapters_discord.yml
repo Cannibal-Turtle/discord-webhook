@@ -70,8 +70,9 @@ jobs:
         run: python bot_paid_chapters.py
 
       - name: Commit state
+        if: ${{ always() }}
+        shell: bash
         run: |
-          if: ${{ always() }}
           git pull --rebase --autostash
           git add state_rss.json
           if git diff --cached --quiet; then
