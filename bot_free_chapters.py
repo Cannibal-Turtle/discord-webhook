@@ -15,11 +15,7 @@ from message_context import build_feed_context
 from message_renderer import render_message, to_discord_py_kwargs
 from guid_state import entry_guid_identity, format_seen_guid, raw_guid_from_entry, seen_guid_identities
 
-try:
-    from novel_mappings import get_translator_url
-except Exception:
-    def get_translator_url(host, novel_title=""):
-        return ""
+from novel_mappings import get_translator_url
 
 try:
     from status_update_dispatcher import trigger_status_update
