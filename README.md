@@ -191,23 +191,7 @@ Settings → Secrets and variables → Actions
 | Secret | Purpose |
 | --- | --- |
 | `DISCORD_BOT_TOKEN` | Discord bot token |
-| `DISCORD_CHANNEL_ID` | General/news announcement channel |
-| `DISCORD_FREE_CHAPTERS_CHANNEL` | Free chapter posts |
-| `DISCORD_ADVANCE_CHAPTERS_CHANNEL` | Paid/advance chapter posts |
-| `DISCORD_COMMENTS_CHANNEL` | Comment posts |
-| `DISCORD_MOD_CHANNEL_ID` | Optional mod/admin alert posts |
 | `PAT_GITHUB` | Optional Personal Access Token for the free chapter → rss-feed status card update callback |
-
-Legacy / no longer required by current scripts:
-
-| Secret | Purpose |
-| --- | --- |
-| `DISCORD_CHANNEL_ID` | Old announcement channel secret; replaced by `config/server.json` |
-| `DISCORD_FREE_CHAPTERS_CHANNEL` | Old free chapter channel secret; replaced by `config/server.json` |
-| `DISCORD_ADVANCE_CHAPTERS_CHANNEL` | Old paid chapter channel secret; replaced by `config/server.json` |
-| `DISCORD_COMMENTS_CHANNEL` | Old comments channel secret; replaced by `config/server.json` |
-| `DISCORD_MOD_CHANNEL_ID` | Old mod/admin channel secret; replaced by `config/server.json` if needed |
-| `DISCORD_WEBHOOK` | Old webhook URL, no longer required for the current bot scripts |
 
 ---
 
