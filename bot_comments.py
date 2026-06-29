@@ -161,7 +161,7 @@ async def main():
         if last_post_dt is not None:
             dt = parse_pub_iso(e)
             # if we can parse pubdate and it isn't newer than last posted time, skip
-            if dt and dt <= last_post_dt:
+            if dt and dt < last_post_dt:
                 continue
         if not include_nu_comments and is_novel_updates_entry(e):
             norm = normalize_guid(e)

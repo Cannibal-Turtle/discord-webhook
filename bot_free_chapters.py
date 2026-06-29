@@ -213,7 +213,7 @@ async def send_new_entries():
             continue
         if last_post_dt is not None:
             dt = parse_pub_iso(e)
-            if dt and dt <= last_post_dt:
+            if dt and dt < last_post_dt:
                 continue
         to_send.append(e)
 
