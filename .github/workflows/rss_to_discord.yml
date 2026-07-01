@@ -76,6 +76,11 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements/rss_dispatch.txt
 
+      - name: Run Extra Checker
+        env:
+          DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+        run: python new_extra_checker.py
+
       - name: Commit updated state.json
         run: |
           set -e
