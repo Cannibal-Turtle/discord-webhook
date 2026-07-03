@@ -7,6 +7,7 @@ import sys
 
 from novel_mappings import HOSTING_SITE_DATA, get_nsfw_novels
 from message_renderer import render_message_sequence, to_discord_api_payload
+from git_state_commit import commit_state_update
 
 
 # ─── CONFIG ────────────────────────────────────────────────────────────────────
@@ -155,22 +156,8 @@ def save_history(history, history_file):
     print(f"✅ Successfully updated history file: {history_file}")
 
 def commit_history_update(history_file):
-    """Commits and pushes the updated history file to GitHub."""
-    print(f"📌 Committing changes for {history_file}...")
-    os.system("git config --global user.name 'GitHub Actions'")
-    os.system("git config --global user.email 'actions@github.com'")
-    os.system("git status")
-    os.system(f"git add {history_file}")
-    changes_detected = os.system("git diff --staged --quiet")
-    if changes_detected != 0:
-        os.system(f"git commit -m 'Auto-update: {history_file}'")
-        print(f"✅ Committed changes for {history_file}")
-    else:
-        print(f"⚠️ No changes detected in {history_file}, skipping commit.")
-    push_status = os.system("git push origin main")
-    if push_status != 0:
-        print("❌ Git push failed. Trying again with force...")
-        os.system("git push origin main --force")
+    """Commit/push the updated arc history file via the shared Git helper."""
+    return commit_state_update(history_file, f"Auto-update: {history_file}")
 
 def clean_feed_title(raw_title):
     """Removes extra characters from feed titles."""

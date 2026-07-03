@@ -24,29 +24,61 @@ def _run_git(repo_dir: Path, *args: str, check: bool = False) -> subprocess.Comp
     return proc
 
 
-def commit_state_update(path: str, message: str = "ci: update state_rss.json") -> bool:
-    """Commit and push a changed state file without making the bot fail.
+def _disabled() -> bool:
+    return str(os.getenv("GIT_STATE_AUTO_COMMIT", "1")).strip().lower() in _FALSEY
 
-    This is intentionally best-effort. The bot should not repost/crash just
+
+def _repo_dir() -> Path:
+    return Path(__file__).resolve().parent
+
+
+def _as_list(paths) -> list[str]:
+    if isinstance(paths, (str, os.PathLike)):
+        return [str(paths)]
+    return [str(path) for path in paths]
+
+
+def _relative_path(repo_dir: Path, path: str) -> str:
+    raw_path = Path(path)
+    target = raw_path if raw_path.is_absolute() else repo_dir / raw_path
+    try:
+        return str(target.resolve().relative_to(repo_dir.resolve()))
+    except ValueError:
+        return str(raw_path)
+
+
+def _default_message(rel_paths: list[str]) -> str:
+    if len(rel_paths) == 1:
+        basename = Path(rel_paths[0]).name
+        if basename == "state_rss.json":
+            return "ci: update state_rss.json"
+        return f"Auto-update: {basename}"
+    return "Auto-update: state files"
+
+
+def commit_paths_if_changed(paths, message: str | None = None) -> bool:
+    """Commit and push changed state/history files without making the bot fail.
+
+    This is intentionally best-effort. The announcement should not crash just
     because Git is unavailable locally or push credentials are missing.
 
     Set GIT_STATE_AUTO_COMMIT=0 to disable this helper.
     """
-    if str(os.getenv("GIT_STATE_AUTO_COMMIT", "1")).strip().lower() in _FALSEY:
+    if _disabled():
         print("ℹ️ GIT_STATE_AUTO_COMMIT=0; skipped Git state commit.")
         return False
 
-    repo_dir = Path(__file__).resolve().parent
+    repo_dir = _repo_dir()
     if not (repo_dir / ".git").exists():
         print("ℹ️ No .git directory found; skipped Git state commit.")
         return False
 
-    raw_path = Path(path)
-    target = raw_path if raw_path.is_absolute() else repo_dir / raw_path
-    try:
-        rel_path = str(target.resolve().relative_to(repo_dir.resolve()))
-    except ValueError:
-        rel_path = str(raw_path)
+    rel_paths = [_relative_path(repo_dir, path) for path in _as_list(paths)]
+    if not rel_paths:
+        print("ℹ️ No state paths provided; skipped Git state commit.")
+        return False
+
+    commit_message = message or _default_message(rel_paths)
 
     try:
         inside = _run_git(repo_dir, "rev-parse", "--is-inside-work-tree")
@@ -61,16 +93,16 @@ def commit_state_update(path: str, message: str = "ci: update state_rss.json") -
         if pull.returncode != 0:
             print("⚠️ Git pull failed; will still try to commit local state.")
 
-        _run_git(repo_dir, "add", "--", rel_path, check=True)
+        _run_git(repo_dir, "add", "--", *rel_paths, check=True)
         diff = _run_git(repo_dir, "diff", "--cached", "--quiet")
         if diff.returncode == 0:
-            print(f"ℹ️ No Git changes to commit for {rel_path}.")
+            print(f"ℹ️ No Git changes to commit for {', '.join(rel_paths)}.")
             return False
         if diff.returncode != 1:
-            print(f"⚠️ Could not check staged diff for {rel_path}; skipped Git state commit.")
+            print(f"⚠️ Could not check staged diff for {', '.join(rel_paths)}; skipped Git state commit.")
             return False
 
-        commit = _run_git(repo_dir, "commit", "-m", message)
+        commit = _run_git(repo_dir, "commit", "-m", commit_message)
         if commit.returncode != 0:
             print("⚠️ Git commit failed; state file was saved locally but not committed.")
             return False
@@ -80,9 +112,13 @@ def commit_state_update(path: str, message: str = "ci: update state_rss.json") -
             print("⚠️ Git push failed; state file was committed locally but not pushed.")
             return False
 
-        print(f"✅ Committed and pushed {rel_path}.")
+        print(f"✅ Committed and pushed {', '.join(rel_paths)}.")
         return True
 
     except Exception as exc:
         print(f"⚠️ Git state commit skipped: {exc}")
         return False
+
+
+def commit_state_update(path: str, message: str | None = None) -> bool:
+    return commit_paths_if_changed([path], message)

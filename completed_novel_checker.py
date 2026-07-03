@@ -24,7 +24,6 @@ import sys
 import feedparser
 import requests
 import re
-import subprocess
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 from novel_mappings import HOSTING_SITE_DATA, get_nsfw_novels
@@ -34,6 +33,7 @@ except Exception:
     def get_translator_url(host, novel_title=""):
         return ""
 from message_renderer import render_message, to_discord_api_payload
+from git_state_commit import commit_state_update
 
 # ─── CONFIG ────────────────────────────────────────────────────────────────────
 from config_loader import (
@@ -72,24 +72,6 @@ def load_state(path=STATE_PATH):
 def save_state(state, path=STATE_PATH):
     with open(path, "w", encoding="utf-8") as f:
         json.dump(state, f, indent=2, ensure_ascii=False)
-
-
-def commit_state_update(path=STATE_PATH):
-    """Commit/push state.json so the completion skip flag survives the next run."""
-    try:
-        subprocess.run(["git", "config", "--global", "user.name", "GitHub Actions"], check=True)
-        subprocess.run(["git", "config", "--global", "user.email", "actions@github.com"], check=True)
-        subprocess.run(["git", "add", path], check=True)
-
-        # Commit only if there are staged changes.
-        staged = subprocess.run(["git", "diff", "--staged", "--quiet"])
-        if staged.returncode != 0:
-            subprocess.run(["git", "commit", "-m", f"Auto-update: {os.path.basename(path)}"], check=True)
-            subprocess.run(["git", "push", "origin", "main"], check=True)
-        else:
-            print(f"ℹ️ No changes detected in {path}, skipping commit.")
-    except Exception as e:
-        print(f"❌ Git commit/push for {path} failed: {e}")
 
 
 def normalize_message_payload(message: dict) -> dict:
