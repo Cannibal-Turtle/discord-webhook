@@ -14,6 +14,7 @@ import requests
 from message_context import build_feed_context
 from message_renderer import render_message, to_discord_py_kwargs
 from guid_state import entry_guid_identity, format_seen_guid, raw_guid_from_entry, seen_guid_identities
+from git_state_commit import commit_state_update
 
 from novel_mappings import get_translator_url, get_coin_emoji
 
@@ -35,6 +36,7 @@ TOKEN      = os.environ["DISCORD_BOT_TOKEN"]
 CHANNEL_ID = server_channel_id("paid_chapters")
 
 STATE_FILE = require_file_value("rss_state_path")
+STATE_CHANGED = False
 FEED_KEY   = require_feed_value("paid", "last_guid_key")
 RSS_URL    = require_feed_url("paid")
 
@@ -62,8 +64,7 @@ def load_state():
             SEEN_KEY:             [],
             LAST_POST_TIME:       None,
         }
-        with open(STATE_FILE, "w", encoding="utf-8") as f:
-            json.dump(st, f, indent=2, ensure_ascii=False)
+        save_state(st)
         return st
 
     # ── put the migration block HERE (existing state on disk) ──
@@ -75,17 +76,23 @@ def load_state():
         st[LAST_POST_TIME] = None
         changed = True
     if changed:
-        with open(STATE_FILE, "w", encoding="utf-8") as f:
-            json.dump(st, f, indent=2, ensure_ascii=False)
+        save_state(st)
     return st
 
 
 def save_state(state):
+    global STATE_CHANGED
     if isinstance(state.get(SEEN_KEY), list) and len(state[SEEN_KEY]) > SEEN_CAP:
         state[SEEN_KEY] = state[SEEN_KEY][-SEEN_CAP:]
     with open(STATE_FILE, "w", encoding="utf-8") as f:
         json.dump(state, f, indent=2, ensure_ascii=False)
+    STATE_CHANGED = True
 
+
+
+def commit_state_if_changed():
+    if STATE_CHANGED:
+        commit_state_update(STATE_FILE)
 
 def is_nsfw(entry) -> bool:
     cat = (entry.get("category") or "").strip().upper()
@@ -393,4 +400,7 @@ async def send_new_paid_entries():
 
 
 if __name__ == "__main__":
-    asyncio.run(send_new_paid_entries())
+    try:
+        asyncio.run(send_new_paid_entries())
+    finally:
+        commit_state_if_changed()

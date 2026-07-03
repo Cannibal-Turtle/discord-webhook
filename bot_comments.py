@@ -7,6 +7,7 @@ import aiohttp
 from message_context import build_feed_context, entry_get
 from message_renderer import render_message, to_discord_api_payload
 from guid_state import entry_guid_identity, format_seen_guid, raw_guid_from_entry, seen_guid_identities
+from git_state_commit import commit_state_update
 
 # ─── CONFIG ────────────────────────────────────────────────────────────────────
 from config_loader import (
@@ -24,6 +25,7 @@ TOKEN      = os.environ["DISCORD_BOT_TOKEN"]
 CHANNEL_ID = server_channel_id_str("comments")
 
 STATE_FILE = require_file_value("rss_state_path")
+STATE_CHANGED = False
 FEED_KEY   = require_feed_value("comments", "last_guid_key")
 RSS_URL    = require_feed_url("comments")
 API_URL    = f"https://discord.com/api/v10/channels/{CHANNEL_ID}/messages"
@@ -45,8 +47,7 @@ def load_state():
           SEEN_KEY:             [],
           LAST_POST_TIME:       None,
         }
-        with open(STATE_FILE, "w", encoding="utf-8") as f:
-            json.dump(st, f, indent=2, ensure_ascii=False)
+        save_state(st)
         return st
 
     # migrate if missing
@@ -58,16 +59,22 @@ def load_state():
         st[LAST_POST_TIME] = None
         changed = True
     if changed:
-        with open(STATE_FILE, "w", encoding="utf-8") as f:
-            json.dump(st, f, indent=2, ensure_ascii=False)
+        save_state(st)
     return st
 
 def save_state(state):
+    global STATE_CHANGED
     # cap the seen list
     if isinstance(state.get(SEEN_KEY), list) and len(state[SEEN_KEY]) > SEEN_CAP:
         state[SEEN_KEY] = state[SEEN_KEY][-SEEN_CAP:]
     with open(STATE_FILE, "w", encoding="utf-8") as f:
         json.dump(state, f, indent=2, ensure_ascii=False)
+    STATE_CHANGED = True
+
+
+def commit_state_if_changed():
+    if STATE_CHANGED:
+        commit_state_update(STATE_FILE)
 
 def normalize_guid(entry):
     return format_seen_guid(entry, default_host="")
@@ -237,4 +244,7 @@ async def main():
             print(f"💾 Updated {STATE_FILE} → {new_last}")
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    try:
+        asyncio.run(main())
+    finally:
+        commit_state_if_changed()
