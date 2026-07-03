@@ -460,20 +460,16 @@
     "Mistmint Haven::ATVHE::a4899a01-1658-4b68-a227-623c8dfe4ff3",
     "Mistmint Haven::TVITPA::93dc070a-7ae7-445e-86f6-ca3246a313b2",
     "Mistmint Haven::AMLWC::6fa9284c-74b9-462c-b40d-86e44989395f",
-    "Mistmint Haven::TDLBKGC::dcba2c72-a91a-426e-befd-4c110bc54da7"
+    "Mistmint Haven::TDLBKGC::dcba2c72-a91a-426e-befd-4c110bc54da7",
+    "Mistmint Haven::WSMSC::19039e99-f9a4-41b8-bbab-fbf283b39e88",
+    "Mistmint Haven::TVITPA::570f8a65-204c-4067-b59d-5e5d89b3aab6",
+    "Mistmint Haven::HIAFLG::b6217914-cab6-4df6-8206-4c8387a132cd",
+    "Mistmint Haven::TVITPA::b61662ec-ebae-4e00-96b6-5e955863670f",
+    "Mistmint Haven::TDLBKGC::c1f254a0-ebbe-4d95-9df3-ff7bfe85c9aa"
   ],
-  "free_last_guid": "dcba2c72-a91a-426e-befd-4c110bc54da7",
-  "last_post_time_free": "2026-07-01T05:00:00+00:00",
+  "free_last_guid": "c1f254a0-ebbe-4d95-9df3-ff7bfe85c9aa",
+  "last_post_time_free": "2026-07-03T05:00:00+00:00",
   "paid_seen_guids": [
-    "Mistmint Haven::21ffdc79-899a-435e-a89a-2bf4ccf20209",
-    "Mistmint Haven::a5df8f97-8813-4c90-be7e-c8bea7747670",
-    "Mistmint Haven::b4b06e37-8365-44d6-b62b-eab5a30d7f02",
-    "Mistmint Haven::11d31ff2-24f1-4bf3-b83a-353a93764f9a",
-    "Mistmint Haven::f9fe694c-ab98-4424-9e6c-de67860b3dc2",
-    "Mistmint Haven::59de6f60-9e0f-4b48-abd2-69f8e7065743",
-    "Mistmint Haven::0867c635-d3df-424a-b056-6655734add35",
-    "Mistmint Haven::b6e9436e-b259-439f-a43c-a15ae5e0e0e6",
-    "Mistmint Haven::821af9f1-ddf3-442e-a0a3-cc26168757c8",
     "Mistmint Haven::f5aaceb2-d199-4475-9366-1684d933af28",
     "Mistmint Haven::22491071-5733-4cbd-85fd-313b67ef567d",
     "Mistmint Haven::a1122b8d-f56f-4a25-9c6d-8c89c2606ee6",
@@ -964,10 +960,19 @@
     "Mistmint Haven::HIAFLG::669a9bcc-a690-4f49-b203-00262836095b",
     "Mistmint Haven::HIAFLG::732ee453-7181-4d44-8224-e274e321e044",
     "Mistmint Haven::HIAFLG::c2cc6ecb-4621-46d7-ad4e-a129818db9a4",
-    "Mistmint Haven::AMLWC::ff2aaf69-1826-4bfa-8190-71ddb90df7b8"
+    "Mistmint Haven::AMLWC::ff2aaf69-1826-4bfa-8190-71ddb90df7b8",
+    "Mistmint Haven::TDLBKGC::d957711e-4383-499e-9002-9189da3a0ec7",
+    "Mistmint Haven::TDLBKGC::efb71e4b-bca3-4a68-bfe4-0b87d383bc57",
+    "Mistmint Haven::TDLBKGC::c6ffa037-1d02-4319-8a46-d039c0b9006a",
+    "Mistmint Haven::TDLBKGC::9a66a0e6-0397-4dce-924b-7b6261456667",
+    "Mistmint Haven::TDLBKGC::229ce99c-2905-4f52-a793-c305c8ba9fbf",
+    "Mistmint Haven::HIAFLG::79d257a5-e12f-480e-8aab-264264529828",
+    "Mistmint Haven::HIAFLG::c0cbcb3a-0002-4f8f-82d6-c3065ddff1c6",
+    "Mistmint Haven::HIAFLG::c4c9cc65-8df5-4b57-a3a0-db502ded9716",
+    "Mistmint Haven::AMLWC::508fc6b7-64cb-41af-98fc-ae0a13f9a392"
   ],
-  "paid_last_guid": "ff2aaf69-1826-4bfa-8190-71ddb90df7b8",
-  "last_post_time_paid": "2026-07-01T16:15:03+00:00",
+  "paid_last_guid": "508fc6b7-64cb-41af-98fc-ae0a13f9a392",
+  "last_post_time_paid": "2026-07-02T16:00:43+00:00",
   "comments_seen_guids": [
     "Novel Updates::https://www.novelupdates.com/?post_type=seriesplans&p=88639#comment-434808",
     "Novel Updates::https://www.novelupdates.com/?post_type=seriesplans&p=88639#comment-439240",
@@ -1144,8 +1149,13 @@
     "Mistmint Haven::EC::c908a8e2-7306-4b59-875b-70f29a251ff5",
     "Mistmint Haven::TDLBKGC::d7c8d363-bf56-46ed-bfc2-77a59b9c99e9",
     "Mistmint Haven::TDLBKGC::c6323936-0b98-46a2-8a06-2393be812795",
-    "Mistmint Haven::AMLWC::0d933803-3c09-4043-80fd-4fbd132746f2"
+    "Mistmint Haven::AMLWC::0d933803-3c09-4043-80fd-4fbd132746f2",
+    "Mistmint Haven::TDLBKGC::3c9c9921-da34-491a-be8e-60799641999e",
+    "Mistmint Haven::TDLBKGC::9e14c317-2f71-49d1-8a26-2ade15b54ab4",
+    "Mistmint Haven::TVITPA::13f843ff-2a2a-49be-ac43-e9a89678c11a",
+    "Mistmint Haven::TDLBKGC::455303f3-d74b-4918-9b52-05c12c37c7f3",
+    "Mistmint Haven::TDLBKGC::40d15061-5fe3-4f7f-bfa7-7d64d340ecfb"
   ],
-  "comments_last_guid": "0d933803-3c09-4043-80fd-4fbd132746f2",
-  "last_post_time_comments": "2026-07-01T10:47:22+00:00"
+  "comments_last_guid": "40d15061-5fe3-4f7f-bfa7-7d64d340ecfb",
+  "last_post_time_comments": "2026-07-02T18:55:34+00:00"
 }
