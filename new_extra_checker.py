@@ -88,16 +88,45 @@ def save_state(state, path=STATE_PATH):
         json.dump(state, f, indent=2, ensure_ascii=False)
 
 def find_released_extras(paid_feed, raw_kw):
+    """Return released bonus indices for extra / side-story labels.
+
+    Supports numbered labels such as ``Extra 2`` and safe unnumbered labels
+    such as ``Extra | Title``. Ordinary titles such as ``Put Extra Seasoning``
+    are not treated as bonus chapters because an unnumbered label must begin
+    the field and be followed by a separator or the end of the field.
+    """
     if not raw_kw:
         return set()
-    pattern = re.compile(rf"(?i)\b{raw_kw}s?\b.*?(\d+)")
+
+    if raw_kw.lower() == "side story":
+        keyword = r"side\s+stor(?:y|ies)"
+    else:
+        keyword = rf"{re.escape(raw_kw)}s?"
+
+    numbered_pattern = re.compile(rf"(?i)\b{keyword}\b.*?(\d+)")
+    unnumbered_pattern = re.compile(
+        rf"(?i)^\s*{keyword}\s*(?:[|:—–-]|$)"
+    )
+
     seen = set()
     for e in paid_feed.entries:
-        for field in ("chapter","chaptername","volume"):
-            val = e.get(field,"") or ""
-            m = pattern.search(val)
-            if m:
-                seen.add(int(m.group(1)))
+        values = [
+            e.get(field, "") or ""
+            for field in ("chapter", "chaptername", "volume")
+        ]
+
+        explicit_number = None
+        for val in values:
+            match = numbered_pattern.search(val)
+            if match:
+                explicit_number = int(match.group(1))
+                break
+
+        if explicit_number is not None:
+            seen.add(explicit_number)
+        elif any(unnumbered_pattern.search(val) for val in values):
+            seen.add(1)
+
     return seen
 
 def process_extras(novel):
