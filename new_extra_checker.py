@@ -232,7 +232,10 @@ def process_extras(novel):
         extra_label = "extra" if tot_ex == 1 else "extras"
         ss_label    = "side story" if tot_ss == 1 else "side stories"
         
-        if tot_ex and tot_ss:
+        # No final chapter is mapped yet, so do not claim the series is near its end.
+        if not (last_chap or "").strip():
+            remaining = ""
+        elif tot_ex and tot_ss:
             remaining = (
                 f"{base} is almost at the very end — just "
                 f"{tot_ex} {extra_label} and {tot_ss} {ss_label} left before we wrap up this journey for good  <:turtle_cowboy2:1365266375274266695>"
