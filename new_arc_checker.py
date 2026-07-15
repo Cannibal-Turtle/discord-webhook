@@ -350,10 +350,16 @@ def process_arc(novel):
 
             # Extras/side stories are handled by new_extra_checker.py, not here.
             # A bonus title ending in "(1)" otherwise looks like an arc start.
-            if is_bonus_label(raw_vol) or is_bonus_label(raw_extend):
+            if (
+                is_bonus_label(raw_vol)
+                or is_bonus_label(raw_extend)
+                or is_bonus_label(raw_chap)
+            ):
                 print(
                     "⏭️ Skipping bonus entry in arc checker: "
-                    f"volume={raw_vol!r}, chaptername={raw_extend!r}"
+                    f"volume={raw_vol!r}, "
+                    f"chapter={raw_chap!r}, "
+                    f"chaptername={raw_extend!r}"
                 )
                 continue
 
