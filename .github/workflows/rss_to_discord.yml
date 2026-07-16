@@ -79,26 +79,16 @@ jobs:
       - name: Run Extra Checker
         env:
           DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+          GIT_STATE_AUTO_COMMIT: "0"
         run: python new_extra_checker.py
 
       - name: Commit updated state.json
-        run: |
-          set -e
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-
-          git pull --rebase --autostash origin main
-
-          git add state.json
-          if git diff --cached --quiet; then
-            echo "No state changes to commit."
-            exit 0
-          fi
-
-          git commit -m "ci: update state.json"
-          git push origin HEAD:main
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GIT_STATE_PUSH_RETRIES: "5"
+          GIT_STATE_PUSH_RETRY_DELAY: "3"
+        run: |
+          .github/scripts/commit_paths_with_retry.sh "ci: update state.json" state.json
 
   paid_completion:
     runs-on: ubuntu-latest
@@ -133,26 +123,16 @@ jobs:
       - name: Run Paid Completion Checker
         env:
           DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+          GIT_STATE_AUTO_COMMIT: "0"
         run: python completed_novel_checker.py --feed paid
 
       - name: Commit updated state.json
-        run: |
-          set -e
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-
-          git pull --rebase --autostash origin main
-
-          git add state.json
-          if git diff --cached --quiet; then
-            echo "No state changes to commit."
-            exit 0
-          fi
-
-          git commit -m "ci: update state.json"
-          git push origin HEAD:main
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GIT_STATE_PUSH_RETRIES: "5"
+          GIT_STATE_PUSH_RETRY_DELAY: "3"
+        run: |
+          .github/scripts/commit_paths_with_retry.sh "ci: update state.json" state.json
 
   free_completion:
     runs-on: ubuntu-latest
@@ -186,26 +166,16 @@ jobs:
       - name: Run Free Completion Checker
         env:
           DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+          GIT_STATE_AUTO_COMMIT: "0"
         run: python completed_novel_checker.py --feed free
 
       - name: Commit updated state.json
-        run: |
-          set -e
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-
-          git pull --rebase --autostash origin main
-
-          git add state.json
-          if git diff --cached --quiet; then
-            echo "No state changes to commit."
-            exit 0
-          fi
-
-          git commit -m "ci: update state.json"
-          git push origin HEAD:main
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GIT_STATE_PUSH_RETRIES: "5"
+          GIT_STATE_PUSH_RETRY_DELAY: "3"
+        run: |
+          .github/scripts/commit_paths_with_retry.sh "ci: update state.json" state.json
 
   new_launch_checker:
     runs-on: ubuntu-latest
@@ -239,26 +209,16 @@ jobs:
       - name: Run New Launch Checker
         env:
           DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+          GIT_STATE_AUTO_COMMIT: "0"
         run: python new_novel_checker.py --feed free
 
       - name: Commit updated state.json
-        run: |
-          set -e
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-
-          git pull --rebase --autostash origin main
-
-          git add state.json
-          if git diff --cached --quiet; then
-            echo "No state changes to commit."
-            exit 0
-          fi
-
-          git commit -m "ci: update state.json"
-          git push origin HEAD:main
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GIT_STATE_PUSH_RETRIES: "5"
+          GIT_STATE_PUSH_RETRY_DELAY: "3"
+        run: |
+          .github/scripts/commit_paths_with_retry.sh "ci: update state.json" state.json
 
   first_arc_checker:
     runs-on: ubuntu-latest

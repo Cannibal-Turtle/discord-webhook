@@ -1,5 +1,6 @@
 import os
 import subprocess
+import time
 from pathlib import Path
 
 _FALSEY = {"0", "false", "no", "n", "off"}
@@ -56,13 +57,72 @@ def _default_message(rel_paths: list[str]) -> str:
     return "Auto-update: state files"
 
 
+def _positive_int_env(name: str, default: int) -> int:
+    try:
+        value = int(str(os.getenv(name, default)).strip())
+    except (TypeError, ValueError):
+        return default
+    return value if value > 0 else default
+
+
+def _current_branch(repo_dir: Path) -> str:
+    branch = str(os.getenv("GIT_STATE_BRANCH", "")).strip()
+    if branch:
+        return branch
+
+    branch = str(os.getenv("GITHUB_REF_NAME", "")).strip()
+    if branch and branch != "merge":
+        return branch
+
+    proc = _run_git(repo_dir, "branch", "--show-current")
+    branch = (proc.stdout or "").strip()
+    return branch or "main"
+
+
+def _push_with_retry(repo_dir: Path) -> bool:
+    remote = str(os.getenv("GIT_STATE_REMOTE", "origin")).strip() or "origin"
+    branch = _current_branch(repo_dir)
+    max_attempts = _positive_int_env("GIT_STATE_PUSH_RETRIES", 5)
+    retry_delay = _positive_int_env("GIT_STATE_PUSH_RETRY_DELAY", 3)
+
+    for attempt in range(1, max_attempts + 1):
+        print(f"State push attempt {attempt}/{max_attempts}...")
+
+        fetch = _run_git(repo_dir, "fetch", remote, branch)
+        if fetch.returncode != 0:
+            print(f"⚠️ Git fetch failed on attempt {attempt}.")
+        else:
+            rebase = _run_git(repo_dir, "rebase", "--autostash", f"{remote}/{branch}")
+            if rebase.returncode != 0:
+                print("⚠️ Git rebase failed; aborting to avoid an unsafe state push.")
+                _run_git(repo_dir, "rebase", "--abort")
+                return False
+
+            ahead = _run_git(repo_dir, "rev-list", "--count", f"{remote}/{branch}..HEAD")
+            if ahead.returncode == 0 and (ahead.stdout or "").strip() == "0":
+                print(f"✅ State is already present on {remote}/{branch}.")
+                return True
+
+            push = _run_git(repo_dir, "push", remote, f"HEAD:{branch}")
+            if push.returncode == 0:
+                print(f"✅ State push succeeded on attempt {attempt}.")
+                return True
+
+            print("⚠️ Remote changed before the push completed.")
+
+        if attempt < max_attempts:
+            time.sleep(retry_delay)
+
+    print(f"⚠️ Git push failed after {max_attempts} attempts.")
+    return False
+
+
 def commit_paths_if_changed(paths, message: str | None = None) -> bool:
-    """Commit and push changed state/history files without making the bot fail.
+    """Commit and push changed state/history files with push-race retries.
 
-    This is intentionally best-effort. The announcement should not crash just
-    because Git is unavailable locally or push credentials are missing.
-
-    Set GIT_STATE_AUTO_COMMIT=0 to disable this helper.
+    This remains best-effort so an announcement does not crash merely because
+    Git is unavailable. Set GIT_STATE_AUTO_COMMIT=0 when a workflow has its own
+    final commit step; that avoids two independent commit mechanisms.
     """
     if _disabled():
         print("ℹ️ GIT_STATE_AUTO_COMMIT=0; skipped Git state commit.")
@@ -89,27 +149,21 @@ def commit_paths_if_changed(paths, message: str | None = None) -> bool:
         _run_git(repo_dir, "config", "user.name", os.getenv("GIT_COMMIT_USER_NAME", "github-actions[bot]"))
         _run_git(repo_dir, "config", "user.email", os.getenv("GIT_COMMIT_USER_EMAIL", "github-actions[bot]@users.noreply.github.com"))
 
-        pull = _run_git(repo_dir, "pull", "--rebase", "--autostash")
-        if pull.returncode != 0:
-            print("⚠️ Git pull failed; will still try to commit local state.")
-
         _run_git(repo_dir, "add", "--", *rel_paths, check=True)
         diff = _run_git(repo_dir, "diff", "--cached", "--quiet")
         if diff.returncode == 0:
-            print(f"ℹ️ No Git changes to commit for {', '.join(rel_paths)}.")
-            return False
-        if diff.returncode != 1:
+            print(f"ℹ️ No new Git changes to commit for {', '.join(rel_paths)}.")
+        elif diff.returncode == 1:
+            commit = _run_git(repo_dir, "commit", "-m", commit_message)
+            if commit.returncode != 0:
+                print("⚠️ Git commit failed; state file was saved locally but not committed.")
+                return False
+        else:
             print(f"⚠️ Could not check staged diff for {', '.join(rel_paths)}; skipped Git state commit.")
             return False
 
-        commit = _run_git(repo_dir, "commit", "-m", commit_message)
-        if commit.returncode != 0:
-            print("⚠️ Git commit failed; state file was saved locally but not committed.")
-            return False
-
-        push = _run_git(repo_dir, "push")
-        if push.returncode != 0:
-            print("⚠️ Git push failed; state file was committed locally but not pushed.")
+        if not _push_with_retry(repo_dir):
+            print("⚠️ State commit remains local because all push attempts failed.")
             return False
 
         print(f"✅ Committed and pushed {', '.join(rel_paths)}.")

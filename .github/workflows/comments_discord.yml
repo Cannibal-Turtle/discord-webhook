@@ -44,20 +44,14 @@ jobs:
         env:
           DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
           PYTHONUNBUFFERED: 1
+          GIT_STATE_AUTO_COMMIT: "0"
         run: python -u bot_comments.py
 
       - name: Commit updated state file
         shell: bash
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GIT_STATE_PUSH_RETRIES: "5"
+          GIT_STATE_PUSH_RETRY_DELAY: "3"
         run: |
-          git config user.name  "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git pull --rebase --autostash origin main
-          git add state_rss.json
-          if git diff --cached --quiet; then
-            echo "No state changes to commit."
-          else
-            git commit -m "ci: update state_rss.json"
-            git push origin main
-          fi
+          .github/scripts/commit_paths_with_retry.sh "ci: update state_rss.json" state_rss.json
