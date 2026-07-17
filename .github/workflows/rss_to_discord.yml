@@ -88,7 +88,7 @@ jobs:
           GIT_STATE_PUSH_RETRIES: "5"
           GIT_STATE_PUSH_RETRY_DELAY: "3"
         run: |
-          .github/scripts/commit_paths_with_retry.sh "ci: update state.json" state.json
+          bash .github/scripts/commit_paths_with_retry.sh "ci: update state.json" state.json
 
   paid_completion:
     runs-on: ubuntu-latest
@@ -132,7 +132,7 @@ jobs:
           GIT_STATE_PUSH_RETRIES: "5"
           GIT_STATE_PUSH_RETRY_DELAY: "3"
         run: |
-          .github/scripts/commit_paths_with_retry.sh "ci: update state.json" state.json
+          bash .github/scripts/commit_paths_with_retry.sh "ci: update state.json" state.json
 
   free_completion:
     runs-on: ubuntu-latest
@@ -175,7 +175,7 @@ jobs:
           GIT_STATE_PUSH_RETRIES: "5"
           GIT_STATE_PUSH_RETRY_DELAY: "3"
         run: |
-          .github/scripts/commit_paths_with_retry.sh "ci: update state.json" state.json
+          bash .github/scripts/commit_paths_with_retry.sh "ci: update state.json" state.json
 
   new_launch_checker:
     runs-on: ubuntu-latest
@@ -218,7 +218,7 @@ jobs:
           GIT_STATE_PUSH_RETRIES: "5"
           GIT_STATE_PUSH_RETRY_DELAY: "3"
         run: |
-          .github/scripts/commit_paths_with_retry.sh "ci: update state.json" state.json
+          bash .github/scripts/commit_paths_with_retry.sh "ci: update state.json" state.json
 
   first_arc_checker:
     runs-on: ubuntu-latest

@@ -82,4 +82,4 @@ jobs:
           GIT_STATE_PUSH_RETRIES: "5"
           GIT_STATE_PUSH_RETRY_DELAY: "3"
         run: |
-          .github/scripts/commit_paths_with_retry.sh "ci: update state_rss.json" state_rss.json
+          bash .github/scripts/commit_paths_with_retry.sh "ci: update state_rss.json" state_rss.json
