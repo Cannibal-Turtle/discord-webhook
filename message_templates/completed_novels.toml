@@ -2,11 +2,11 @@
 suppress_embeds = true
 content = '''
 {completion_mention} <a:HappyCloud:1365575487333859398>
-## ꧁ᐟᐟ ◌ೄ⟢  Completion Announcement  :blueberries: ˚. ᵎᵎ˖ˎˊ-
+## ꧁ᐟᐟ ◌ೄ⟢  Completion Announcement  <:simplebouquet:1527555354391613520> ˚. ᵎᵎ˖ˎˊ-
 <:purple_divider1:1365652778957144165><:purple_divider1:1365652778957144165><:purple_divider1:1365652778957144165><:purple_divider1:1365652778957144165><:purple_divider1:1365652778957144165><:purple_divider1:1365652778957144165><:purple_divider1:1365652778957144165><:purple_divider1:1365652778957144165><:purple_divider1:1365652778957144165><:purple_divider1:1365652778957144165>
 ***<a:kikilts_bracket:1365693072138174525>[{novel_title}]({novel_link})<a:lalalts_bracket:1365693058905014313> — officially completed!*** <a:cowiggle:1368136766791483472><a:whitesparkles:1365569806966853664>
 
-*The last chapter, [{chapter_text}]({chapter_link}), has now been released. <a:turtle_hyper:1365223449827737630>
+*The last chapter, [{chapter_text}]({chapter_link}), has now been released. <:fallingflowers:1527555351463858349>
 After {duration} of updates, {novel_title} is now fully translated with {chapter_count}! Thank you for coming on this journey and for your continued support <:turtle_plead:1365223487274352670> You can now visit {host} to binge all advance releases~*<a:Heart:1365575427724283944><a:Paws:1365676154865979453>
 <:FF_Divider_Pink:1365575626194681936><:FF_Divider_Pink:1365575626194681936><:FF_Divider_Pink:1365575626194681936><:FF_Divider_Pink:1365575626194681936><:FF_Divider_Pink:1365575626194681936>
 -# Check out other translated projects at {discord_role_url} and react to get the latest updates <a:LoveLetter:1365575475841339435>
@@ -19,11 +19,11 @@ parse = ["everyone", "users", "roles"]
 suppress_embeds = true
 content = '''
 {completion_mention} <a:HappyCloud:1365575487333859398>
-## ꧁ᐟᐟ ◌ೄ⟢  Completion Announcement  :blueberries: ˚. ᵎᵎ˖ˎˊ-
+## ꧁ᐟᐟ ◌ೄ⟢  Completion Announcement  <:simplebouquet:1527555354391613520> ˚. ᵎᵎ˖ˎˊ-
 <:purple_divider1:1365652778957144165><:purple_divider1:1365652778957144165><:purple_divider1:1365652778957144165><:purple_divider1:1365652778957144165><:purple_divider1:1365652778957144165><:purple_divider1:1365652778957144165><:purple_divider1:1365652778957144165><:purple_divider1:1365652778957144165><:purple_divider1:1365652778957144165><:purple_divider1:1365652778957144165>
 ***<a:kikilts_bracket:1365693072138174525>[{novel_title}]({novel_link})<a:lalalts_bracket:1365693058905014313> — officially completed!*** <a:cowiggle:1368136766791483472><a:whitesparkles:1365569806966853664>
 
-*The last chapter, [{chapter_text}]({chapter_link}), has now been released. <a:turtle_hyper:1365223449827737630>
+*The last chapter, [{chapter_text}]({chapter_link}), has now been released. <:fallingflowers:1527555351463858349>
 {novel_title} is now fully translated with {chapter_count}! Thank you for coming on this journey and for your continued support <:turtle_plead:1365223487274352670> You can now visit {host} to binge all advance releases~*<a:Heart:1365575427724283944><a:Paws:1365676154865979453>
 <:FF_Divider_Pink:1365575626194681936><:FF_Divider_Pink:1365575626194681936><:FF_Divider_Pink:1365575626194681936><:FF_Divider_Pink:1365575626194681936><:FF_Divider_Pink:1365575626194681936>
 -# Check out other translated projects at {discord_role_url} and react to get the latest updates <a:LoveLetter:1365575475841339435>
@@ -36,7 +36,7 @@ parse = ["everyone", "users", "roles"]
 suppress_embeds = true
 content = '''
 {completion_mention} <a:HappyCloud:1365575487333859398>
-## 𐔌  Announcing: Complete Series Unlocked ,, :cherries: — 𝝑𝝔  ꒱
+## 𐔌  Announcing: Complete Series Unlocked ,, <:simplebouquet:1527555354391613520> — 𝝑𝝔  ꒱
 <:purple_divider1:1365652778957144165><:purple_divider1:1365652778957144165><:purple_divider1:1365652778957144165><:purple_divider1:1365652778957144165><:purple_divider1:1365652778957144165><:purple_divider1:1365652778957144165><:purple_divider1:1365652778957144165><:purple_divider1:1365652778957144165><:purple_divider1:1365652778957144165><:purple_divider1:1365652778957144165>
 ***<a:kikilts_bracket:1365693072138174525>[{novel_title}]({novel_link})<a:lalalts_bracket:1365693058905014313>— complete access granted!*** <a:cowiggle:1368136766791483472><a:whitesparkles:1365569806966853664>
 
@@ -54,11 +54,11 @@ parse = ["everyone", "users", "roles"]
 suppress_embeds = true
 content = '''
 {completion_mention} <a:HappyCloud:1365575487333859398>
-## ⁺‧ ༻•┈๑☽₊˚ ⌞Completion Announcement⋆ཋྀ ˚₊‧⁺ :kiwi: ∗༉‧₊˚
+## ⁺‧ ༻•┈๑☽₊˚ ⌞Completion Announcement⋆ཋྀ ˚₊‧⁺ <:simplebouquet:1527555354391613520> ∗༉‧₊˚
 <:purple_divider1:1365652778957144165><:purple_divider1:1365652778957144165><:purple_divider1:1365652778957144165><:purple_divider1:1365652778957144165><:purple_divider1:1365652778957144165><:purple_divider1:1365652778957144165><:purple_divider1:1365652778957144165><:purple_divider1:1365652778957144165><:purple_divider1:1365652778957144165><:purple_divider1:1365652778957144165>
 ***<a:kikilts_bracket:1365693072138174525>[{novel_title}]({novel_link})<a:lalalts_bracket:1365693058905014313> — officially completed!*** <a:cowiggle:1368136766791483472><a:whitesparkles:1365569806966853664>
 
-*The last chapter, [{chapter_text}]({chapter_link}), has now been released. <a:turtle_hyper:1365223449827737630>
+*The last chapter, [{chapter_text}]({chapter_link}), has now been released. <:fallingflowers:1527555351463858349>
 After {duration} of updates, {novel_title} is now fully translated with {chapter_count}! Thank you for coming on this journey and for your continued support <:luv_turtle:365263712549736448> You can now visit {host} to binge on all the releases~*<a:Heart:1365575427724283944><a:Paws:1365676154865979453>
 <:FF_Divider_Pink:1365575626194681936><:FF_Divider_Pink:1365575626194681936><:FF_Divider_Pink:1365575626194681936><:FF_Divider_Pink:1365575626194681936><:FF_Divider_Pink:1365575626194681936>
 -# Check out other translated projects at {discord_role_url} and react to get the latest updates <a:LoveLetter:1365575475841339435>
@@ -71,11 +71,11 @@ parse = ["everyone", "users", "roles"]
 suppress_embeds = true
 content = '''
 {completion_mention} <a:HappyCloud:1365575487333859398>
-## ⁺‧ ༻•┈๑☽₊˚ ⌞Completion Announcement⋆ཋྀ ˚₊‧⁺ :kiwi: ∗༉‧₊˚
+## ⁺‧ ༻•┈๑☽₊˚ ⌞Completion Announcement⋆ཋྀ ˚₊‧⁺ <:simplebouquet:1527555354391613520> ∗༉‧₊˚
 <:purple_divider1:1365652778957144165><:purple_divider1:1365652778957144165><:purple_divider1:1365652778957144165><:purple_divider1:1365652778957144165><:purple_divider1:1365652778957144165><:purple_divider1:1365652778957144165><:purple_divider1:1365652778957144165><:purple_divider1:1365652778957144165><:purple_divider1:1365652778957144165><:purple_divider1:1365652778957144165>
 ***<a:kikilts_bracket:1365693072138174525>[{novel_title}]({novel_link})<a:lalalts_bracket:1365693058905014313> — officially completed!*** <a:cowiggle:1368136766791483472><a:whitesparkles:1365569806966853664>
 
-*The last chapter, [{chapter_text}]({chapter_link}), has now been released. <a:turtle_hyper:1365223449827737630>
+*The last chapter, [{chapter_text}]({chapter_link}), has now been released. <:fallingflowers:1527555351463858349>
 {novel_title} is now fully translated with {chapter_count}! Thank you for coming on this journey and for your continued support <:luv_turtle:365263712549736448> You can now visit {host} to binge on all the releases~*<a:Heart:1365575427724283944><a:Paws:1365676154865979453>
 <:FF_Divider_Pink:1365575626194681936><:FF_Divider_Pink:1365575626194681936><:FF_Divider_Pink:1365575626194681936><:FF_Divider_Pink:1365575626194681936><:FF_Divider_Pink:1365575626194681936>
 -# Check out other translated projects at {discord_role_url} and react to get the latest updates <a:LoveLetter:1365575475841339435>
