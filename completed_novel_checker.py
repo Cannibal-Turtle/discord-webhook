@@ -34,6 +34,7 @@ except Exception:
         return ""
 from message_renderer import render_message, to_discord_api_payload
 from git_state_commit import commit_state_update
+from announcement_banner import build_announcement_banner
 
 # ─── CONFIG ────────────────────────────────────────────────────────────────────
 from config_loader import (
@@ -78,23 +79,50 @@ def normalize_message_payload(message: dict) -> dict:
     return to_discord_api_payload(message)
 
 
-def send_bot_message(bot_token: str, channel_id: str, message_payload: dict):
+def send_bot_message(
+    bot_token: str,
+    channel_id: str,
+    message_payload: dict,
+    attachment: tuple[str, bytes, str] | None = None,
+):
     """
     Post the rendered TOML payload via your bot account to channel_id.
     """
     url = f"https://discord.com/api/v10/channels/{channel_id}/messages"
-    headers = {
-        "Authorization": f"Bot {bot_token}",
-        "Content-Type":  "application/json"
-    }
     payload = normalize_message_payload(message_payload)
-    r = requests.post(url, headers=headers, json=payload)
+
+    if attachment:
+        filename, file_bytes, content_type = attachment
+        payload = dict(payload)
+        payload["attachments"] = [{"id": 0, "filename": filename}]
+        r = requests.post(
+            url,
+            headers={"Authorization": f"Bot {bot_token}"},
+            data={"payload_json": json.dumps(payload, ensure_ascii=False)},
+            files={"files[0]": (filename, file_bytes, content_type)},
+            timeout=30,
+        )
+    else:
+        r = requests.post(
+            url,
+            headers={
+                "Authorization": f"Bot {bot_token}",
+                "Content-Type": "application/json",
+            },
+            json=payload,
+            timeout=20,
+        )
     r.raise_for_status()
 
 
-def safe_send_bot(bot_token: str, channel_id: str, message_payload: dict):
+def safe_send_bot(
+    bot_token: str,
+    channel_id: str,
+    message_payload: dict,
+    attachment: tuple[str, bytes, str] | None = None,
+):
     try:
-        send_bot_message(bot_token, channel_id, message_payload)
+        send_bot_message(bot_token, channel_id, message_payload, attachment=attachment)
         return True
       
     except requests.HTTPError as e:
@@ -182,6 +210,27 @@ def get_entry_translator_url(entry) -> str:
     return ""
 
 
+def build_completion_attachment(novel: dict):
+    featured_image = (novel.get("featured_image") or "").strip()
+    if not featured_image:
+        print(f"⚠️ No featured image for {novel.get('novel_title', 'novel')}; sending text only.")
+        return None
+
+    try:
+        return build_announcement_banner(
+            featured_image,
+            output_size=(1600, 600),
+            crop_position="auto",
+        )
+    except Exception as exc:
+        print(
+            f"⚠️ Could not prepare completion banner for {novel.get('novel_title', 'novel')}: {exc}. "
+            "Sending text only.",
+            file=sys.stderr,
+        )
+        return None
+
+
 def build_completion_context(novel, chap_field, chap_link, duration: str = "") -> dict:
     translator_url = (
         novel.get("feed_translator_url", "")
@@ -254,6 +303,7 @@ def load_novels():
                 "translator":       details.get("translator") or host_translator,
                 "translator_url":   details.get("translator_url") or host_translator_url,
                 "novel_link":       details.get("novel_url", ""),
+                "featured_image":   details.get("featured_image", ""),
                 "chapter_count":    details.get("chapter_count", ""),
                 "last_chapter":     last,
                 "start_date":       details.get("start_date", ""),
@@ -327,6 +377,7 @@ def main():
             # 2) use a clean title for display (prefer base)
             chap_field = base.strip()
             novel_for_message = dict(novel, feed_translator_url=get_entry_translator_url(entry))
+            completion_attachment = build_completion_attachment(novel)
 
             # --- ONLY-FREE CASE (series with no paid feed at all) ---
             if feed_type == "free" and not novel.get("paid_feed"):
@@ -348,7 +399,12 @@ def main():
                 msg = build_only_free_completion(novel_for_message, chap_field, entry.link, duration)
                 print(f"→ Built message of {len(msg.get('content', ''))} characters")
 
-                success = safe_send_bot(bot_token, channel_id, msg)
+                success = safe_send_bot(
+                    bot_token,
+                    channel_id,
+                    msg,
+                    attachment=completion_attachment,
+                )
                 if success:
                     print(f"✔️ Sent only-free completion announcement for {novel_id}")
                     state.setdefault(novel_id, {})["only_free_completion"] = {
@@ -384,7 +440,12 @@ def main():
                 msg = build_paid_completion(novel_for_message, chap_field, entry.link, duration)
                 print(f"→ Built message of {len(msg.get('content', ''))} characters")
 
-                success = safe_send_bot(bot_token, channel_id, msg)
+                success = safe_send_bot(
+                    bot_token,
+                    channel_id,
+                    msg,
+                    attachment=completion_attachment,
+                )
                 if success:
                     print(f"✔️ Sent paid-completion announcement for {novel_id}")
                     state.setdefault(novel_id, {})["paid_completion"] = {
@@ -410,7 +471,12 @@ def main():
                 msg = build_free_completion(novel_for_message, chap_field, entry.link)
                 print(f"→ Built message of {len(msg.get('content', ''))} characters")
 
-                success = safe_send_bot(bot_token, channel_id, msg)
+                success = safe_send_bot(
+                    bot_token,
+                    channel_id,
+                    msg,
+                    attachment=completion_attachment,
+                )
                 if success:
                     print(f"✔️ Sent free-completion announcement for {novel_id}")
                     state.setdefault(novel_id, {})["free_completion"] = {
