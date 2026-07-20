@@ -773,7 +773,7 @@ ratio = "8:3"
 crop = "auto"
 ```
 
-Set `ratio = "original"` to attach the full featured image without cropping or resizing. Other ratio values such as `4:1` or `8:3` create a cropped banner.
+Set `ratio = "original"` to attach the full featured image without cropping or resizing. Other ratio values such as `4:1` or `8:3` create a cropped banner. With `crop = "auto"`, a lightweight text-band heuristic chooses `lower center` when text-like activity is stronger near the top, `upper center` when it is stronger near the bottom, and defaults to `upper center` when unclear.
 
 ---
 

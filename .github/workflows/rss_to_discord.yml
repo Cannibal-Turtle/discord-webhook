@@ -114,12 +114,6 @@ jobs:
           cache: 'pip'
           cache-dependency-path: requirements/rss_dispatch.txt
 
-      - name: Cache announcement subject model
-        uses: actions/cache@v5
-        with:
-          path: ~/.cache/cannibal-turtle/announcement-banner
-          key: announcement-yoloe-11s-seg-pf-v1
-
       - name: Install dependencies
         env: { PIP_DISABLE_PIP_VERSION_CHECK: 1 }
         run: |
@@ -162,12 +156,6 @@ jobs:
           python-version: '3.x'
           cache: 'pip'
           cache-dependency-path: requirements/rss_dispatch.txt
-
-      - name: Cache announcement subject model
-        uses: actions/cache@v5
-        with:
-          path: ~/.cache/cannibal-turtle/announcement-banner
-          key: announcement-yoloe-11s-seg-pf-v1
 
       - name: Install dependencies
         env: { PIP_DISABLE_PIP_VERSION_CHECK: 1 }
