@@ -4,4 +4,4 @@ python-dateutil~=2.9
 tomli>=2.0.1
 git+https://github.com/Cannibal-Turtle/rss-feed.git@main
 Pillow>=10.0
-mediapipe>=0.10.31,<0.11
+ultralytics>=8.4,<9
