@@ -1,3 +1,8 @@
+[settings.banner]
+enabled = true
+ratio = "8:3"
+crop = "auto"
+
 [paid_with_duration]
 suppress_embeds = true
 content = '''

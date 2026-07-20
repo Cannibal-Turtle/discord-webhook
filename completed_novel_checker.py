@@ -39,6 +39,7 @@ from announcement_banner import build_announcement_banner
 # ─── CONFIG ────────────────────────────────────────────────────────────────────
 from config_loader import (
     server_channel_id_str,
+    load_toml,
     get_novel_role_id,
     get_novel_role_url,
     require_file_value,
@@ -55,6 +56,66 @@ COMPLETE_ROLE = role_id_to_mention(require_role_value("complete"))
 NSFW_ROLE     = role_id_to_mention(require_role_value("nsfw"))
 TRANSLATOR_URL = str(server_value("translator_url", "") or "").strip()
 # ────────────────────────────────────────────────────────────────────────────────
+
+COMPLETED_NOVELS_TEMPLATE_PATH = "message_templates/completed_novels.toml"
+DEFAULT_COMPLETION_BANNER_SETTINGS = {
+    "enabled": True,
+    "ratio": "8:3",
+    "crop": "auto",
+}
+DEFAULT_COMPLETION_BANNER_SIZE = (1600, 600)
+
+
+def _truthy(value, default: bool) -> bool:
+    if value is None:
+        return default
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, (int, float)):
+        return bool(value)
+    if isinstance(value, str):
+        normalized = value.strip().lower()
+        if normalized in {"1", "true", "yes", "on"}:
+            return True
+        if normalized in {"0", "false", "no", "off"}:
+            return False
+    return default
+
+
+def load_completion_banner_settings() -> dict:
+    template = load_toml(COMPLETED_NOVELS_TEMPLATE_PATH, required=False, default={})
+    settings = ((template.get("settings") or {}).get("banner") or {})
+
+    return {
+        "enabled": _truthy(settings.get("enabled"), DEFAULT_COMPLETION_BANNER_SETTINGS["enabled"]),
+        "ratio": str(settings.get("ratio") or DEFAULT_COMPLETION_BANNER_SETTINGS["ratio"]).strip(),
+        "crop": str(settings.get("crop") or DEFAULT_COMPLETION_BANNER_SETTINGS["crop"]).strip().lower(),
+    }
+
+
+def parse_banner_ratio_to_size(ratio: str) -> tuple[int, int]:
+    ratio_text = str(ratio or "").strip()
+
+    try:
+        width_text, height_text = ratio_text.split(":", 1)
+        ratio_width = float(width_text.strip())
+        ratio_height = float(height_text.strip())
+        if ratio_width <= 0 or ratio_height <= 0:
+            raise ValueError
+
+        output_width = DEFAULT_COMPLETION_BANNER_SIZE[0]
+        output_height = max(1, int(round(output_width * ratio_height / ratio_width)))
+        return output_width, output_height
+    except Exception:
+        print(
+            f"⚠️ Invalid completed_novels banner ratio {ratio_text!r}; "
+            f"falling back to {DEFAULT_COMPLETION_BANNER_SETTINGS['ratio']}.",
+            file=sys.stderr,
+        )
+        return DEFAULT_COMPLETION_BANNER_SIZE
+
+
+COMPLETION_BANNER_SETTINGS = load_completion_banner_settings()
 
 
 def get_series_role_from_short_code(short_code: str) -> str:
@@ -211,16 +272,22 @@ def get_entry_translator_url(entry) -> str:
 
 
 def build_completion_attachment(novel: dict):
+    if not COMPLETION_BANNER_SETTINGS["enabled"]:
+        return None
+
     featured_image = (novel.get("featured_image") or "").strip()
     if not featured_image:
         print(f"⚠️ No featured image for {novel.get('novel_title', 'novel')}; sending text only.")
         return None
 
+    output_size = parse_banner_ratio_to_size(COMPLETION_BANNER_SETTINGS["ratio"])
+    crop_position = COMPLETION_BANNER_SETTINGS["crop"] or DEFAULT_COMPLETION_BANNER_SETTINGS["crop"]
+
     try:
         return build_announcement_banner(
             featured_image,
-            output_size=(1600, 600),
-            crop_position="auto",
+            output_size=output_size,
+            crop_position=crop_position,
         )
     except Exception as exc:
         print(
