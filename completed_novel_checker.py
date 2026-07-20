@@ -93,8 +93,11 @@ def load_completion_banner_settings() -> dict:
     }
 
 
-def parse_banner_ratio_to_size(ratio: str) -> tuple[int, int]:
+def parse_banner_ratio_to_size(ratio: str) -> tuple[int, int] | None:
     ratio_text = str(ratio or "").strip()
+
+    if ratio_text.casefold() == "original":
+        return None
 
     try:
         width_text, height_text = ratio_text.split(":", 1)

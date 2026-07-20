@@ -764,6 +764,17 @@ start_date = ""
 
 If `start_date = ""`, the duration phrase is safely omitted.
 
+Completion banner behavior is configured at the top of `message_templates/completed_novels.toml`:
+
+```toml
+[settings.banner]
+enabled = true
+ratio = "8:3"
+crop = "auto"
+```
+
+Set `ratio = "original"` to attach the full featured image without cropping or resizing. Other ratio values such as `4:1` or `8:3` create a cropped banner.
+
 ---
 
 ## Arc History
