@@ -7,7 +7,7 @@ crop = "auto"
 suppress_embeds = true
 content = '''
 {completion_mention} <a:HappyCloud:1365575487333859398>
-## ꧁ᐟᐟ ◌ೄ⟢  Completion Announcement  <:simplebouquet:1527555354391613520> ˚. ᵎᵎ˖ˎˊ-
+## ꧁ᐟᐟ ◌ೄ⟢  Completion Announcement <:simplebouquet:1527555354391613520> ˚. ᵎᵎ˖ˎˊ-
 <:purple_divider1:1365652778957144165><:purple_divider1:1365652778957144165><:purple_divider1:1365652778957144165><:purple_divider1:1365652778957144165><:purple_divider1:1365652778957144165><:purple_divider1:1365652778957144165><:purple_divider1:1365652778957144165><:purple_divider1:1365652778957144165><:purple_divider1:1365652778957144165><:purple_divider1:1365652778957144165>
 ***<a:kikilts_bracket:1365693072138174525>[{novel_title}]({novel_link})<a:lalalts_bracket:1365693058905014313> — officially completed!*** <a:cowiggle:1368136766791483472><a:whitesparkles:1365569806966853664>
 
@@ -24,7 +24,7 @@ parse = ["everyone", "users", "roles"]
 suppress_embeds = true
 content = '''
 {completion_mention} <a:HappyCloud:1365575487333859398>
-## ꧁ᐟᐟ ◌ೄ⟢  Completion Announcement  <:simplebouquet:1527555354391613520> ˚. ᵎᵎ˖ˎˊ-
+## ꧁ᐟᐟ ◌ೄ⟢  Completion Announcement <:simplebouquet:1527555354391613520> ˚. ᵎᵎ˖ˎˊ-
 <:purple_divider1:1365652778957144165><:purple_divider1:1365652778957144165><:purple_divider1:1365652778957144165><:purple_divider1:1365652778957144165><:purple_divider1:1365652778957144165><:purple_divider1:1365652778957144165><:purple_divider1:1365652778957144165><:purple_divider1:1365652778957144165><:purple_divider1:1365652778957144165><:purple_divider1:1365652778957144165>
 ***<a:kikilts_bracket:1365693072138174525>[{novel_title}]({novel_link})<a:lalalts_bracket:1365693058905014313> — officially completed!*** <a:cowiggle:1368136766791483472><a:whitesparkles:1365569806966853664>
 
