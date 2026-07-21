@@ -62,6 +62,7 @@ DEFAULT_COMPLETION_BANNER_SETTINGS = {
     "enabled": True,
     "ratio": "8:3",
     "crop": "auto",
+    "spoiler_nsfw": True,
 }
 DEFAULT_COMPLETION_BANNER_SIZE = (1600, 600)
 
@@ -90,6 +91,10 @@ def load_completion_banner_settings() -> dict:
         "enabled": _truthy(settings.get("enabled"), DEFAULT_COMPLETION_BANNER_SETTINGS["enabled"]),
         "ratio": str(settings.get("ratio") or DEFAULT_COMPLETION_BANNER_SETTINGS["ratio"]).strip(),
         "crop": str(settings.get("crop") or DEFAULT_COMPLETION_BANNER_SETTINGS["crop"]).strip().lower(),
+        "spoiler_nsfw": _truthy(
+            settings.get("spoiler_nsfw"),
+            DEFAULT_COMPLETION_BANNER_SETTINGS["spoiler_nsfw"],
+        ),
     }
 
 
@@ -261,7 +266,7 @@ def build_completion_mention(novel: dict) -> str:
     NSFW is appended last, mirroring new_novel_checker’s visual.
     """
     base_role = (novel.get("role_mention") or "").strip()
-    nsfw_tail = NSFW_ROLE if novel.get("novel_title") in get_nsfw_novels() else None
+    nsfw_tail = NSFW_ROLE if novel_is_nsfw(novel) else None
     # COMPLETE_ROLE goes in the same line, deduped
     return join_role_mentions(base_role, COMPLETE_ROLE, nsfw_tail)
 
@@ -272,6 +277,13 @@ def get_entry_translator_url(entry) -> str:
         if value:
             return str(value).strip()
     return ""
+
+
+def novel_is_nsfw(novel: dict) -> bool:
+    """Return whether this novel should use NSFW-only announcement behavior."""
+    title = (novel.get("novel_title") or "").strip()
+    fallback = title in set(get_nsfw_novels()) if title else False
+    return _truthy(novel.get("is_nsfw"), fallback)
 
 
 def build_completion_attachment(novel: dict):
@@ -286,12 +298,29 @@ def build_completion_attachment(novel: dict):
     output_size = parse_banner_ratio_to_size(COMPLETION_BANNER_SETTINGS["ratio"])
     crop_position = COMPLETION_BANNER_SETTINGS["crop"] or DEFAULT_COMPLETION_BANNER_SETTINGS["crop"]
 
+    spoiler_nsfw = (
+        COMPLETION_BANNER_SETTINGS["spoiler_nsfw"]
+        and novel_is_nsfw(novel)
+    )
+    filename = (
+        "SPOILER_completion_banner.png"
+        if spoiler_nsfw
+        else "completion_banner.png"
+    )
+
     try:
-        return build_announcement_banner(
+        attachment = build_announcement_banner(
             featured_image,
             output_size=output_size,
             crop_position=crop_position,
+            filename=filename,
         )
+        if spoiler_nsfw:
+            print(
+                f"🔞 Completion banner for {novel.get('novel_title', 'novel')} "
+                "will be blurred as a Discord spoiler."
+            )
+        return attachment
     except Exception as exc:
         print(
             f"⚠️ Could not prepare completion banner for {novel.get('novel_title', 'novel')}: {exc}. "
@@ -374,6 +403,7 @@ def load_novels():
                 "translator_url":   details.get("translator_url") or host_translator_url,
                 "novel_link":       details.get("novel_url", ""),
                 "featured_image":   details.get("featured_image", ""),
+                "is_nsfw":          details.get("is_nsfw", False),
                 "chapter_count":    details.get("chapter_count", ""),
                 "last_chapter":     last,
                 "start_date":       details.get("start_date", ""),

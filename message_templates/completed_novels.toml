@@ -2,6 +2,7 @@
 enabled = true
 ratio = "8:3"
 crop = "auto"
+spoiler_nsfw = true
 
 [paid_with_duration]
 suppress_embeds = true

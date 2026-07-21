@@ -771,7 +771,10 @@ Completion banner behavior is configured at the top of `message_templates/comple
 enabled = true
 ratio = "8:3"
 crop = "auto"
+spoiler_nsfw = true
 ```
+
+When `spoiler_nsfw = true`, completion banners for novels with `is_nsfw = true` are uploaded as Discord spoiler attachments and stay blurred until a reader opens them. Set it to `false` to keep NSFW completion banners visible.
 
 Set `ratio = "original"` to attach the full featured image without cropping or resizing. Other ratio values such as `4:1` or `8:3` create a cropped banner. With `crop = "auto"`, a lightweight text-band heuristic chooses `lower center` when text-like activity is stronger near the top, `upper center` when it is stronger near the bottom, and defaults to `upper center` when unclear.
 
