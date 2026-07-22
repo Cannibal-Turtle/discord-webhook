@@ -74,7 +74,13 @@ def _card_status_update_config() -> dict:
     return section if isinstance(section, dict) else {}
 
 
-def trigger_status_update(title: str, host: str) -> bool:
+def trigger_status_update(
+    title: str,
+    host: str,
+    *,
+    source: str = "free_chapter",
+    short_code: str = "",
+) -> bool:
     cfg = _card_status_update_config()
 
     if not _truthy(cfg.get("enabled")):
@@ -101,13 +107,19 @@ def trigger_status_update(title: str, host: str) -> bool:
         "Accept": "application/vnd.github+json",
     }
 
+    client_payload = {
+        "title": title,
+        "host": host,
+        "source": str(source or "free_chapter").strip() or "free_chapter",
+    }
+
+    normalized_short_code = str(short_code or "").strip().upper()
+    if normalized_short_code:
+        client_payload["short_code"] = normalized_short_code
+
     payload = {
         "event_type": event_type,
-        "client_payload": {
-            "title": title,
-            "host": host,
-            "source": "free_chapter",
-        },
+        "client_payload": client_payload,
     }
 
     try:
@@ -120,5 +132,8 @@ def trigger_status_update(title: str, host: str) -> bool:
         print(f"⚠️ Optional card status update failed for {title}: {r.status_code} {r.text}")
         return False
 
-    print(f"✅ Card status update dispatched for {title} ({host})")
+    print(
+        f"✅ Card status update dispatched for {title} ({host}) "
+        f"[{client_payload['source']}]"
+    )
     return True

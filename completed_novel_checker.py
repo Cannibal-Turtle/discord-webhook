@@ -36,6 +36,24 @@ from message_renderer import render_message, to_discord_api_payload
 from git_state_commit import commit_state_update
 from announcement_banner import build_announcement_banner
 
+try:
+    from status_update_dispatcher import trigger_status_update
+except Exception as import_exc:
+    _STATUS_UPDATE_IMPORT_ERROR = str(import_exc)
+
+    def trigger_status_update(
+        title: str,
+        host: str,
+        *,
+        source: str = "free_chapter",
+        short_code: str = "",
+    ) -> bool:
+        print(
+            f"⚠️ Optional card status update unavailable; skipped {title}: "
+            f"{_STATUS_UPDATE_IMPORT_ERROR}"
+        )
+        return False
+
 # ─── CONFIG ────────────────────────────────────────────────────────────────────
 from config_loader import (
     server_channel_id_str,
@@ -554,6 +572,19 @@ def main():
                     }
                     save_state(state)
                     commit_state_update(STATE_PATH)
+
+                    try:
+                        trigger_status_update(
+                            novel_id,
+                            novel.get("host", ""),
+                            source="paid_completion",
+                            short_code=novel.get("short_code", ""),
+                        )
+                    except Exception as exc:
+                        print(
+                            f"⚠️ Optional card status update crashed for {novel_id}; "
+                            f"skipped: {exc}"
+                        )
                 else:
                     print(
                         f"→ Not marking {novel_id} as ‘paid_completion’ "

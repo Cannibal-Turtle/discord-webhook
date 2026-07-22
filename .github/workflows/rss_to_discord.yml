@@ -123,6 +123,7 @@ jobs:
       - name: Run Paid Completion Checker
         env:
           DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+          PAT_GITHUB: ${{ secrets.PAT_GITHUB }}
           GIT_STATE_AUTO_COMMIT: "0"
         run: python completed_novel_checker.py --feed paid
 

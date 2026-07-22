@@ -191,7 +191,7 @@ Settings → Secrets and variables → Actions
 | Secret | Purpose |
 | --- | --- |
 | `DISCORD_BOT_TOKEN` | Discord bot token |
-| `PAT_GITHUB` | Optional Personal Access Token for the free chapter → rss-feed status card update callback |
+| `PAT_GITHUB` | Optional Personal Access Token for free chapter / paid completion → rss-feed novel card updates |
 
 ---
 
@@ -930,23 +930,27 @@ schedule
 workflow_dispatch
 ```
 
-### Optional free chapter status card update callback
+### Optional novel card status update callback
 
-Free chapter announcements can optionally trigger a status card refresh back in the `rss-feed` repo.
+Free chapter announcements and successful paid-completion announcements can optionally trigger a status card refresh back in the `rss-feed` repo. This lets a novel card switch to **Completed** as soon as the final paid chapter is announced instead of waiting for the final chapter to become free.
 
-This flow is intentionally optional and non-fatal. If the callback config is missing, disabled, unreachable, or `PAT_GITHUB` is not configured, the free chapter announcement should still post normally.
+This flow is intentionally optional and non-fatal. If the callback config is missing, disabled, unreachable, or `PAT_GITHUB` is not configured, Discord announcements should still post normally.
 
-Flow:
+Flows:
 
 ```text
-rss-feed updates free_chapters_feed.xml
-→ rss-feed dispatches discord-webhook with feed=free
-→ bot_free_chapters.py posts the new free chapter message
-→ status_update_dispatcher.py checks rss-feed config/integrations.json
-→ if card_status_update.enabled=true, it sends repository_dispatch to rss-feed
+free chapter posted by bot_free_chapters.py
+→ status_update_dispatcher.py sends repository_dispatch with source=free_chapter
+
+successful paid completion posted by completed_novel_checker.py
+→ paid_completion is saved to state.json
+→ status_update_dispatcher.py sends repository_dispatch with source=paid_completion
+
 → rss-feed runs update_novel_status.yml
-→ tools/update_novel_status.py updates the configured novel status card embeds
+→ tools/update_novel_card.py refreshes the configured novel card embeds
 ```
+
+The paid-completion callback includes the novel short code when available, so `rss-feed` can resolve the exact card without relying only on title and host matching. Only-free novels remain covered by the existing final free-chapter callback.
 
 Required file in this repo:
 
@@ -954,10 +958,16 @@ Required file in this repo:
 status_update_dispatcher.py
 ```
 
-`bot_free_chapters.py` calls this after free chapter posts are sent:
+Call examples:
 
 ```python
 trigger_status_update(title, host)
+trigger_status_update(
+    title,
+    host,
+    source="paid_completion",
+    short_code=short_code,
+)
 ```
 
 The dispatcher reads the integration config from the URL configured in:
@@ -992,9 +1002,9 @@ Required secret in the `discord-webhook` repo:
 PAT_GITHUB
 ```
 
-`PAT_GITHUB` is only required for the optional status card update callback.
+`PAT_GITHUB` is only required for the optional status card update callback. It must be exposed to both the free chapter bot step and the paid completion checker step.
 
-If `PAT_GITHUB` is missing, `status_update_dispatcher.py` should skip the callback and print a warning instead of crashing the free chapter bot.
+If `PAT_GITHUB` is missing, `status_update_dispatcher.py` should skip the callback and print a warning instead of crashing the chapter or completion workflow.
 
 Example skip behavior:
 
