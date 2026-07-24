@@ -504,7 +504,6 @@
   "free_last_guid": "584cdb61-6f50-458e-9420-f577cdf00112",
   "last_post_time_free": "2026-07-24T05:00:00+00:00",
   "paid_seen_guids": [
-    "Mistmint Haven::23fd4823-62dd-40bf-bc11-84be895b0478",
     "Mistmint Haven::aef05df8-4bc1-49fc-9e76-eccdc1b956bc",
     "Mistmint Haven::5f97c146-e20b-4f32-8143-80c556f7a046",
     "Mistmint Haven::ebb8c12c-a68b-4548-b739-1176565a62af",
@@ -1003,10 +1002,11 @@
     "Mistmint Haven::HIAFLG::b4585e26-b427-4bfe-aaec-9b382fad7f25",
     "Mistmint Haven::HIAFLG::c75ce264-383a-4084-8372-492bbef5873f",
     "Mistmint Haven::HIAFLG::a55c0196-e2c2-4042-a8a3-c256b0422aa5",
-    "Mistmint Haven::HIAFLG::404ebe80-a7d1-4b38-b82c-55a1ed5cc5f0"
+    "Mistmint Haven::HIAFLG::404ebe80-a7d1-4b38-b82c-55a1ed5cc5f0",
+    "Mistmint Haven::HIAFLG::490cffe5-2f56-4209-bc73-5351c795f73a"
   ],
-  "paid_last_guid": "404ebe80-a7d1-4b38-b82c-55a1ed5cc5f0",
-  "last_post_time_paid": "2026-07-24T16:03:57+00:00",
+  "paid_last_guid": "490cffe5-2f56-4209-bc73-5351c795f73a",
+  "last_post_time_paid": "2026-07-24T16:05:16+00:00",
   "comments_seen_guids": [
     "Novel Updates::https://www.novelupdates.com/?post_type=seriesplans&p=88639#comment-434808",
     "Novel Updates::https://www.novelupdates.com/?post_type=seriesplans&p=88639#comment-439240",
