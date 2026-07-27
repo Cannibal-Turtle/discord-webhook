@@ -457,12 +457,13 @@ def main():
         if not url:
             continue
 
-        # map feed_type to the new state.json key
-        # (this controls the generic skip check before parsing)
+        # Skip completed novels before fetching/parsing their RSS feed.
         if feed_type == "paid":
             completion_key = "paid_completion"
-        else:
+        elif novel.get("paid_feed"):
             completion_key = "free_completion"
+        else:
+            completion_key = "only_free_completion"
 
         if state.get(novel_id, {}).get(completion_key):
             print(f"→ skipping {novel_id} ({completion_key}) — already notified")
