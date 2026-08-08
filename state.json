@@ -73,6 +73,10 @@
       "sent_at": "2026-07-21T17:06:22.445355"
     },
     "last_extra_announced": 1,
-    "extra_announced": true
+    "extra_announced": true,
+    "paid_completion": {
+      "chapter": "Chapter 120",
+      "sent_at": "2026-08-08T16:25:22.870778"
+    }
   }
 }
