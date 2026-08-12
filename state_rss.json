@@ -504,12 +504,6 @@
   "free_last_guid": "62f8098b-c768-4876-bb5b-2d1bcfbfcb9f",
   "last_post_time_free": "2026-08-12T05:00:00+00:00",
   "paid_seen_guids": [
-    "Mistmint Haven::a5a860bc-ffae-4855-b535-a638b6543e2c",
-    "Mistmint Haven::feaa0802-460b-4239-986a-9e01db22ae77",
-    "Mistmint Haven::d0f460ed-bd4a-47e8-979e-a4abaad0ab2d",
-    "Mistmint Haven::f20bd7a8-0ece-44b1-bf17-295bcd089dc6",
-    "Mistmint Haven::2cbf8afa-93ae-41c6-a18d-9ad57a450ff5",
-    "Mistmint Haven::a8461778-40fe-4096-9dbb-96c50bd59ef3",
     "Mistmint Haven::e4cb01fe-f720-4e38-a44a-a625ed187b54",
     "Mistmint Haven::a98b1953-8109-4965-8c34-6febf6ae08a2",
     "Mistmint Haven::61c0b241-b845-4be5-92e5-ecc52533ec20",
@@ -1003,10 +997,16 @@
     "Mistmint Haven::HIAFLG::346d38ae-bb1a-48c4-a439-14d571d4e653",
     "Mistmint Haven::HIAFLG::2f438292-8c4c-448b-84de-db2dba6eeafb",
     "Mistmint Haven::HIAFLG::2e20929d-52e8-4f2a-a99f-d1604b5d2f03",
-    "Mistmint Haven::AMLWC::ac16905c-b17f-47ab-8ef8-f63fc127e3c9"
+    "Mistmint Haven::AMLWC::ac16905c-b17f-47ab-8ef8-f63fc127e3c9",
+    "Mistmint Haven::HIAFLG::b2cc638e-c4d9-4da1-8d30-4761569dad87",
+    "Mistmint Haven::HIAFLG::7d4fd4ba-afbc-447a-bc47-9717a7e67903",
+    "Mistmint Haven::HIAFLG::4951e862-058a-4190-aca8-6e2ef5d84d82",
+    "Mistmint Haven::HIAFLG::a8f2a35f-ccb7-470e-8d02-c6f10db579bc",
+    "Mistmint Haven::HIAFLG::23e0e6e3-bd4c-4e0b-87dc-198090b90559",
+    "Mistmint Haven::AMLWC::87709ac4-e9aa-4f45-881a-ebeb952430aa"
   ],
-  "paid_last_guid": "ac16905c-b17f-47ab-8ef8-f63fc127e3c9",
-  "last_post_time_paid": "2026-08-10T16:06:42+00:00",
+  "paid_last_guid": "87709ac4-e9aa-4f45-881a-ebeb952430aa",
+  "last_post_time_paid": "2026-08-12T05:58:07+00:00",
   "comments_seen_guids": [
     "Novel Updates::https://www.novelupdates.com/?post_type=seriesplans&p=88639#comment-434808",
     "Novel Updates::https://www.novelupdates.com/?post_type=seriesplans&p=88639#comment-439240",
